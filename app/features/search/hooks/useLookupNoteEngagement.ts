@@ -107,7 +107,7 @@ export function useLookupNoteEngagement({
     if (!result.ok) {
       setIsLiked(false);
       // While the attempt is parked in `awaiting_signer`, the per-row
-      // CompactSignStatus owns the recovery affordance — only surface a
+      // CompactSignStatus owns the recovery affordance  -  only surface a
       // textual error for the terminal failure modes the pill can't
       // recover from.
       if (result.reason === "fatal" || result.reason === "expired") {
@@ -172,7 +172,7 @@ export function useLookupNoteEngagement({
 
       if (!result.ok) {
         // While the attempt is parked in `awaiting_signer` the global
-        // recovery banner owns the recovery affordance — only surface a
+        // recovery banner owns the recovery affordance  -  only surface a
         // textual error for the terminal failure modes the banner can't
         // recover from on its own.
         if (result.reason === "fatal" || result.reason === "expired") {

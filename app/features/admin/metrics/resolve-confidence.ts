@@ -17,13 +17,13 @@ export function confidenceForRate(
   if (attempts < 5) {
     return {
       confidence: "insufficient_sample",
-      note: "Very few events — treat as directional only.",
+      note: "Very few events  -  treat as directional only.",
     };
   }
   if (attempts < 20) {
     return {
       confidence: "directional",
-      note: "Low sample — trend direction only.",
+      note: "Low sample  -  trend direction only.",
     };
   }
   return { confidence: "confident" };

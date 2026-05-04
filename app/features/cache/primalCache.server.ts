@@ -175,8 +175,8 @@ export async function fetchFromCache(
 /**
  * Connects to the Primal cache and fetches data.
  * PRIMAL_CACHING_URL can be:
- * - https://... — HTTP proxy (e.g. Cloudflare Worker): POST { requestType, params }, returns same array format
- * - wss://... or unset — WebSocket API (direct cache or default wss://cache1.primal.net/v1, etc.)
+ * - https://...  -  HTTP proxy (e.g. Cloudflare Worker): POST { requestType, params }, returns same array format
+ * - wss://... or unset  -  WebSocket API (direct cache or default wss://cache1.primal.net/v1, etc.)
  * WebSocket `requestType` strings must match `App.exposed_functions` in Primal’s `app.jl`
  * (e.g. `network_stats`, `thread_view`, `parametrized_replaceable_event`, `contact_list`,
  * `user_followers`, `mutual_follows`). Helpers in `nostrwebsocket.server.ts` map aliases

@@ -53,7 +53,7 @@ async function tryConnectToCache(
 
     ws.onopen = () => {
       switch (requestType) {
-        /** `App.network_stats` — `net_stats` kept as alias for older callers. */
+        /** `App.network_stats`  -  `net_stats` kept as alias for older callers. */
         case "network_stats":
         case "net_stats":
           ws.send(
@@ -131,7 +131,7 @@ async function tryConnectToCache(
             ])
           );
           break;
-        /** Primal `App.contact_list` — kind 3 follow list for `pubkey` (see primal-caching-service `exposed_functions`). */
+        /** Primal `App.contact_list`  -  kind 3 follow list for `pubkey` (see primal-caching-service `exposed_functions`). */
         case "contact_list":
           ws.send(
             JSON.stringify([
@@ -152,7 +152,7 @@ async function tryConnectToCache(
             ])
           );
           break;
-        /** Primal `App.user_followers` — follower pubkeys as profile (kind 0) events; max limit 1000 server-side. */
+        /** Primal `App.user_followers`  -  follower pubkeys as profile (kind 0) events; max limit 1000 server-side. */
         case "user_followers":
           ws.send(
             JSON.stringify([
@@ -175,7 +175,7 @@ async function tryConnectToCache(
             ])
           );
           break;
-        /** Primal `App.mutual_follows` — pass same hex for `pubkey` and `user_pubkey` for “my mutuals”. */
+        /** Primal `App.mutual_follows`  -  pass same hex for `pubkey` and `user_pubkey` for “my mutuals”. */
         case "mutual_follows":
           ws.send(
             JSON.stringify([

@@ -14,6 +14,7 @@ vi.mock("~/features/user", () => ({
   getQueueTypes: vi.fn(),
   getUserTimezone: vi.fn(),
   getQueueTypeByIdForUser: vi.fn(),
+  getQueueTypeByNameForUser: vi.fn(),
 }));
 
 vi.mock("~/features/posts/scheduling/services/schedulers", () => ({
@@ -32,6 +33,7 @@ import {
   getQueueTypes,
   getUserTimezone,
   getQueueTypeByIdForUser,
+  getQueueTypeByNameForUser,
 } from "~/features/user";
 import { action } from "~/routes/api.queue-schedule";
 
@@ -159,6 +161,58 @@ describe("API: Queue Schedule", () => {
             })
           : {};
 
+      expect(getQueueTypeByIdForUser).toHaveBeenCalledWith(
+        TEST_USER_ID,
+        "queue-1"
+      );
+      expect(data).toEqual({ scheduledTime: formattedTime });
+    });
+
+    it("should calculate schedule time using queueTypeName when id is omitted", async () => {
+      const mockQueueType = {
+        id: "queue-1",
+        name: "Morning",
+        scheduleType: "INTERVAL",
+        scheduleConfig: { intervalHours: 4 },
+      };
+
+      const mockNextTime = new Date("2024-01-15T14:00:00Z");
+      const formattedTime = "2024-01-15T10:00";
+
+      (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
+        { id: "queue-1" }
+      );
+      (getQueueTypeByIdForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockQueueType
+      );
+      (calculateNextScheduleTime as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockNextTime
+      );
+      (formatScheduleTimeForInput as ReturnType<typeof vi.fn>).mockReturnValue(
+        formattedTime
+      );
+
+      const request = new Request("http://localhost:3000/api/queue-schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ queueTypeName: "Morning" }),
+      });
+
+      const response = await action({ request, params: {}, context: {} });
+      const responseObj =
+        response instanceof Response
+          ? response
+          : new Response(JSON.stringify(response));
+      const dataRaw: unknown = await responseObj.json();
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { scheduledTime?: unknown })
+          : {};
+
+      expect(getQueueTypeByNameForUser).toHaveBeenCalledWith(
+        TEST_USER_ID,
+        "Morning"
+      );
       expect(getQueueTypeByIdForUser).toHaveBeenCalledWith(
         TEST_USER_ID,
         "queue-1"

@@ -19,7 +19,7 @@ function useIsClient(): boolean {
 
 export default function LoginPage() {
   // NostrLoginPanel pulls .client hooks; render only on client (avoid SSR 500).
-  // useSyncExternalStore flips as soon as React hydrates—no useEffect delay (important on slow mobile).
+  // useSyncExternalStore flips as soon as React hydrates - no useEffect delay (important on slow mobile).
   const isClient = useIsClient();
 
   return (
@@ -27,7 +27,7 @@ export default function LoginPage() {
       id="page-container"
       className="bg-canvas landing-texture relative mx-auto flex min-h-dvh w-full min-w-[320px] flex-col"
     >
-      {/* Decorative layer only — must not capture clicks above header/main/footer */}
+      {/* Decorative layer only  -  must not capture clicks above header/main/footer */}
       <div
         className="hero-gradient-light dark:hero-gradient-dark pointer-events-none absolute inset-0 z-0"
         aria-hidden

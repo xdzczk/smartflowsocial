@@ -17,7 +17,7 @@
  * `listeners` map, `serial`, `idPrefix`, and `subCloser` on the JS heap for
  * the lifetime of the instance. iOS Safari preserves that heap across tab
  * close/reopen via bfcache, but the underlying WebSockets are torn down by
- * the OS in the meantime — that is the bug we have to fix. Rebuilding on
+ * the OS in the meantime  -  that is the bug we have to fix. Rebuilding on
  * every call also fixes it, but it spawns a fresh REQ subscription per
  * sign, which inflates relay traffic for bulk loops (50 posts → 50 extra
  * subscriptions piling up against the bunker relay's quota). Pinning the
@@ -88,7 +88,7 @@ const PREVIOUS_SIGNER_CLOSE_DELAY_MS = 65_000;
 
 /**
  * Hidden duration above which a returning tab is treated as "transport
- * suspect". Below this threshold a tab switch is just a tab switch — sockets
+ * suspect". Below this threshold a tab switch is just a tab switch  -  sockets
  * stay open, the BunkerSigner is fine, no rebuild needed. Above it the OS
  * very likely suspended the tab and tore down our WebSockets.
  */
@@ -251,7 +251,7 @@ function isConnectionRelatedError(err: unknown): boolean {
 
 function handleSignerConnectionError(err: unknown): void {
   resetCachedSigner();
-  // Cache is empty now; no point holding the staleness flag — it would
+  // Cache is empty now; no point holding the staleness flag  -  it would
   // immediately get cleared by the next rebuild anyway.
   nip46TransportStale = false;
 
@@ -354,7 +354,7 @@ export async function getActiveSigner(
     return getCachedSigner();
   }
 
-  // Happy path: the cached signer is fine — return it directly. We only
+  // Happy path: the cached signer is fine  -  return it directly. We only
   // rebuild when the transport-staleness flag is set (bfcache resume,
   // long-hidden tab, explicit error). This keeps bulk-sign loops and
   // intra-action follow-up RPCs cheap while still guaranteeing a fresh
@@ -386,7 +386,7 @@ export async function getActiveSigner(
 
   // Clear the stale flag at the moment we commit to rebuilding. If a new
   // bfcache/visibility event sets it again while the rebuild is in flight,
-  // the next caller will rebuild a second time — that is the right
+  // the next caller will rebuild a second time  -  that is the right
   // behavior: better one wasted rebuild than reusing a transport that we
   // already know is suspect.
   nip46TransportStale = false;

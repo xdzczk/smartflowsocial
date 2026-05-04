@@ -24,8 +24,8 @@ interface AttachmentsStripProps {
   /** Optional: reorder (fromIndex, toIndex) - for drag reorder */
   onReorder?: (fromIndex: number, toIndex: number) => void;
   /**
-   * `inline` — no outer bordered box (use inside unified composer canvas).
-   * `boxed` — legacy bordered wrapper.
+   * `inline`  -  no outer bordered box (use inside unified composer canvas).
+   * `boxed`  -  legacy bordered wrapper.
    */
   variant?: "inline" | "boxed";
   /**
@@ -37,7 +37,7 @@ interface AttachmentsStripProps {
   /** Smaller tiles and add control (e.g. per thread segment). */
   density?: "default" | "compact";
   /**
-   * `minimal` — ghost-style add control for thread segments (lighter than outline tile).
+   * `minimal`  -  ghost-style add control for thread segments (lighter than outline tile).
    */
   addControlTone?: "default" | "minimal";
   className?: string;
@@ -131,7 +131,7 @@ export function AttachmentsStrip({
             att.status === "failed"
               ? [att.file?.name, att.uploadErrorMessage, failedStatusTitle]
                   .filter(Boolean)
-                  .join(" — ")
+                  .join(" - ")
               : undefined
           }
         >

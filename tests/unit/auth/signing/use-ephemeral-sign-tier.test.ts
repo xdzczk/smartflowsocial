@@ -9,7 +9,7 @@
  *
  *   1. Ephemeral attempts in `signing` / `submitting` / `resuming` render
  *      the subtle spinner (never the compact pill, regardless of how
- *      long the attempt has been running — those states aren't blocked
+ *      long the attempt has been running  -  those states aren't blocked
  *      on the user).
  *   2. Ephemeral attempts in `awaiting_signer` render subtle for the
  *      first `EPHEMERAL_ESCALATION_MS`, then escalate to compact.
@@ -17,12 +17,12 @@
  *      "timed out / Dismiss" affordance).
  *   4. Terminal states (`completed`, `failed`, `idle`) render nothing
  *      (`null`).
- *   5. The hook does not require multi-slot mode — `start({ ephemeral })`
+ *   5. The hook does not require multi-slot mode  -  `start({ ephemeral })`
  *      coexists with a foreground durable attempt under the default
  *      single-slot flag (verifies the additive ephemeral rule added to
  *      `signing-attempts.start()` in PR 4).
  *   6. `signing-attempts.runAttempt` writes `awaitingSince` on the
- *      transition into `awaiting_signer` and clears it on resume — the
+ *      transition into `awaiting_signer` and clears it on resume  -  the
  *      hook keys off this field.
  */
 
@@ -61,7 +61,7 @@ describe("useEphemeralSignTier", () => {
 
   beforeEach(() => {
     savedFlag = clientFeatureFlags.signingMultiSlot;
-    // PR 4 must work under the default single-slot flag — that's the
+    // PR 4 must work under the default single-slot flag  -  that's the
     // production state until PR 6 flips multi-slot on.
     _setClientFeatureFlagsForTests({ signingMultiSlot: false });
     resetSigningAttempts();
@@ -110,17 +110,17 @@ describe("useEphemeralSignTier", () => {
     expect(attempt.awaitingSince).toBeTypeOf("number");
 
     const { result, rerender } = renderTierForAttempt(id);
-    // Immediately after entering awaiting_signer — still subtle.
+    // Immediately after entering awaiting_signer  -  still subtle.
     expect(result.current.tier).toBe("subtle");
 
-    // Just under the threshold — still subtle.
+    // Just under the threshold  -  still subtle.
     await act(async () => {
       await vi.advanceTimersByTimeAsync(EPHEMERAL_ESCALATION_MS - 100);
     });
     rerender();
     expect(result.current.tier).toBe("subtle");
 
-    // Cross the threshold — should escalate to compact.
+    // Cross the threshold  -  should escalate to compact.
     await act(async () => {
       await vi.advanceTimersByTimeAsync(200);
     });
@@ -207,7 +207,7 @@ describe("useEphemeralSignTier", () => {
     expect(parked.state).toBe("awaiting_signer");
     expect(parked.awaitingSince).toBeTypeOf("number");
 
-    // Past escalation threshold — would render compact at this point.
+    // Past escalation threshold  -  would render compact at this point.
     await act(async () => {
       await vi.advanceTimersByTimeAsync(EPHEMERAL_ESCALATION_MS + 100);
     });

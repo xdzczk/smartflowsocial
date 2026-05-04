@@ -128,7 +128,7 @@ export async function runBroadcastFinalizeFlow(
             } catch {
               // Gift-wrap failures are non-fatal: the recipient still gets
               // the kind-4 fallback. We deliberately do not park the batch
-              // here — only kind-4 sign failures (which propagate above)
+              // here  -  only kind-4 sign failures (which propagate above)
               // are recoverable.
               giftWraps = undefined;
             }

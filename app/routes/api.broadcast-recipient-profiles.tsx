@@ -15,7 +15,7 @@ function parsePubkeys(body: unknown): string[] {
 }
 
 /**
- * POST JSON { pubkeys: string[] } — kind 0 display fields (batched, max ~500).
+ * POST JSON { pubkeys: string[] }  -  kind 0 display fields (batched, max ~500).
  */
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {

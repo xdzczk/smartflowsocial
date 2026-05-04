@@ -26,7 +26,7 @@ export function CreateTemplateTypeDialog({
         <DialogHeader>
           <DialogTitle>Create template</DialogTitle>
           <DialogDescription>
-            Choose a blueprint type. You will define reusable content next — not
+            Choose a blueprint type. You will define reusable content next - not
             a live post.
           </DialogDescription>
         </DialogHeader>

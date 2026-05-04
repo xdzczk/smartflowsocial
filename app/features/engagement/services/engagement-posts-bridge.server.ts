@@ -23,7 +23,7 @@ export async function createDeferredEngagementAction(params: {
   content?: string;
   scheduledFor?: string | null;
   queueTypeId?: string | null;
-  /** Required when mode is schedule — client-signed Nostr event (publish time = scheduledFor). */
+  /** Required when mode is schedule  -  client-signed Nostr event (publish time = scheduledFor). */
   signedEvent?: SignedEvent | null;
 }): Promise<{
   postId: string;

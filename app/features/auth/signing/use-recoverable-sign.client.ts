@@ -82,7 +82,7 @@ export type RecoverableSignResult =
 /**
  * Start a signing attempt and await its terminal outcome.
  *
- * The promise NEVER rejects — failures are returned as `{ ok: false }` so
+ * The promise NEVER rejects  -  failures are returned as `{ ok: false }` so
  * the caller can branch without a try/catch. Anything thrown inside
  * `performSignAndSubmit` is captured by the store and surfaced as either
  * `awaiting_signer` (transient signer error) or `failed` (anything else).
@@ -90,7 +90,7 @@ export type RecoverableSignResult =
  * The caller's `performSignAndSubmit` is responsible for invoking
  * `signingAttempts.markCompleted(submissionId)` after a successful publish
  * so the awaitable resolves promptly with `ok: true`. If it doesn't, the
- * attempt sits in `submitting` forever — defensive but visible.
+ * attempt sits in `submitting` forever  -  defensive but visible.
  */
 export function startRecoverableSign(
   input: StartAttemptInput
@@ -152,7 +152,7 @@ export function startRecoverableSign(
           });
           return;
         default:
-          // idle / signing / awaiting_signer / resuming / submitting —
+          // idle / signing / awaiting_signer / resuming / submitting  -
           // not terminal yet, keep listening.
           return;
       }
@@ -238,7 +238,7 @@ function defaultLabelFor(
  * has been removed from the store (user cancel, LRU eviction).
  *
  * Snapshots are cached so successive calls during a single React render
- * return referentially-equal values — required by `useSyncExternalStore`'s
+ * return referentially-equal values  -  required by `useSyncExternalStore`'s
  * tearing-detection in concurrent mode.
  */
 export function useSigningAttemptById(

@@ -439,7 +439,7 @@ export function PlansPage(): ReactNode {
           {founderOffering ? (
             <section className="border-border from-surface via-surface to-surface-hover/20 shadow-2 mb-7 rounded-xl border bg-gradient-to-r p-4 md:p-5">
               <p className="text-link text-[11px] font-semibold tracking-[0.14em] uppercase">
-                LIMITED ALLOCATION — LIFETIME ACCESS
+                LIMITED ALLOCATION - LIFETIME ACCESS
               </p>
               <div className="mt-3 grid gap-4 md:grid-cols-2 lg:grid-cols-12 lg:items-start lg:gap-5">
                 <div className="md:col-span-1 lg:col-span-4">

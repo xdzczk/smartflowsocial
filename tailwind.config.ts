@@ -2,7 +2,7 @@
 // Most of the design system lives in CSS via the `@theme` directive
 // (see app/tailwind.css). This config only exists to scope content
 // scanning and to safelist the few classes that the scanner cannot
-// see — primarily the per-queue hex color utilities built from the
+// see  -  primarily the per-queue hex color utilities built from the
 // `QUEUE_COLOR_ACCENTS` map at runtime (see app/features/posts/queue-colors.ts).
 import type { Config } from "tailwindcss";
 
@@ -13,11 +13,11 @@ export default {
     "./server.ts",
     "./worker.ts",
   ],
-  // Keep this list short. Anything added here ships in every build —
+  // Keep this list short. Anything added here ships in every build  -
   // prefer literal class strings in source over adding here. We only safelist
   // classes whose *full string* is assembled at runtime from data we control
-  // (hex color palette, percentage opacities). Everything else — including the
-  // PlansPage, PricingCard, and FeatureComparisonTable — now uses design tokens
+  // (hex color palette, percentage opacities). Everything else  -  including the
+  // PlansPage, PricingCard, and FeatureComparisonTable  -  now uses design tokens
   // (`bg-surface`, `text-text`, `border-border`…) and is picked up by content
   // scanning automatically.
   safelist: [

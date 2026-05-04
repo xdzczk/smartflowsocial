@@ -118,7 +118,7 @@ export function CompactSignStatus({
           className
         )}
       >
-        Reconnected — completing {verb.toLowerCase()}…
+        Reconnected - completing {verb.toLowerCase()}…
       </span>
     );
   }

@@ -58,7 +58,7 @@ export function SettingsShell({
   const [searchParams] = useSearchParams();
   const grouped = groupVisibleSettingsSections(sections);
 
-  // No overflow-x-hidden on root — it breaks `position:sticky` on the rail (same as dashboard main / ActionRail).
+  // No overflow-x-hidden on root  -  it breaks `position:sticky` on the rail (same as dashboard main / ActionRail).
   return (
     <PageContent fluid className="pb-8" data-testid="settings-page">
       <div className="pt-2 pb-4">

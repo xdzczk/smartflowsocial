@@ -125,7 +125,7 @@ export default function NewLongFormPostPage() {
   }, []);
 
   // Check for published/scheduled URL param. Note: do NOT skip when
-  // showPublishModal is already true — the modal may be open from an
+  // showPublishModal is already true  -  the modal may be open from an
   // immediate publish intent and still needs to be hydrated with the real
   // postId once the server redirect arrives.
   useEffect(() => {

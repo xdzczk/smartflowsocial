@@ -315,7 +315,7 @@ NOSTR_DM_NIP17_ENABLED=true
 
 **npub** (or hex pubkey) of the Nostr inbox that receives **Report a bug / Suggest a feature**
 submissions from the dashboard sidebar. The user’s client **encrypts (NIP-04) and signs (kind 4)**
-with their active identity—**NIP-07** (`window.nostr.nip04`) or **NIP-46** (`nip04_encrypt` on the
+with their active identity - **NIP-07** (`window.nostr.nip04`) or **NIP-46** (`nip04_encrypt` on the
 remote signer). The server only validates and **publishes** (`/api/feedback-dm`); no `NOSTR_NSEC` is
 used for feedback. If **`NOSTR_DM_NIP17_ENABLED`** is on and this inbox has **kind `10050`** inbox
 relays, clients may also submit two **NIP-17 gift wraps** using **NIP-44** via **`nip44_encrypt`**
@@ -377,7 +377,7 @@ If unset or empty, no accounts have admin access.
 
 Comparison accepts **either** bech32 `npub1…` **or** 64-character **hex** pubkeys, and normalizes
 them to the same form. That matches how login works: Nostr auth v2 stores **`User.npub` as hex**,
-while wallets usually show **`npub1…`** — you can paste either into `ADMIN_NPUBS`. Stray zero-width
+while wallets usually show **`npub1…`** - you can paste either into `ADMIN_NPUBS`. Stray zero-width
 characters are stripped. Watch **capital `I` vs lowercase `l`** when pasting bech32.
 
 ---
@@ -723,7 +723,7 @@ Defaults to **off**; safe for production until you intentionally roll out.
 NIP88_POLLS_ENABLED=true
 ```
 
-**Related:** [Nostr reference — NIP-88](./nostr.md#nip-88-polls-kind-1068--1018)
+**Related:** [Nostr reference - NIP-88](./nostr.md#nip-88-polls-kind-1068--1018)
 
 ---
 

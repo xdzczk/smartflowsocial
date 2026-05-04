@@ -32,7 +32,7 @@ export function GiveawayNewBuilderPresetTemplates({
         aria-labelledby="preset-templates-heading"
       >
         <div className="bg-surface-hover/25 text-text-secondary rounded-md px-3 py-2 text-xs leading-snug">
-          <span className="text-text/90 font-medium">Presets</span> — none yet.
+          <span className="text-text/90 font-medium">Presets</span> - none yet.
           Save one from a giveaway detail page to start here next time.
         </div>
       </section>

@@ -13,7 +13,7 @@ export type ProofCardType =
   | "adoption"
   | "product_progress";
 
-/** Export / preview aspect ratio — layout rules differ per ratio, not just crop. */
+/** Export / preview aspect ratio  -  layout rules differ per ratio, not just crop. */
 export type ProofCardAspectRatio = "4:5" | "1:1" | "16:9";
 
 export interface ProofCardData {

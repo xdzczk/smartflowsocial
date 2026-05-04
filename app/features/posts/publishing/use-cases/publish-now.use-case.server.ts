@@ -302,7 +302,7 @@ export class PublishNowUseCase {
     // the caller's brand-new signed event would be silently dropped. Surface
     // it so the route layer can return a real 409 instead of a fake success.
     logInfo(
-      "PublishNowUseCase: Refusing publish — existing PUBLISHED post has different event id",
+      "PublishNowUseCase: Refusing publish  -  existing PUBLISHED post has different event id",
       buildObsContext({
         postId: input.postId,
         userId: input.userId,
@@ -321,7 +321,7 @@ export class PublishNowUseCase {
   /**
    * Tries to acquire the publish lease. Returns the lease on success.
    * On lease miss, inspects the latest post state and either short-circuits
-   * (concurrent publish in flight or already done — idempotent), throws
+   * (concurrent publish in flight or already done  -  idempotent), throws
    * PublishEventMismatchError (mismatched event id), or throws a "try again"
    * error. Returning `null` means the caller should short-circuit.
    */
@@ -370,7 +370,7 @@ export class PublishNowUseCase {
       latestPost.nostrEventId !== input.signedEvent.id
     ) {
       logInfo(
-        "PublishNowUseCase: Lease miss with mismatched event id — refusing silent skip",
+        "PublishNowUseCase: Lease miss with mismatched event id  -  refusing silent skip",
         {
           postId: input.postId,
           userId: input.userId,

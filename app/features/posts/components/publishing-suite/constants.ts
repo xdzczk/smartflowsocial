@@ -24,7 +24,7 @@ export const PUBLISHING_CONTENT_KIND_BADGE_CLASS =
 /**
  * Outer layout for Drafts, Templates, Scheduled, Published, Recyclables.
  * Width and horizontal padding come from `DashboardLayoutPage`’s main band;
- * prefer wrapping with `PageContent` `fluid` in new code — this string stays for
+ * prefer wrapping with `PageContent` `fluid` in new code  -  this string stays for
  * call sites that still compose class names directly.
  */
 export const PUBLISHING_LIBRARY_SHELL_CLASS = `${PAGE_INNER_FLUID_CLASS} min-h-screen w-full pb-8`;
@@ -40,7 +40,7 @@ export const PUBLISHING_BATCH_SELECTION_BAR_CLASS =
 /** Gap between adjacent metadata chips in a row. */
 export const PUBLISHING_METADATA_CHIP_GAP_CLASS = "gap-1.5";
 
-/** Unassigned / no queue — intentional neutral, same footprint as assigned queue chips. */
+/** Unassigned / no queue  -  intentional neutral, same footprint as assigned queue chips. */
 export const PUBLISHING_QUEUE_NEUTRAL_CHIP_CLASS =
   "inline-flex max-w-[12rem] truncate rounded-full border border-border/60 bg-surface-hover/25 px-2 py-1 text-xs font-medium text-text-secondary";
 

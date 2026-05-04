@@ -10,7 +10,7 @@ import {
   uploadMultipleFiles as uploadMultipleFilesLegacy,
 } from "./upload.client";
 
-/** Trimmed non-empty string, else undefined — use with `??` instead of `||` for MIME fallbacks. */
+/** Trimmed non-empty string, else undefined  -  use with `??` instead of `||` for MIME fallbacks. */
 function nonemptyMime(value: string | undefined | null): string | undefined {
   if (value == null) return undefined;
   const t = value.trim();

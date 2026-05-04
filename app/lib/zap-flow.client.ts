@@ -211,7 +211,7 @@ export async function zapRecipient(
   // `RemoteSignerTimeoutError` to the user. Idempotency key scopes the
   // recovery to (recipient, target event, submission instant) so a
   // resumed attempt doesn't double-sign a stale request from a prior
-  // click — the user can click Zap again to start a fresh attempt.
+  // click  -  the user can click Zap again to start a fresh attempt.
   //
   // Scope of the recoverable boundary: sign + LNURL callback fetch
   // only. Once we have an invoice (`pr`), the signing concern is

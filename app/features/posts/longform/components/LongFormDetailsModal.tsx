@@ -121,7 +121,7 @@ function getLongFormReadingTime(content: string | undefined): string {
     const readingTime = Math.ceil(wordCount / 200);
     return `${readingTime} min read`;
   } catch {
-    return "— min read";
+    return " -  min read";
   }
 }
 

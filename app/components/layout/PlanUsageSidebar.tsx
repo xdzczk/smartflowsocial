@@ -55,7 +55,7 @@ function labelClass(state: ReturnType<typeof meterVisualState>): string {
   }
 }
 
-/** Thin meter fill — low contrast unless warn/error. */
+/** Thin meter fill  -  low contrast unless warn/error. */
 function meterFillClass(state: ReturnType<typeof meterVisualState>): string {
   switch (state) {
     case "error":

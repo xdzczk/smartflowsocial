@@ -9,7 +9,7 @@ import type {
  * Live status for the in-flight sign cycle. The composer surfaces this so the
  * user sees a phase-aware message ("Still waiting · 12s", "Reconnecting to
  * signer · 16s") instead of a static spinner. Driven entirely by the
- * `signer-nudge` events emitted by the adapter — there is no per-attempt
+ * `signer-nudge` events emitted by the adapter  -  there is no per-attempt
  * counter anymore (the adapter does at most one initial attempt + one
  * reconnect-and-retry, and the UI describes that via `phase`, not numbers).
  */

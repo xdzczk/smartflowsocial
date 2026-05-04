@@ -152,6 +152,6 @@ export async function handleExistingReconnectFailure(
   setState("idle");
   setExistingReconnectAttempt(0);
   setError(
-    "Could not reconnect with existing connection. If the connection is still in your signer app, switch to it, reactivate the connection, then return here — we'll retry automatically. Or generate a new connection string below."
+    "Could not reconnect with existing connection. If the connection is still in your signer app, switch to it, reactivate the connection, then return here  -  we'll retry automatically. Or generate a new connection string below."
   );
 }

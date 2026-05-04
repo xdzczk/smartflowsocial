@@ -14,7 +14,7 @@
  *     the original sign+submit closure with the same `submissionId`. When the
  *     store actually starts a resume we stop here so the legacy retry path
  *     and `clearSigningState` can't race against it (this is the Scenario A
- *     vs Scenario B fix — both flows now collapse onto a single autocomplete
+ *     vs Scenario B fix  -  both flows now collapse onto a single autocomplete
  *     path).
  *
  *  2. **Active-attempt guard.** Even when `maybeResume` is a no-op (e.g. the
@@ -22,7 +22,7 @@
  *     is still in `signing` rather than `awaiting_signer`), we must NOT
  *     clear the local signing UI. Doing so exposes the Publish button while
  *     the original sign+submit is still in flight, and the user's "retry"
- *     click then races a brand-new `submissionId` against the original —
+ *     click then races a brand-new `submissionId` against the original  -
  *     which the server can't dedupe, producing duplicate publishes. The
  *     state machine owns the lifecycle until the in-flight sign settles
  *     (success → `submitting`/`completed`, transient failure → `awaiting_signer`,
@@ -70,7 +70,7 @@ export function useComposerSignerReconnect(
       // 3. Legacy ref-based retry path (kept for unmigrated surfaces).
       const retried = onHealthyWhileSigning?.() === true;
       if (retried) return;
-      // 4. No active attempt and no legacy retry — clear any stuck local
+      // 4. No active attempt and no legacy retry  -  clear any stuck local
       //    signing UI so the user isn't stranded on an awaiting banner
       //    after the bunker is healthy again.
       clearSigningState();

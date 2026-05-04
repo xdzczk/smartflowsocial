@@ -5,8 +5,8 @@
 The `app/features/posts/` feature is split into internal submodules so that boundaries stay
 meaningful as the product grows. The rest of the app uses `~/features/posts/server` and
 `~/features/posts/ui` for **shared** symbols, and **submodule entry points** for submodule-specific
-logic; internally, code in one submodule must not import from another submodule's internals—use the
-submodule's public API (its `index.ts` or `index.server.ts`).
+logic; internally, code in one submodule must not import from another submodule's internals - use
+the submodule's public API (its `index.ts` or `index.server.ts`).
 
 ## Import guide
 

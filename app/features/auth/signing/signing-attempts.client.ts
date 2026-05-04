@@ -19,13 +19,13 @@
  *     A reconnect after expiry never silently autocompletes an attempt.
  *   - Multi-slot semantics gated by `clientFeatureFlags.signingMultiSlot`.
  *     When the flag is OFF (default), every `start()` cancels prior
- *     attempts — exactly the pre-PR-2 single-slot composer behavior. When
+ *     attempts  -  exactly the pre-PR-2 single-slot composer behavior. When
  *     ON, attempts coexist up to `MAX_ATTEMPTS` and the oldest
  *     non-foreground is evicted on overflow.
  *
- * Module scope (intentional): every consumer — composer hook, the
+ * Module scope (intentional): every consumer  -  composer hook, the
  * `nostr-connection-healthy` listener, an unmount/remount of any host
- * component — sees the same set of attempts.
+ * component  -  sees the same set of attempts.
  *
  * History: this module was previously located at
  * `app/features/posts/composer/state/pending-publish.client.ts` and only
@@ -220,7 +220,7 @@ export interface StartAttemptInput {
   isResourceAlive?: () => boolean;
 }
 
-/** 5 minutes — matches the user's chosen recovery scope. */
+/** 5 minutes  -  matches the user's chosen recovery scope. */
 export const RECOVERY_WINDOW_MS = 5 * 60 * 1000;
 
 /**
@@ -305,7 +305,7 @@ function pickForegroundAttemptId(): string | null {
   let terminalId: string | null = null;
   let terminalCreatedAt = -Infinity;
   // Map iteration is insertion order, so `>=` makes ties resolve to the
-  // most-recently inserted attempt — important when several attempts are
+  // most-recently inserted attempt  -  important when several attempts are
   // started inside the same Date.now() tick (e.g. fake-timer tests, or
   // a synchronous batch of producers).
   for (const [id, attempt] of attempts) {
@@ -493,7 +493,7 @@ async function runAttempt(
   attempt.state = wasIdle ? "signing" : "resuming";
   attempt.lastError = null;
   // Leaving `awaiting_signer` (either by user-driven resume or by the
-  // healthy-event listener) — clear the escalation anchor so the
+  // healthy-event listener)  -  clear the escalation anchor so the
   // ephemeral UI tier reverts to the subtle spinner for the resume.
   attempt.awaitingSince = null;
   if (!wasIdle) emitTelemetry(attempt, "attempt:resumed");
@@ -505,7 +505,7 @@ async function runAttempt(
     // The callback may have already driven the attempt into a terminal
     // state via `markCompleted` / `markFailed` (the `startRecoverableSign`
     // pattern bundles sign + submit + mark inside `performSignAndSubmit`).
-    // If so, do NOT downgrade back to `submitting` — that would leave the
+    // If so, do NOT downgrade back to `submitting`  -  that would leave the
     // ephemeral row spinner / global banner visible forever and prevent
     // `startRecoverableSign`'s subscriber from observing the terminal
     // transition (it already saw `completed` and unsubscribed; we'd be
@@ -526,7 +526,7 @@ async function runAttempt(
     // `markFailed` BEFORE throwing (e.g. a downstream cleanup error after
     // a successful submit, or a `markFailed` followed by a re-thrown
     // signer error). Do NOT clobber that terminal state with
-    // `awaiting_signer` / `failed` / `expired` — that would resurrect the
+    // `awaiting_signer` / `failed` / `expired`  -  that would resurrect the
     // recovery banner / per-row spinner for an attempt the caller has
     // already moved past, and would duplicate telemetry for a single
     // logical outcome.
@@ -609,7 +609,7 @@ function cancelExistingDurables(reason: string): void {
  *     are left in place. This preserves the pre-PR-2 single-slot
  *     composer behavior for the durable foreground while still letting
  *     ephemeral micro-actions (PR 4 reactions/likes) coexist with an
- *     in-flight composer publish — clicking "Like" must not cancel a
+ *     in-flight composer publish  -  clicking "Like" must not cancel a
  *     foreground reschedule or compose.
  *   - **Multi-slot OFF, ephemeral intent:** the new attempt is added
  *     additively. Multi-slot eviction (LRU over `MAX_ATTEMPTS`) still
@@ -784,7 +784,7 @@ export function markFailed(submissionId: string, message: string): void {
 }
 
 /**
- * True when ANY attempt in the store is in an "in flight" state — still
+ * True when ANY attempt in the store is in an "in flight" state  -  still
  * signing, parked awaiting reconnect, resuming, or already handed off to
  * the server. Reconnect / "looks-idle" code paths MUST consult this
  * before they tear down host UI state, otherwise the user is tempted to

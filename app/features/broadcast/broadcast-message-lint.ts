@@ -49,7 +49,7 @@ export function getBroadcastMessageLintWarnings(
       out.push({
         level: "warning",
         message:
-          "Message is long enough that the required unsubscribe footer may exceed the maximum length when you sign—shorten the text or links.",
+          "Message is long enough that the required unsubscribe footer may exceed the maximum length when you sign - shorten the text or links.",
       });
     }
   }
@@ -72,7 +72,7 @@ export function getBroadcastMessageLintWarnings(
     out.push({
       level: "warning",
       message:
-        "This message is mostly a link or nearly empty—recipients may not understand why you wrote.",
+        "This message is mostly a link or nearly empty - recipients may not understand why you wrote.",
     });
   }
 

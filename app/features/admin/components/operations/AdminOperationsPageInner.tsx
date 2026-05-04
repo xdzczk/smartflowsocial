@@ -173,7 +173,7 @@ export function AdminOperationsPageInner() {
     <div>
       <AdminPageHeader
         title="Operations"
-        subtitle="Failures, dead letters, queues, and outbox — surgical view for incident response."
+        subtitle="Failures, dead letters, queues, and outbox  -  surgical view for incident response."
         generatedAt={d.generatedAt}
       />
       <div className={`${ADMIN_PAGE_BODY_CLASS} space-y-8`}>
@@ -234,7 +234,7 @@ export function AdminOperationsPageInner() {
             </ul>
           ) : (
             <p className="text-text-secondary mt-2 text-sm">
-              No failure buckets in range — either healthy or no telemetry yet.
+              No failure buckets in range - either healthy or no telemetry yet.
             </p>
           )}
         </AdminSection>
@@ -340,7 +340,7 @@ export function AdminOperationsPageInner() {
               }
               title={
                 d.queueError
-                  ? "Redis unreachable — cannot clean failed jobs."
+                  ? "Redis unreachable  -  cannot clean failed jobs."
                   : undefined
               }
               onClick={() => {
@@ -568,7 +568,7 @@ export function AdminOperationsPageInner() {
               <>
                 {" "}
                 <span className="text-warning dark:text-warning">
-                  Queue stats failed to load — replay may not work until Redis
+                  Queue stats failed to load - replay may not work until Redis
                   is reachable.
                 </span>
               </>
@@ -618,7 +618,7 @@ export function AdminOperationsPageInner() {
                         }
                         title={
                           d.queueError
-                            ? "Queue/Redis unavailable — fix connectivity before replaying."
+                            ? "Queue/Redis unavailable  -  fix connectivity before replaying."
                             : "Re-enqueue this job"
                         }
                         onClick={() => {

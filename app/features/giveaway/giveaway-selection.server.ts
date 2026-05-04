@@ -158,7 +158,7 @@ function pubkeyToNpub(pubkey: string): string {
  */
 /**
  * Random winners from unique pubkeys (followers / following giveaways).
- * Ignores engagement kind — one eligible account per pubkey after filters.
+ * Ignores engagement kind  -  one eligible account per pubkey after filters.
  */
 export function runGiveawayAccountPoolSelection(
   relatedEvents: RelatedEvent[],

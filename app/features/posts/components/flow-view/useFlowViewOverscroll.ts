@@ -14,7 +14,7 @@ import {
   OVERSCROLL_SPRING_BACK_FAST_THRESHOLD_PX,
 } from "../flow-view-constants";
 
-/** Avoid capturing the pointer on the scroll container when the user is interacting with a link or control — capture breaks click/navigation on edge slots (e.g. Flow CTA → composer). */
+/** Avoid capturing the pointer on the scroll container when the user is interacting with a link or control  -  capture breaks click/navigation on edge slots (e.g. Flow CTA → composer). */
 function isFlowOverscrollPointerCaptureSafeTarget(
   target: EventTarget | null
 ): boolean {

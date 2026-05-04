@@ -22,7 +22,7 @@
  *      even if `BunkerSigner.setupSubscription`'s persistent sub has
  *      gone ghost on the relay (silent reconnect, server eviction, the
  *      fromURI close-then-reopen-in-same-tick race, etc.). Nostrify's
- *      `NConnectSigner.send` works the same way — see
+ *      `NConnectSigner.send` works the same way  -  see
  *      `Nip46Signer.openPerRpcSubscription` for the full rationale.
  *
  * The wrapper still does NOT touch the bunker's persistent `subCloser`.
@@ -319,7 +319,7 @@ describe("Nip46Signer RPC dispatch", () => {
     vi.useFakeTimers();
     try {
       const fake = makeFakeBunker();
-      // Never resolves on any attempt — simulates a wedged signer app.
+      // Never resolves on any attempt  -  simulates a wedged signer app.
       fake.getPublicKey = vi.fn().mockImplementation(
         () =>
           new Promise(() => {
@@ -358,7 +358,7 @@ describe("Nip46Signer RPC dispatch", () => {
         .mockImplementationOnce(
           () =>
             new Promise(() => {
-              // intentionally never resolves — the per-attempt timer fires
+              // intentionally never resolves  -  the per-attempt timer fires
               // and the wrapper publishes a fresh EVENT id for attempt #2.
             })
         )
@@ -377,7 +377,7 @@ describe("Nip46Signer RPC dispatch", () => {
       const result = await settled;
       expect(result).toBe("pubkey-hex");
       expect(fake.getPublicKey).toHaveBeenCalledTimes(2);
-      // One fresh sub per attempt — both opened, both closed.
+      // One fresh sub per attempt  -  both opened, both closed.
       expect(pool.subscribe).toHaveBeenCalledTimes(2);
       const closer1 = pool.subscribe.mock.results[0]?.value as
         | { close: ReturnType<typeof vi.fn> }
@@ -400,7 +400,7 @@ describe("Nip46Signer RPC dispatch", () => {
     const { signer, pool } = makeSigner(fake);
 
     await expect(signer.getPublicKey()).rejects.toThrow("permission_denied");
-    // No retry on application errors — surfaces immediately.
+    // No retry on application errors  -  surfaces immediately.
     expect(fake.getPublicKey).toHaveBeenCalledTimes(1);
     expect(pool.subscribe).toHaveBeenCalledTimes(1);
   });
@@ -415,8 +415,8 @@ describe("Nip46Signer RPC dispatch", () => {
  *     underlying pool with the EVENT/REQ fanned out to every relay the
  *     caller (i.e. `nostr-tools`' `BunkerSigner.sendRequest`) asked for.
  *
- *   - This mirrors `@nostrify/nostrify`'s `NConnectSigner` — used by Ditto
- *     via `pool.group(login.data.relays)` — which fans NIP-46 EVENTs across
+ *   - This mirrors `@nostrify/nostrify`'s `NConnectSigner`  -  used by Ditto
+ *     via `pool.group(login.data.relays)`  -  which fans NIP-46 EVENTs across
  *     every advertised bunker relay. Our previous single-relay restriction
  *     broke Primal cold-reopen sign because Primal's iOS bunker can wake up
  *     subscribed to whichever of its 3 advertised relays its push pipeline
@@ -461,7 +461,7 @@ describe("Nip46Signer bunker pool wrapping", () => {
     return { fake, innerPoolPublish, innerPoolSubscribe };
   }
 
-  it("publish fans out to every relay in bp.relays — no single-relay restriction", () => {
+  it("publish fans out to every relay in bp.relays  -  no single-relay restriction", () => {
     const relays = [
       "wss://relay.primal.net",
       "wss://relay.damus.io",

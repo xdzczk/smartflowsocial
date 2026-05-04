@@ -176,7 +176,7 @@ export function UploadProviderSettings({
                 Blosstr Blossom (NOSTR)
               </label>
               <p className="text-text-secondary mt-1 text-xs">
-                blosstr.com — third-party Blosstr account
+                blosstr.com - third-party Blosstr account
               </p>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 <Badge variant="default">Subscription required</Badge>
@@ -207,7 +207,7 @@ export function UploadProviderSettings({
                 </p>
                 {isLegacyStoredSfs ? (
                   <p className="text-text-secondary text-xs">
-                    Previously selected — unavailable on your current plan.
+                    Previously selected - unavailable on your current plan.
                     Uploads use your effective provider above until you upgrade.
                   </p>
                 ) : null}

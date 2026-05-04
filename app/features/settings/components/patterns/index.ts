@@ -1,11 +1,11 @@
 /**
- * Settings section patterns (V4) — align with app settings primitives:
- * - PreferenceSection — small defaults (timezone, formats, zap default).
- * - ToggleRowSection — label + description + right-aligned switch.
- * - ManagementListSection — queues, presets, relays, templates, lists.
- * - ProviderSelectionSection — option-card style infra pickers.
- * - AccountSummarySection — billing/plan summaries.
- * - DestructiveSection — cancel, delete, risky resets.
+ * Settings section patterns (V4)  -  align with app settings primitives:
+ * - PreferenceSection  -  small defaults (timezone, formats, zap default).
+ * - ToggleRowSection  -  label + description + right-aligned switch.
+ * - ManagementListSection  -  queues, presets, relays, templates, lists.
+ * - ProviderSelectionSection  -  option-card style infra pickers.
+ * - AccountSummarySection  -  billing/plan summaries.
+ * - DestructiveSection  -  cancel, delete, risky resets.
  */
 export { SettingsSectionHeader } from "./SettingsSectionHeader";
 export type { SettingsSectionHeaderProps } from "./SettingsSectionHeader";

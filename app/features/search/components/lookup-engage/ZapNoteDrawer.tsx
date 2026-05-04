@@ -93,7 +93,9 @@ export function ZapNoteDrawer({
         toast.success(`Zap sent (${amt} sats)`);
         handleOpenChange(false);
       } else {
-        toast.success("Opened payment in a new tab — complete there if needed");
+        toast.success(
+          "Opened payment in a new tab  -  complete there if needed"
+        );
         handleOpenChange(false);
       }
     } catch (e) {

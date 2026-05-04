@@ -54,7 +54,7 @@ export function ContestLeaderboard({
   const winnerByEvent = new Map(winners.map((w) => [w.entryEventId, w]));
 
   const liveLeaderboardTitle =
-    mode === "live" ? `${title} — top ${winnerCount} in the money` : title;
+    mode === "live" ? `${title}  -  top ${winnerCount} in the money` : title;
 
   return (
     <div

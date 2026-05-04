@@ -865,7 +865,7 @@ export function EditPostModal({
                     <span>
                       Waiting for signer approval…
                       {signPhaseStatus ? <> {signPhaseStatus}</> : null}
-                      {" — Approve this request in your remote signer."}
+                      {" - Approve this request in your remote signer."}
                     </span>
                     <Button
                       type="button"

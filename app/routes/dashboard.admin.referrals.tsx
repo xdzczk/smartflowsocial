@@ -391,7 +391,7 @@ export default function AdminReferralsPage() {
                                 <Badge variant="secondary">Ready</Badge>
                               ) : (
                                 <span className="text-text-secondary">
-                                  Skipped — {row.skipReason}
+                                  Skipped - {row.skipReason}
                                 </span>
                               )}
                             </td>
@@ -438,7 +438,7 @@ export default function AdminReferralsPage() {
           <div className="border-border space-y-3 border-t pt-4">
             <h3 className="font-medium">Manual Lightning payout</h3>
             <p className="text-text-secondary text-xs">
-              Pay a specific BOLT11 against pending balance — opens a second
+              Pay a specific BOLT11 against pending balance - opens a second
               confirmation step.
             </p>
             <Button

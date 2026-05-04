@@ -7,7 +7,7 @@
  * event with the same `attemptId`. Relays already dedupe by event id, but
  * the route's post-publish side effects (`recordReplyPost`,
  * `persistPublishRelayAcks`, `invalidateRelayIntentCache`) are not all
- * intrinsically once-only — `recordReplyPost` in particular would create a
+ * intrinsically once-only  -  `recordReplyPost` in particular would create a
  * second `Post` row on a replay.
  *
  * This module exposes a tiny "claim" primitive backed by Redis SETNX with a

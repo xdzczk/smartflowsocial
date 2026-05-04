@@ -100,7 +100,7 @@ body.has-btcpay-confirmation-bar {
 }
 
 /* ============================================================================
- * @theme — Tailwind v4 token surface
+ * @theme  -  Tailwind v4 token surface
  *
  * Naming policy (Phase 1b):
  *   - Existing token names (background, card, popover, primary, primary-action,
@@ -117,7 +117,7 @@ body.has-btcpay-confirmation-bar {
  *     into the global system but the *names* stay aliased for one phase to
  *     avoid touching feature consumers in this PR.
  *
- * Phase A — semantic aliases (same computed values as today; migrate call sites
+ * Phase A  -  semantic aliases (same computed values as today; migrate call sites
  * in Phase B): action-primary, link, selection-*, focus-border, brand-wash-*,
  * brand-action. See block under “Brand” in @theme.
  * ========================================================================= */
@@ -144,7 +144,7 @@ body.has-btcpay-confirmation-bar {
   /* ---------- Radius ladder (5 steps + full) ----------
      Each step is tied to a component family. New code SHOULD pick the
      semantic step, not raw pixel values. The ladder progression is
-     intentional (4 → 6 → 10 → 14 → 16) — wider gaps between control and
+     intentional (4 → 6 → 10 → 14 → 16)  -  wider gaps between control and
      panel sizes than between panel and modal, so the "modal feels special"
      distinction reads as a small but intentional bump.
 
@@ -156,7 +156,7 @@ body.has-btcpay-confirmation-bar {
 
      Migration note: stock Tailwind `rounded-xl` is 12px. We REDEFINE it to
      16px so the modal/hero family reads as visibly more rounded than the
-     panel family. `rounded-2xl` is intentionally NOT defined — sweep those
+     panel family. `rounded-2xl` is intentionally NOT defined  -  sweep those
      to `rounded-xl`. Bare `rounded` (4px stock) maps to our `rounded-xs`. */
   --radius-xs: 0.25rem;  /* 4px */
   --radius-sm: 0.375rem; /* 6px */
@@ -197,11 +197,11 @@ body.has-btcpay-confirmation-bar {
   --color-input: hsl(var(--input));
 
   /* ---------- Brand ----------
-   * Roles (do not overload in new code — use aliases below):
+   * Roles (do not overload in new code  -  use aliases below):
    *   --link / text-link / link-hover      → body links + trust/slate actions (NOT CTAs,
-   *     selection, or focus — those stay brand-strong / --brand).
+   *     selection, or focus  -  those stay brand-strong / --brand).
    *   --brand / text-brand / border-brand  → selection chips, borders, tints (slate-blue);
-   *     avoid for plain hyperlinks — prefer --link.
+   *     avoid for plain hyperlinks  -  prefer --link.
    *   --brand-strong                       → saturated action hue (matches primary Button).
    *   action-primary                       → primary CTA fill (alias of brand-strong).
    *   selection-fill / selection-border    → filled chips, tiles, segmented “on” states
@@ -220,7 +220,7 @@ body.has-btcpay-confirmation-bar {
   --color-action-primary: hsl(var(--brand-strong));
   --color-action-primary-foreground: hsl(var(--brand-on));
 
-  /* Trust / informational links (hue ~221; lower chroma than --brand — does not compete with purple). */
+  /* Trust / informational links (hue ~221; lower chroma than --brand  -  does not compete with purple). */
   --color-link: hsl(var(--link));
   --color-link-hover: hsl(var(--link-hover));
 
@@ -233,7 +233,7 @@ body.has-btcpay-confirmation-bar {
   /* Input / keyboard focus border color (ring recipe still uses --focus-ring). */
   --color-focus-border: hsl(var(--focus-ring));
 
-  /* Soft washes — fixed alpha on --brand-strong (purple identity tint). */
+  /* Soft washes  -  fixed alpha on --brand-strong (purple identity tint). */
   --color-brand-wash: hsl(var(--brand-strong) / 0.06);
   --color-brand-wash-strong: hsl(var(--brand-strong) / 0.12);
   --color-selection-wash: hsl(var(--brand-strong) / 0.06);
@@ -243,8 +243,8 @@ body.has-btcpay-confirmation-bar {
 
   /* ---------- Status ----------
    * Two foreground families:
-   *   --*-foreground : pairs with the SOLID status fill (Toast, action button) — near-white
-   *   --*-text       : pairs with the TINTED status WASH (Alert, Badge, Notice) —
+   *   --*-foreground : pairs with the SOLID status fill (Toast, action button)  -  near-white
+   *   --*-text       : pairs with the TINTED status WASH (Alert, Badge, Notice)  - 
    *                    saturated dark in light mode, saturated light in dark mode,
    *                    so legibility on alpha-tinted backgrounds clears WCAG AA.
    */
@@ -284,16 +284,16 @@ body.has-btcpay-confirmation-bar {
    * Surface + shadow + border together form an elevation tier. Use the same
    * tier for every component playing the same architectural role.
    *
-   *   Tier 0 — flat content (in-flow paragraphs, lists)
+   *   Tier 0  -  flat content (in-flow paragraphs, lists)
    *     no surface, no shadow, no border. Just typography on canvas.
    *
-   *   Tier 1 — content card, form section (most common)
+   *   Tier 1  -  content card, form section (most common)
    *     bg-surface  border-transparent  shadow-1 (inset highlight + soft drop)
    *
-   *   Tier 2 — feature panel, key dashboard card, sticky rail
+   *   Tier 2  -  feature panel, key dashboard card, sticky rail
    *     bg-surface (or bg-surface-raised)  border-transparent  shadow-2
    *
-   *   Tier 3 — overlay / popover / dropdown / sheet (transient floating surface)
+   *   Tier 3  -  overlay / popover / dropdown / sheet (transient floating surface)
    *     bg-surface-overlay  border-transparent  shadow-3
    *     Highest surface brightness + stacked shadow. For things that float
    *     above the canvas and dismiss.
@@ -345,14 +345,14 @@ body.has-btcpay-confirmation-bar {
 }
 
 /* ============================================================================
- * Token values — light + dark
+ * Token values  -  light + dark
  *
  * Elevation ladder:
  *   --bg-base → app / canvas · --bg-surface-1 → sections · --bg-surface-2 → cards
  *   · --bg-surface-3 → hover / active. Chrome: `--chrome-shell` + directional
  *   `--chrome-shell-shadow-*` (pronounced toward canvas; joints don’t triple-stack).
  *
- * Material: **Dark** = neutral charcoal / slate (`~220°`, very low chroma) — no
+ * Material: **Dark** = neutral charcoal / slate (`~220°`, very low chroma)  -  no
  * global purple wash. **Light** = warm cream / greige canvas + white cards.
  * **Purple** = `--brand-strong` + selection washes only (CTAs, focus, active nav,
  * selected controls, Flow NEXT pulse). **Links** = `--link` / `text-link` (cool slate,
@@ -392,7 +392,7 @@ body.has-btcpay-confirmation-bar {
     --text-tertiary: 38 5% 46%;
     --text-on-brand: 0 0% 100%;
 
-    /* ---------- Borders (warm grey — no lavender) ---------- */
+    /* ---------- Borders (warm grey  -  no lavender) ---------- */
     --border-subtle: 38 10% 90%;
     --border: 36 9% 84%;
     --border-strong: 34 8% 72%;
@@ -403,17 +403,17 @@ body.has-btcpay-confirmation-bar {
     /* Trust / hyperlinks: ~221° hue, lower S than --brand; hover = deeper + a touch more S */
     --link: 221 14% 43%;
     --link-hover: 221 22% 36%;
-    /* ~10% less S, ~3% lower L vs prior — calmer primary / focus / toggles */
+    /* ~10% less S, ~3% lower L vs prior  -  calmer primary / focus / toggles */
     --brand-strong: 258 62% 55%;
     --brand-soft: 258 34% 77%;
     --brand-on: 0 0% 100%;
 
     /* ---------- Focus ring ---------- */
     --focus-ring: var(--brand-strong);
-    /* Legacy shadcn/Tailwind `ring-*` token; was undefined — mirrors focus accent. */
+    /* Legacy shadcn/Tailwind `ring-*` token; was undefined  -  mirrors focus accent. */
     --ring: var(--focus-ring);
 
-    /* Neutral scrim: `0 0% 0%` only — drive dimming with `bg-scrim/30`…`/90` (dialogs, media, modals). */
+    /* Neutral scrim: `0 0% 0%` only  -  drive dimming with `bg-scrim/30`…`/90` (dialogs, media, modals). */
     --scrim: 0 0% 0%;
     /* Optical white for QR / dense codes; constant in light + dark. */
     --capture: 0 0% 100%;
@@ -465,7 +465,7 @@ body.has-btcpay-confirmation-bar {
     /* ---------- Switch / toggle ----------
      * On state: track matches primary CTA (`--brand-strong`) exactly; border is the same hue,
      * mixed toward black for a slightly darker rim; thumb stays neutral (`--capture`), not purple.
-     * Thumb shadows stay neutral — no hue taken from brand (reads as chrome, not a second accent).
+     * Thumb shadows stay neutral  -  no hue taken from brand (reads as chrome, not a second accent).
      */
     --switch-track-off: 40 12% 91%;
     --switch-track-off-hover: 38 11% 86%;
@@ -487,7 +487,7 @@ body.has-btcpay-confirmation-bar {
     --switch-thumb-shadow-on: 0 1px 3px hsl(38 14% 12% / 0.22);
 
     /* ---------- Calendar (sealed island; values aligned to global ladder) ---------- */
-    /* Time column: `boxShadow: "var(--shadow-sidebar-edge)"` — token lives with scrim/capture above. */
+    /* Time column: `boxShadow: "var(--shadow-sidebar-edge)"`  -  token lives with scrim/capture above. */
     /* Surface 1 = main content container (section tier) */
     --calendar-surface-1-bg: var(--bg-surface-1);
     --calendar-surface-1-shadow: none;
@@ -525,7 +525,7 @@ body.has-btcpay-confirmation-bar {
       inset 0 -1px 0 0 rgb(255 255 255 / 0.3),
       0 3px 18px hsl(32 16% 16% / 0.055),
       0 1px 6px hsl(30 12% 12% / 0.04);
-    /* No top inset hairline — it read as a bright strip vs canvas above the bar */
+    /* No top inset hairline  -  it read as a bright strip vs canvas above the bar */
     --chrome-shell-shadow-footer:
       0 -3px 18px hsl(32 16% 16% / 0.055),
       0 -1px 6px hsl(30 12% 12% / 0.04);
@@ -562,7 +562,7 @@ body.has-btcpay-confirmation-bar {
     --text-tertiary: 220 4% 50%;
     --text-on-brand: 0 0% 100%;
 
-    /* ---------- Borders (tonal; invisible on card tier — separation = shadow) ---------- */
+    /* ---------- Borders (tonal; invisible on card tier  -  separation = shadow) ---------- */
     --border-subtle: 220 7% 14.2%;
     --border: 220 6% 21%;
     --border-strong: 220 8% 30%;
@@ -579,10 +579,10 @@ body.has-btcpay-confirmation-bar {
 
     /* ---------- Focus ring ---------- */
     --focus-ring: var(--brand-strong);
-    /* Legacy shadcn/Tailwind `ring-*` token; was undefined — mirrors focus accent. */
+    /* Legacy shadcn/Tailwind `ring-*` token; was undefined  -  mirrors focus accent. */
     --ring: var(--focus-ring);
 
-    /* Neutral scrim: `0 0% 0%` only — drive dimming with `bg-scrim/30`…`/90` (dialogs, media, modals). */
+    /* Neutral scrim: `0 0% 0%` only  -  drive dimming with `bg-scrim/30`…`/90` (dialogs, media, modals). */
     --scrim: 0 0% 0%;
     /* Optical white for QR / dense codes; constant in light + dark. */
     --capture: 0 0% 100%;
@@ -623,7 +623,7 @@ body.has-btcpay-confirmation-bar {
     --chart-3: 215 32% 38%;
     --chart-5: 32 62% 52%;
 
-    /* ---------- Elevation (cool charcoal shadow — no harsh ring) ---------- */
+    /* ---------- Elevation (cool charcoal shadow  -  no harsh ring) ---------- */
     --elevation-1:
       0 5px 24px hsl(220 16% 4% / 0.38),
       0 1px 3px hsl(220 12% 3% / 0.28),
@@ -687,7 +687,7 @@ body.has-btcpay-confirmation-bar {
 
 /* TODO: Dashboard shell chrome could co-locate with layout when splitting global CSS. */
 /* ============================================================================
- * Dashboard shell — unified chrome (one bg). Header/footer shadow into canvas;
+ * Dashboard shell  -  unified chrome (one bg). Header/footer shadow into canvas;
  * no sidebar inset rail (seam depth = main ::before at lg+).
  * ========================================================================= */
 
@@ -705,7 +705,7 @@ body.has-btcpay-confirmation-bar {
 
   /*
    * Sidebar seam vs header strip, main canvas, and footer (one hairline; lg+).
-   * Same chrome bg — border is barely visible separation only.
+   * Same chrome bg  -  border is barely visible separation only.
    */
   @media (min-width: 1024px) {
     #page-sidebar.dashboard-shell-chrome {
@@ -724,7 +724,7 @@ body.has-btcpay-confirmation-bar {
   /*
    * Chrome→canvas depth at the sidebar seam (lg+).
    * Inset box-shadow on `main` sits *under* full-bleed descendants, so it never
-   * showed — use a ::before gradient band above in-flow content instead.
+   * showed  -  use a ::before gradient band above in-flow content instead.
    * Scoped with [data-dashboard-shell] so login (same #page-content id) is excluded.
    */
   @media (min-width: 1024px) {
@@ -844,7 +844,7 @@ body.has-btcpay-confirmation-bar {
  *
  * Atomic spacing keeps Tailwind's 4px base scale (p-1 = 4, p-2 = 8, p-3 = 12,
  * p-4 = 16, p-6 = 24, p-8 = 32). The atomic scale is fine; the problem the
- * codebase had was *intent* — 541 `gap-2`, 231 `space-y-2`, 214 `p-4`, but
+ * codebase had was *intent*  -  541 `gap-2`, 231 `space-y-2`, 214 `p-4`, but
  * spread across many semantically-different surfaces (cards, modals, page
  * shells, list items) without any signal of which-is-which.
  *
@@ -866,7 +866,7 @@ body.has-btcpay-confirmation-bar {
  * Migration:
  *   - Don't mass-sweep. Adopt at the primitive layer (Card, Dialog) and at
  *     page shells where the intent is unambiguous. Existing atomic spacing
- *     keeps working — these utilities exist to *signal intent*, not to
+ *     keeps working  -  these utilities exist to *signal intent*, not to
  *     replace the atomic scale.
  *   - When in doubt: cards use `stack`, page shells use atomic `space-y-*` / `gap-*`,
  *     icon+text rows use `cluster`.
@@ -920,7 +920,7 @@ body.has-btcpay-confirmation-bar {
  *   inset-card-lg  24 → 16
  *   table cells    8 → 6
  *
- * This is a SCOPE, not a global mode — there's no theme-level "compact density"
+ * This is a SCOPE, not a global mode  -  there's no theme-level "compact density"
  * toggle. Use it when the local context (data table, dense rail) needs more
  * information per pixel, not as a user-facing setting.
  * ========================================================================= */
@@ -1024,13 +1024,13 @@ body.has-btcpay-confirmation-bar {
  *     transparent outline so Windows High Contrast / forced-colors mode
  *     still shows a visible focus indicator
  *
- * `focus-ring`        — flush 2px ring on the element edge.
+ * `focus-ring`         -  flush 2px ring on the element edge.
  *                        Use for inputs, badges, segmented controls, table
  *                        rows, calendar cells, anything bordered or living
  *                        inside a row where a gap would clip neighbours.
  *
- * `focus-ring-offset` — 2px ring with a 2px canvas-colored "donut" gap.
- *                        Use for solid CTAs, icon buttons, floating chips —
+ * `focus-ring-offset`  -  2px ring with a 2px canvas-colored "donut" gap.
+ *                        Use for solid CTAs, icon buttons, floating chips  - 
  *                        anything sitting visibly on a surface where the
  *                        gap reads as intentional polish.
  *
@@ -1296,7 +1296,7 @@ body.has-btcpay-confirmation-bar {
     );
   }
 
-  /* Dashboard base canvas: flat --canvas + grain only (no vertical tone shift —
+  /* Dashboard base canvas: flat --canvas + grain only (no vertical tone shift  - 
    * a bottom gradient vs flat `bg-canvas` on #page-container read as a light seam above the footer). */
   .dashboard-canvas {
     background-color: hsl(var(--canvas));
@@ -1448,7 +1448,7 @@ body.has-btcpay-confirmation-bar {
     }
   }
 
-  /* Flow cards: neutral elevation on hover/active. Next-scheduled pulse keeps keyframe box-shadow — do not override when .animate-flow-next-shadow-glow is present. */
+  /* Flow cards: neutral elevation on hover/active. Next-scheduled pulse keeps keyframe box-shadow  -  do not override when .animate-flow-next-shadow-glow is present. */
   @media (hover: hover) {
     .flow-card-queue-shadow.card-lift:hover:not(.animate-flow-next-shadow-glow),
     .flow-card-queue-shadow.card-lift:active:not(.animate-flow-next-shadow-glow) {
@@ -1500,7 +1500,7 @@ body.has-btcpay-confirmation-bar {
     accent-color: hsl(var(--checkbox));
   }
 
-  /* Native checkbox/radio accent — matches action-primary / Radix control fill */
+  /* Native checkbox/radio accent  -  matches action-primary / Radix control fill */
   .accent-action-primary {
     accent-color: hsl(var(--brand-strong));
   }
@@ -1524,7 +1524,7 @@ body.has-btcpay-confirmation-bar {
     padding-right: env(safe-area-inset-right);
   }
 
-  /* Header chrome offset (matches --header-offset — the visible bar + notch inset). */
+  /* Header chrome offset (matches --header-offset  -  the visible bar + notch inset). */
   .h-header { height: var(--header-offset); }
   .pt-header { padding-top: var(--header-offset); }
   .top-header { top: var(--header-offset); }

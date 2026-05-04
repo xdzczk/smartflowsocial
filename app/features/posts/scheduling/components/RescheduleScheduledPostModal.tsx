@@ -35,6 +35,10 @@ import { NostrResignNotice } from "~/features/posts/scheduled/components/NostrRe
 import { QueueSelector } from "~/features/posts/scheduled/components/QueueSelector";
 import { ScheduledPostPreview } from "~/features/posts/scheduled/components/ScheduledPostPreview";
 import { ScheduledTimeField } from "~/features/posts/scheduled/components/ScheduledTimeField";
+import {
+  buildUnsignedEventTemplateForReschedule,
+  type UnsignedNostrEventTemplate,
+} from "~/features/posts/scheduling/utils/reschedule-sign-template.client";
 import type {
   LongFormPostData,
   PostData,
@@ -42,6 +46,7 @@ import type {
   RepostConditions,
   UserData,
 } from "~/features/posts/types";
+import { defaultIncludeHashtagsForQueueSelection } from "~/features/posts/types";
 import { isPureRepostSourcePost } from "~/features/posts/utils/repost-chain-policy";
 import {
   getClientDisplayErrorMessage,
@@ -180,7 +185,7 @@ export function RescheduleScheduledPostModal({
     inFlightAttemptIdRef.current = null;
     clearSigningState();
   };
-  // Resume is now handled inside `signing-attempts.client.ts` — the new
+  // Resume is now handled inside `signing-attempts.client.ts`  -  the new
   // recoverable wrapper registers a `performSignAndSubmit` closure that
   // the store re-invokes on the next `nostr-connection-healthy` event,
   // with the same `attemptId`. The legacy `retryLastSign` callback is
@@ -241,7 +246,7 @@ export function RescheduleScheduledPostModal({
     if (d.success) {
       if (d.needsSigning) return;
       if (attemptId) {
-        // Server accepted the resigned event — collapse the recovery
+        // Server accepted the resigned event  -  collapse the recovery
         // attempt onto the success branch so any portal banner
         // dismisses itself, and so a late healthy-reconnect never tries
         // to re-resume a completed attempt.
@@ -328,12 +333,36 @@ export function RescheduleScheduledPostModal({
     const originalSignedEvent = post.signedEvent;
     const originalNostrEvent = post.nostrEvent;
 
+    let unsignedTemplate: UnsignedNostrEventTemplate | null = null;
     if (!originalSignedEvent || !originalNostrEvent) {
-      setIsSigningEvent(false);
-      setSigningError(
-        "Original event not found. Cannot reschedule unsigned posts."
-      );
-      return;
+      const includeHashtagsInNoteBody = !isLongform
+        ? defaultIncludeHashtagsForQueueSelection(
+            data.queueTypeId ?? "",
+            queueTypes
+          )
+        : true;
+      const pd = post as PostData;
+      const built = buildUnsignedEventTemplateForReschedule({
+        post,
+        isLongform,
+        newTimeUnix,
+        includeHashtagsInNoteBody,
+        repostSourceSignedEvent: isLongform
+          ? undefined
+          : pd.repostSourceSignedEvent,
+        quoteSourceSignedEvent: isLongform
+          ? undefined
+          : pd.quoteSourceSignedEvent,
+        quoteLongFormSourceSignedEvent: isLongform
+          ? undefined
+          : pd.quoteLongFormSourceSignedEvent,
+      });
+      if ("error" in built) {
+        setIsSigningEvent(false);
+        setSigningError(built.error);
+        return;
+      }
+      unsignedTemplate = built;
     }
 
     // Idempotency key collapses a resumed retry onto the same server-side
@@ -349,13 +378,24 @@ export function RescheduleScheduledPostModal({
       // resumable in the store and is allowed to complete in the
       // background. No `isResourceAlive` guard needed.
       performSignAndSubmit: async (submissionId) => {
+        const signPayload =
+          originalSignedEvent && originalNostrEvent
+            ? {
+                content: originalSignedEvent.content,
+                created_at: newTimeUnix,
+                kind: originalSignedEvent.kind,
+                tags: originalSignedEvent.tags,
+              }
+            : unsignedTemplate;
+        if (!signPayload) {
+          setIsSigningEvent(false);
+          setSigningError(
+            "Could not build event to sign. Try opening Edit instead."
+          );
+          return;
+        }
         const { nostrEvent, signedEvent } = await nostrAdapter.signEvent(
-          {
-            content: originalSignedEvent.content,
-            created_at: newTimeUnix,
-            kind: originalSignedEvent.kind,
-            tags: originalSignedEvent.tags,
-          },
+          signPayload,
           { clearCacheOnError: false }
         );
 
@@ -395,7 +435,7 @@ export function RescheduleScheduledPostModal({
 
     // Recoverable failure: render an inline error so the user can Retry.
     // The recovery banner (PR 1/2 single-slot) will also show for the
-    // `expired` branch — both representations are intentional during the
+    // `expired` branch  -  both representations are intentional during the
     // PR-3 multi-slot flag-off period.
     setIsSigningEvent(false);
     if (result.reason === "fatal") {

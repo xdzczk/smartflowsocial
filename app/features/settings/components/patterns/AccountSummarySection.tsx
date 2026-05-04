@@ -5,7 +5,7 @@ import { SettingsSectionHeader } from "./SettingsSectionHeader";
 export interface AccountSummarySectionProps {
   title: string;
   description?: string;
-  /** Metrics / current state (plan, balances) — lead with this. */
+  /** Metrics / current state (plan, balances)  -  lead with this. */
   summary: React.ReactNode;
   /** Optional management actions below summary. */
   actions?: React.ReactNode;
@@ -15,7 +15,7 @@ export interface AccountSummarySectionProps {
 }
 
 /**
- * Pattern D — subscription, billing, referral earnings: state before controls.
+ * Pattern D  -  subscription, billing, referral earnings: state before controls.
  */
 export function AccountSummarySection({
   title,

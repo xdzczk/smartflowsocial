@@ -1,6 +1,6 @@
 /**
  * Persist composer state to localStorage (debounced). Restore on mount when not opening a server draft.
- * Do not restore when initialDraftId/groupId is set — server draft is source of truth.
+ * Do not restore when initialDraftId/groupId is set  -  server draft is source of truth.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";

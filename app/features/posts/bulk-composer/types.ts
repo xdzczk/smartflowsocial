@@ -1,5 +1,5 @@
 /**
- * Bulk Composer V2 — workspace stages and batch UI mode.
+ * Bulk Composer V2  -  workspace stages and batch UI mode.
  */
 
 export type BulkComposerStage = "build" | "review";

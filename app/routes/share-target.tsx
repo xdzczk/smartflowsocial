@@ -74,7 +74,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const composed = composeSharedString(title, text, sharedUrl);
 
   if (!composed) {
-    // Empty share (edge case: some Android apps share empty placeholder) —
+    // Empty share (edge case: some Android apps share empty placeholder)  -
     // just open the composer.
     return redirect(TARGET_COMPOSER_PATH);
   }
@@ -134,7 +134,7 @@ function writeDraft(snapshot: ComposerLocalSnapshotLike): void {
   try {
     window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(snapshot));
   } catch {
-    // Ignore quota / private mode — we'll still redirect; the user just has to paste.
+    // Ignore quota / private mode  -  we'll still redirect; the user just has to paste.
   }
 }
 
@@ -200,7 +200,7 @@ export default function ShareTargetRoute() {
         />
         <p className="text-text text-sm font-semibold">
           {errored
-            ? "Couldn't stash your share — taking you to the composer anyway."
+            ? "Couldn't stash your share  -  taking you to the composer anyway."
             : "Preparing your post…"}
         </p>
         <p className="text-text-secondary text-xs">

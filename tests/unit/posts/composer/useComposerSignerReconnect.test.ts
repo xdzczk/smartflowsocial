@@ -6,7 +6,7 @@
  * "nostr-connection-healthy" event and never spins up an interval.
  *
  * Resolution order on the healthy event:
- *   1. `pendingPublish.maybeResume()` — only fires when the composer
+ *   1. `pendingPublish.maybeResume()`  -  only fires when the composer
  *      registered a state-machine attempt; in these unit tests no attempt is
  *      registered, so the helper short-circuits and we exercise the legacy
  *      retry / clear paths exactly as before.
@@ -95,7 +95,7 @@ describe("useComposerSignerReconnect", () => {
     const clearSigningState = vi.fn();
     const onHealthyWhileSigning = vi.fn(() => false);
 
-    // Hanging sign — state machine parks at `signing` and stays there.
+    // Hanging sign  -  state machine parks at `signing` and stays there.
     pendingPublish.start({
       performSignAndSubmit: () =>
         new Promise<void>(() => {
@@ -111,7 +111,7 @@ describe("useComposerSignerReconnect", () => {
     window.dispatchEvent(new CustomEvent("nostr-connection-healthy"));
 
     expect(clearSigningState).not.toHaveBeenCalled();
-    // Active-attempt guard short-circuits before the legacy retry too — the
+    // Active-attempt guard short-circuits before the legacy retry too  -  the
     // store owns the lifecycle until the in-flight sign settles, and the
     // legacy retry callback would have nothing useful to do here anyway.
     expect(onHealthyWhileSigning).not.toHaveBeenCalled();

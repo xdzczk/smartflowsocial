@@ -1,5 +1,5 @@
 /**
- * Schedule quote follow-ups for longform (publish rail — compact list UI).
+ * Schedule quote follow-ups for longform (publish rail  -  compact list UI).
  */
 
 import { useState } from "react";

@@ -48,7 +48,7 @@ export function PostDetailHeader({
   statusType: "draft" | "published" | "scheduled";
   titleId?: string;
   publishedPillLabel?: string;
-  /** Reply / Quote / Repost / Thread item — layered on content type (V2.2). */
+  /** Reply / Quote / Repost / Thread item  -  layered on content type (V2.2). */
   relationshipChipLabel?: string | null;
   subtitle?: string | null;
 }) {

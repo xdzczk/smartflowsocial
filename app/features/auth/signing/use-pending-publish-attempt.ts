@@ -11,7 +11,7 @@
  * hasn't changed.
  *
  * History: this hook used to live at
- * `app/features/posts/composer/state/use-pending-publish-attempt.ts` —
+ * `app/features/posts/composer/state/use-pending-publish-attempt.ts`  -
  * that path now re-exports from here so existing composer code keeps
  * working unchanged.
  */
@@ -29,7 +29,7 @@ import {
 // `getSnapshot` are `undefined` during SSR. Calling
 // `useSyncExternalStore` with undefined args throws
 // "Missing getServerSnapshot, which is required for server-rendered
-// content." — so we provide stable no-op fallbacks for the SSR pass and
+// content."  -  so we provide stable no-op fallbacks for the SSR pass and
 // only wire the real client store after hydration.
 const noopSubscribe = (): (() => void) => () => {
   /* server-side: store has no events */

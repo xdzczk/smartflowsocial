@@ -12,7 +12,7 @@ export function UnifiedComposerBlossomSignerMediaNote() {
       )}
     >
       <span className="font-medium">Media uploads disabled</span>
-      {" — "}
+      {" - "}
       Blossom storage needs a{" "}
       <span className="font-medium">browser extension</span> (NIP-07) or a{" "}
       <span className="font-medium">connected remote signer</span> (NIP-46).

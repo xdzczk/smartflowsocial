@@ -472,7 +472,7 @@ can reuse cached media when switching day/week/month or date ranges.
   Blossom server** by the client; our server only receives the resulting URL from the client and
   stores it. Calendar (and all UI) then loads that URL **directly from the Blossom host** (e.g.
   `blossom.primal.net`, `blosstr.com` or their CDNs). We **do not set or influence** Cache-Control
-  for these URLs—cache behavior is entirely determined by the Blossom provider. Many such CDNs
+  for these URLs - cache behavior is entirely determined by the Blossom provider. Many such CDNs
   already send long-lived cache headers for static assets.
 - **Other external URLs** (e.g. user-pasted nostr CDNs): Same as Blossom; cache behavior depends on
   the upstream host; the app does not proxy calendar media.

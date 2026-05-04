@@ -3,7 +3,7 @@ import { cn } from "~/lib/utils";
 export interface SettingsSectionHeaderProps {
   title: string;
   description?: string;
-  /** Secondary actions (e.g. Add, Manage) — keep lightweight; primary commits belong in section body. */
+  /** Secondary actions (e.g. Add, Manage)  -  keep lightweight; primary commits belong in section body. */
   actions?: React.ReactNode;
   className?: string;
 }

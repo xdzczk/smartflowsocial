@@ -46,7 +46,7 @@ export class PublishLongFormNowUseCase {
     // (publishAttemptId is the first-class idempotency key written in this same
     // use case on the PUBLISHED transition). Without that extra guard, any
     // upstream caller that pre-marks the post as PUBLISHED would cause us to
-    // silently skip the very first publish — the relays never see the event,
+    // silently skip the very first publish  -  the relays never see the event,
     // yet the UI shows "Published". This is exactly the bug we hit when
     // `CreateLongFormPostUseCase` used to set `currentState: "PUBLISHED"`
     // before ever calling us.
@@ -173,7 +173,7 @@ export class PublishLongFormNowUseCase {
       // Transition to PUBLISHED and atomically persist publish metadata. We
       // also write `signedEvent` (and `nostrEvent` if the caller passed it)
       // here because the immediate-publish path no longer persists them at
-      // create time — see CreateLongFormPostUseCase for why.
+      // create time  -  see CreateLongFormPostUseCase for why.
       const publishedPostData: Prisma.LongFormPostUpdateInput = {
         nostrEventId: validatedSignedEvent.id,
         publishAttemptId,

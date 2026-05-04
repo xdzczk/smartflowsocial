@@ -5,7 +5,7 @@ import * as React from "react";
 import { cn } from "~/lib/utils";
 const buttonVariants = cva(
   // Base: type, focus, transition. Focus uses the canonical `focus-ring-offset`
-  // recipe (Phase 1j-2) — ring-2 with a 2px canvas-colored donut so the ring
+  // recipe (Phase 1j-2)  -  ring-2 with a 2px canvas-colored donut so the ring
   // reads as designed polish on top of a surface. Override with `focus-ring`
   // on inline / table-row buttons where the offset clips against neighbours.
   //
@@ -16,7 +16,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Primary action: brand-strong fill. shadow-1 (subtle) — premium, not loud.
+        // Primary action: brand-strong fill. shadow-1 (subtle)  -  premium, not loud.
         default:
           "bg-brand-strong text-brand-on shadow-1 hover:bg-brand-strong/92 active:bg-brand-strong/85",
         destructive:

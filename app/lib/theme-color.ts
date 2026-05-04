@@ -1,5 +1,5 @@
 /**
- * Canvas-aligned browser/PWA chrome (`theme-color`) — keep in sync with
+ * Canvas-aligned browser/PWA chrome (`theme-color`)  -  keep in sync with
  * `tailwind.css` `--canvas`.
  *
  * This module is intentionally NOT `.client.ts` so the constant is available

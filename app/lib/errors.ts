@@ -82,7 +82,7 @@ export class AuthenticationError extends AppError {
  */
 export class ProfileMismatchError extends AppError {
   constructor(
-    message = "Different signer profile detected — re-authentication required",
+    message = "Different signer profile detected  -  re-authentication required",
     context?: Record<string, unknown>
   ) {
     super(message, 401, "PROFILE_MISMATCH", true, context);

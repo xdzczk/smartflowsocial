@@ -196,7 +196,7 @@ export function ProductFeedbackSidebar({
         return;
       }
 
-      toast.success("Thanks — your feedback was sent.");
+      toast.success("Thanks  -  your feedback was sent.");
       setOpen(false);
       setFormNonce((n) => n + 1);
     } catch (err) {

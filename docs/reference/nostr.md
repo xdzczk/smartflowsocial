@@ -84,14 +84,14 @@ Relay hints use kind `10050` for NIP-17 delivery and kind `10002` (NIP-65) plus
 `DEFAULT_USER_WRITE_RELAYS` for the NIP-04 leg.
 
 **Dashboard bug/feature feedback** to `FEEDBACK_INBOX_NPUB` is **not** server-signed: the client
-builds a **kind `4`** ciphertext with NIP-04 encryption from the **same identity** as
-signing—`window.nostr.nip04` for NIP-07, or the NIP-46 bunker **`nip04_encrypt`** RPC for remote
-signers—then signs and POSTs to `/api/feedback-dm`, which verifies and publishes (merged user
-execution relays + inbox DM relay hints). When `NOSTR_DM_NIP17_ENABLED` is on and the inbox has
-**kind `10050`** relay hints, the client may also build two **user-signed gift wraps (kind `1059`)**
-using **`nip44_encrypt`** (remote) or `window.nostr.nip44.encrypt` (extension) for the seal (kind
-`13`) plus local ephemeral keys for the wrap; the API validates and publishes each wrap like system
-NIP-17 DMs.
+builds a **kind `4`** ciphertext with NIP-04 encryption from the **same identity** as signing -
+`window.nostr.nip04` for NIP-07, or the NIP-46 bunker **`nip04_encrypt`** RPC for remote signers -
+then signs and POSTs to `/api/feedback-dm`, which verifies and publishes (merged user execution
+relays + inbox DM relay hints). When `NOSTR_DM_NIP17_ENABLED` is on and the inbox has **kind
+`10050`** relay hints, the client may also build two **user-signed gift wraps (kind `1059`)** using
+**`nip44_encrypt`** (remote) or `window.nostr.nip44.encrypt` (extension) for the seal (kind `13`)
+plus local ephemeral keys for the wrap; the API validates and publishes each wrap like system NIP-17
+DMs.
 
 **Broadcasts** (Engagement) are **user-signed** kind `4` DMs (and optional user-signed NIP-17 wraps
 stored as JSON), persisted per recipient like scheduled posts’ `signedEvent`, then published by the
@@ -162,7 +162,7 @@ SmartFlowSocial supports NIP-23 for publishing long-form articles.
 
 ### NIP-88: Polls (kind 1068 / 1018)
 
-**Status**: ⚠️ **Optional (feature-flagged)** — NIP-88 is still a draft; interoperability with other
+**Status**: ⚠️ **Optional (feature-flagged)** - NIP-88 is still a draft; interoperability with other
 clients may vary.
 
 When `NIP88_POLLS_ENABLED` is on, the app can compose and schedule **polls** as kind **`1068`** and
@@ -198,9 +198,9 @@ Tallies are computed **client-side** by subscribing to the poll’s relay URLs f
 
 **Code locations**
 
-- `app/features/polls/` — parse/build/validate/aggregate
-- `app/routes/api.publish.tsx` — vote publish + relay merge
-- `app/lib/nostr-adapter.client.ts` — `signPollEvent`
+- `app/features/polls/` - parse/build/validate/aggregate
+- `app/routes/api.publish.tsx` - vote publish + relay merge
+- `app/lib/nostr-adapter.client.ts` - `signPollEvent`
 
 **Spec**
 

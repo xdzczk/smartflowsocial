@@ -1,5 +1,5 @@
 /**
- * Form field primitives — canonical Label + Control + Description + Error
+ * Form field primitives  -  canonical Label + Control + Description + Error
  * shape used across SmartFlowSocial forms.
  *
  * Phase 1j-1. Before this primitive, the codebase had ~20 ad-hoc form-field
@@ -36,7 +36,7 @@
  *
  * Required state: pass `required` to <FormField> (or to <FormLabel>) and
  * a small visual asterisk renders next to the label. The DOM `required`
- * attribute is NOT auto-injected onto the control — callers still pass
+ * attribute is NOT auto-injected onto the control  -  callers still pass
  * `required` to the input itself; the FormField's `required` prop only
  * drives the label decoration.
  */
@@ -85,7 +85,7 @@ export interface FormFieldProps extends Omit<
 > {
   /** Stable id for the control. Auto-generated if omitted. */
   id?: string;
-  /** Error message — string, ReactNode, or `null`/`undefined` for none. */
+  /** Error message  -  string, ReactNode, or `null`/`undefined` for none. */
   error?: React.ReactNode | null;
   /** Marks the field as required (drives the label asterisk). */
   required?: boolean;

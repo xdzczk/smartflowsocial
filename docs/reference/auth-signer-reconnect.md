@@ -57,4 +57,4 @@ that implement guards. It helps reviewers and future contributors avoid regressi
 
 ## Related docs
 
-- [Auth / signer architecture](./auth-signer-architecture.md) — layers, public API, and testing.
+- [Auth / signer architecture](./auth-signer-architecture.md) - layers, public API, and testing.

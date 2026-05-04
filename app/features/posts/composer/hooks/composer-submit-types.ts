@@ -76,7 +76,7 @@ export interface UseComposerSubmitOptions {
   /** Fires when the user submits a server draft save (`save-draft` / `draft-text`). */
   onBeginSaveDraft?: () => void;
   /**
-   * Fires immediately when the user commits a "Publish now" action — before
+   * Fires immediately when the user commits a "Publish now" action  -  before
    * signing or any async work. Used to open the publish progress modal early
    * so the user never waits on the button spinner alone.
    */

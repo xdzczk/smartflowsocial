@@ -421,7 +421,7 @@ export async function getAdminAnalyticsPageData(
   }
   if (canCompare && newUsers + (totalsPrevious?.newUsers ?? 0) < 6) {
     takeaways.push(
-      "Low signup volume in current and prior windows — treat period-over-period deltas as directional only."
+      "Low signup volume in current and prior windows  -  treat period-over-period deltas as directional only."
     );
   }
   if (takeaways.length === 0) {

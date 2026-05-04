@@ -40,7 +40,7 @@ async function payInvoiceWithNwcTimeout(
 }
 
 /**
- * POST /api/zap-pay — pay a BOLT11 invoice via the signed-in user's NWC (if configured).
+ * POST /api/zap-pay  -  pay a BOLT11 invoice via the signed-in user's NWC (if configured).
  * Used by the client zap flow before falling back to WebLN.
  */
 export async function loader(_args: LoaderFunctionArgs) {

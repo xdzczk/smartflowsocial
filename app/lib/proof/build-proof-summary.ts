@@ -11,7 +11,7 @@ function footerLines(f: ProofCardPayload["footer"]): string[] {
 }
 
 /**
- * Multi-line summary for clipboard — derived from the same payload as the visual card.
+ * Multi-line summary for clipboard  -  derived from the same payload as the visual card.
  */
 export function buildProofSummary(payload: ProofCardPayload): string {
   const lines: string[] = [];
@@ -21,7 +21,7 @@ export function buildProofSummary(payload: ProofCardPayload): string {
   if (payload.metricFirst && payload.heroValue != null) {
     lines.push(
       payload.heroLabel
-        ? `${payload.heroValue} — ${payload.heroLabel}`
+        ? `${payload.heroValue} - ${payload.heroLabel}`
         : payload.heroValue
     );
     if (payload.title.trim().length > 0) lines.push(payload.title);
@@ -29,7 +29,7 @@ export function buildProofSummary(payload: ProofCardPayload): string {
   } else {
     const headline =
       payload.heroValue != null && payload.heroLabel != null
-        ? `${payload.heroValue} — ${payload.heroLabel}`
+        ? `${payload.heroValue} - ${payload.heroLabel}`
         : (payload.heroValue ?? payload.title);
 
     if (payload.heroValue != null || payload.heroLabel != null) {

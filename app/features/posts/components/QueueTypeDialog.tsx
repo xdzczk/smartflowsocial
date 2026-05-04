@@ -565,7 +565,7 @@ export function QueueTypeDialog({
                 <Input
                   id="description"
                   {...form.register("description")}
-                  placeholder="Optional — when to use this queue"
+                  placeholder="Optional  -  when to use this queue"
                 />
               </div>
               <div className="space-y-2">

@@ -30,7 +30,7 @@ export function RailSummaryMetadataRow({
   );
 }
 
-/** Compact metadata token (relays, etc.) — not a chip, not a field */
+/** Compact metadata token (relays, etc.)  -  not a chip, not a field */
 export function RailSummaryToken({
   children,
   onClick,

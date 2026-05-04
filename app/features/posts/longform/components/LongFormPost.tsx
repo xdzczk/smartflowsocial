@@ -873,7 +873,7 @@ export default function LongFormPost({
                 articleColumnClass="w-full min-w-0"
               />
 
-              {/* Writing zone — continuous with headline stack */}
+              {/* Writing zone  -  continuous with headline stack */}
               <LongFormContentEditor
                 key={initialData?.id ?? "new"}
                 surface="editorial"
@@ -887,7 +887,7 @@ export default function LongFormPost({
                 chromeLeading={editPreviewToggle}
               />
 
-              {/* Finishing zone — tags & presets (secondary) */}
+              {/* Finishing zone  -  tags & presets (secondary) */}
               <div className="space-y-3 pt-1">
                 <div>
                   <ComposerCanvasSectionLabel

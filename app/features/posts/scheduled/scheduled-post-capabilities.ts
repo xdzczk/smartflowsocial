@@ -1,5 +1,5 @@
 /**
- * Central rules for scheduled post actions — same on Dashboard, Calendar, Scheduled.
+ * Central rules for scheduled post actions  -  same on Dashboard, Calendar, Scheduled.
  */
 
 import { isPureRepostSourcePost } from "~/features/posts/utils/repost-chain-policy";
@@ -24,7 +24,7 @@ export interface ScheduledPostCapabilities {
 }
 
 /**
- * Pure repost (kind REPOST or repost flag without quote) — no meaningful caption/media edit.
+ * Pure repost (kind REPOST or repost flag without quote)  -  no meaningful caption/media edit.
  */
 function isPureRepost(input: ScheduledPostCapabilitiesInput): boolean {
   if (input.entityKind === "longform") return false;

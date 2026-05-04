@@ -78,7 +78,7 @@ export async function publishPollVote(input: {
     // Preserve the historical throwing contract so existing callers'
     // try/catch wiring still surfaces the error to the user. The
     // recovery banner is already showing for `awaiting_signer`/`expired`
-    // — the throw here is the secondary signal for the non-banner
+    //  -  the throw here is the secondary signal for the non-banner
     // branches (fatal, cancelled).
     throw new Error(
       result.lastError ??

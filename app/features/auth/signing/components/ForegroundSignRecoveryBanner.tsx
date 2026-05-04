@@ -4,7 +4,7 @@
  * Surfaces the currently-active {@link SigningAttempt} to the user when a
  * publish click stalled on the remote signer. Today the only producer is
  * the composer publish flow; PR 2/3 of the unified signing-recovery effort
- * widen this to other durable intents (reschedule, edit, etc.) — at which
+ * widen this to other durable intents (reschedule, edit, etc.)  -  at which
  * point the host of this banner moves into a global toast region rather
  * than living inside `UnifiedComposer`.
  *
@@ -17,7 +17,7 @@
  *   - `resuming`: a `nostr-connection-healthy` event arrived inside the
  *     window and we're re-running the original sign+submit.
  *   - `expired`: the recovery window elapsed without a successful sign.
- *     The user must click `Retry` to start a fresh attempt — we never
+ *     The user must click `Retry` to start a fresh attempt  -  we never
  *     autocomplete an expired attempt because the original click intent
  *     may be stale.
  *
@@ -60,6 +60,18 @@ function formatRemaining(remainingMs: number): string {
   return `${minutes}m ${seconds.toString().padStart(2, "0")}s`;
 }
 
+/** True when {@link ForegroundSignRecoveryBanner} would render non-null UI. */
+export function isForegroundSignRecoveryBannerVisible(
+  attempt: PendingPublishAttempt | null
+): attempt is PendingPublishAttempt {
+  if (!attempt) return false;
+  return (
+    attempt.state === "awaiting_signer" ||
+    attempt.state === "resuming" ||
+    attempt.state === "expired"
+  );
+}
+
 export function ForegroundSignRecoveryBanner({
   attempt,
   onRetryClick,
@@ -79,12 +91,7 @@ export function ForegroundSignRecoveryBanner({
     return () => clearInterval(interval);
   }, [attempt]);
 
-  if (!attempt) return null;
-  if (
-    attempt.state !== "awaiting_signer" &&
-    attempt.state !== "resuming" &&
-    attempt.state !== "expired"
-  ) {
+  if (!isForegroundSignRecoveryBannerVisible(attempt)) {
     return null;
   }
 
@@ -102,7 +109,7 @@ export function ForegroundSignRecoveryBanner({
         className={`${containerBaseClass} border-warning/50 bg-warning/10 text-warning-text flex items-center justify-between gap-2`}
       >
         <span className="flex-1">
-          Signer unavailable — we&rsquo;ll resume this publish automatically
+          Signer unavailable - we&rsquo;ll resume this publish automatically
           when you reconnect ({formatRemaining(remainingMs)} left).
         </span>
         <div className="flex shrink-0 items-center gap-2">
@@ -138,7 +145,7 @@ export function ForegroundSignRecoveryBanner({
         aria-live="polite"
         className={`${containerBaseClass} bg-surface-hover/30 text-text-secondary cluster`}
       >
-        <span>Reconnected — completing your publish…</span>
+        <span>Reconnected - completing your publish…</span>
       </div>
     );
   }

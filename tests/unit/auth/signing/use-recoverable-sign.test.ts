@@ -11,13 +11,13 @@
  *      the caller has marked the attempt completed (the caller owns the
  *      transition because only it knows the server response).
  *   2. `ok: false, reason: "fatal"` when the caller's closure throws a
- *      non-recoverable error — preserves the legacy throwing contract for
+ *      non-recoverable error  -  preserves the legacy throwing contract for
  *      the call sites that re-throw the failure.
  *   3. `ok: false, reason: "expired"` when the recovery window elapses.
  *   4. `ok: false, reason: "cancelled"` when the user (or another start()
  *      under the single-slot flag) tears down the attempt before it
  *      completes.
- *   5. The promise NEVER rejects — every outcome flows through `result`.
+ *   5. The promise NEVER rejects  -  every outcome flows through `result`.
  *      Migrated callers depend on this so a rogue throw inside the
  *      sign+submit closure can't escape the wrapper and surface as an
  *      unhandled rejection.
@@ -77,7 +77,7 @@ describe("startRecoverableSign", () => {
 
   it("leaves the attempt state at completed (not submitting) when the callback marks completion inline", async () => {
     // Regression: after the callback returned, `runAttempt` used to
-    // unconditionally overwrite the attempt state with `"submitting"` —
+    // unconditionally overwrite the attempt state with `"submitting"`  -
     // clobbering the terminal `"completed"` set by `markCompleted` inside
     // the callback. That left the in-row ephemeral spinner
     // (SubtleSignPending) and the reaction toast bound to the attempt
@@ -129,7 +129,7 @@ describe("startRecoverableSign", () => {
     });
 
     await flushMicrotasks();
-    // Attempt is parked, not yet resolved — the wrapper waits for the
+    // Attempt is parked, not yet resolved  -  the wrapper waits for the
     // recovery window to elapse (or a maybeResume to succeed).
     const inFlight = signingAttempts.getAllAttempts();
     expect(inFlight).toHaveLength(1);

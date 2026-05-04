@@ -9,7 +9,7 @@ export interface ContestProofSettlementSummary {
 }
 
 /**
- * Payout breakdown for proof cards — aligns with contest detail aggregation.
+ * Payout breakdown for proof cards  -  aligns with contest detail aggregation.
  */
 export async function summarizeContestProofSettlement(
   contestId: string,

@@ -10,14 +10,14 @@
  * (`composer_publish` intent): `UnifiedComposer` mounts its own copy of the
  * banner inside the publishing rail, with a per-composer `Retry` callback
  * that re-fires the most recent submit. Rendering both at once would double
- * the visual noise during a composer publish — the composer mount wins
+ * the visual noise during a composer publish  -  the composer mount wins
  * because it has surface-specific retry semantics that this generic mount
  * cannot.
  *
  * For any other durable intent, the global mount renders the banner without
  * a `Retry` button: a stale durable intent that expired requires the user to
  * re-trigger the action from the original surface (the click intent may no
- * longer be valid — e.g. the post they were rescheduling has since moved).
+ * longer be valid  -  e.g. the post they were rescheduling has since moved).
  *
  * Ephemeral intents (reactions, search engagement) are also suppressed: those
  * have a dedicated subtle/compact tier (`SubtleSignPending` /

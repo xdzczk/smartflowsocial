@@ -1,5 +1,5 @@
 /**
- * Appearance — account default theme (System / Light / Dark).
+ * Appearance  -  account default theme (System / Light / Dark).
  * Header toggle can override for this browser only until you save here again.
  */
 

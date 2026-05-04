@@ -25,7 +25,7 @@ export function broadcastDeliveryModeComposerHelper(
     case "NIP17_ONLY":
       return "Sends only to recipients compatible with NIP-17.";
     case "NIP04_ONLY":
-      return "Legacy NIP-04 only—widest older client support.";
+      return "Legacy NIP-04 only - widest older client support.";
     case "NIP17_FALLBACK_NIP04":
       return "Prefers NIP-17 where available, with NIP-04 fallback.";
     case "BOTH":
@@ -51,11 +51,11 @@ export function broadcastCompatibilityForecastNote(
     case "NIP17_ONLY":
       return "NIP-17–only sends rely on gift wraps; ensure your signer produces wraps for each recipient or delivery may fail.";
     case "NIP04_ONLY":
-      return "Legacy NIP-04 (kind 4) only—narrower privacy model, widest legacy client support.";
+      return "Legacy NIP-04 (kind 4) only - narrower privacy model, widest legacy client support.";
     case "NIP17_FALLBACK_NIP04":
       return "Prefer modern NIP-17 delivery where wraps exist; kind 4 remains the baseline encrypted payload.";
     case "BOTH":
-      return "Expert mode: both paths may be used where the signed payload allows—higher relay load.";
+      return "Expert mode: both paths may be used where the signed payload allows - higher relay load.";
     default:
       return "";
   }

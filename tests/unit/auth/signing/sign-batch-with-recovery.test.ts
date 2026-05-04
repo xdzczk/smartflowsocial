@@ -8,16 +8,16 @@
  * helpers all stand on. The properties asserted here are the shape every
  * call site relies on:
  *
- *   1. Resolves `ok: true` when every item signs successfully — leaves
+ *   1. Resolves `ok: true` when every item signs successfully  -  leaves
  *      the attempt in `submitting` so the caller can `markCompleted`
  *      after their downstream submit lands.
  *   2. Resolves `ok: false, reason: "partial"` when some items fail
- *      with non-recoverable errors after the retry pass — auto-cancels
+ *      with non-recoverable errors after the retry pass  -  auto-cancels
  *      the attempt so the foreground banner clears.
  *   3. Parks the attempt as `awaiting_signer` on a sign-timeout error
  *      and resumes from the next-unsigned index (already-signed items
  *      are NEVER re-signed across resumes).
- *   4. The promise NEVER rejects — every outcome flows through the
+ *   4. The promise NEVER rejects  -  every outcome flows through the
  *      `result` value.
  *   5. Pre-acquires the signer once, then re-acquires for the second
  *      pass (matches the historical bulk perf characteristics).

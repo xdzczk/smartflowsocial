@@ -23,7 +23,7 @@ export function useUnifiedComposerState({
   const [lastPublishFailed, setLastPublishFailed] = useState(false);
   const [signerLabel, setSignerLabel] = useState<string | null>(null);
   const [signerReady, setSignerReady] = useState<boolean | null>(null);
-  /** NIP-07 bridge in the page (e.g. Alby, nos2x) — uploads can use it without stored signer config. */
+  /** NIP-07 bridge in the page (e.g. Alby, nos2x)  -  uploads can use it without stored signer config. */
   const [windowNostrBridgePresent, setWindowNostrBridgePresent] = useState(
     () => typeof window !== "undefined" && !!window.nostr
   );

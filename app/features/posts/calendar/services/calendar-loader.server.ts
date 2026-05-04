@@ -17,6 +17,7 @@ import {
   getPastLongFormPosts,
   getScheduledPosts,
   getPastPosts,
+  pickRescheduleSourceSignedEvents,
 } from "~/features/posts/server";
 import { filterPostsByQueueType } from "~/features/posts/services/post-filtering.server";
 import type {
@@ -153,7 +154,11 @@ export async function loadCalendarData(userId: string, queueType: string) {
     post: (typeof filteredScheduledPosts)[0]
   ): { fileUrl: string[]; postType: string | null | undefined } => {
     const raw = post as typeof post & {
-      repostOf?: { fileUrl: string[]; postType: string | null } | null;
+      repostOf?: {
+        fileUrl: string[];
+        postType: string | null;
+        signedEvent?: unknown;
+      } | null;
     };
     const isRepostWithNoMedia =
       (raw.repost || raw.postKind === "REPOST") &&
@@ -174,10 +179,27 @@ export async function loadCalendarData(userId: string, queueType: string) {
     const {
       queueType,
       repostOf: _ro,
+      quoteOf,
+      quoteOfLongForm,
       ...rest
     } = post as typeof post & {
-      repostOf?: { fileUrl: string[]; postType: string | null } | null;
+      repostOf?: {
+        fileUrl: string[];
+        postType: string | null;
+        signedEvent?: unknown;
+      } | null;
+      quoteOf?: { signedEvent?: unknown } | null;
+      quoteOfLongForm?: { signedEvent?: unknown } | null;
     };
+    const repostOf = (
+      post as typeof post & {
+        repostOf?: {
+          fileUrl: string[];
+          postType: string | null;
+          signedEvent?: unknown;
+        } | null;
+      }
+    ).repostOf;
     const { fileUrl, postType } = mergeRepostMedia(post);
     const convertedQueueType: QueueType | undefined = queueType
       ? ((): QueueType => {
@@ -208,6 +230,11 @@ export async function loadCalendarData(userId: string, queueType: string) {
     // Validate Prisma JsonValue with Zod schemas
     const signedEventValue = validateSignedEvent(post.signedEvent);
     const nostrEventValue = validateNostrEvent(post.nostrEvent);
+    const sources = pickRescheduleSourceSignedEvents({
+      repostOf,
+      quoteOf,
+      quoteOfLongForm,
+    });
     const result: PostData = {
       ...rest,
       fileUrl,
@@ -215,6 +242,7 @@ export async function loadCalendarData(userId: string, queueType: string) {
       queueType: convertedQueueType,
       signedEvent: signedEventValue,
       nostrEvent: nostrEventValue,
+      ...sources,
     };
     return result;
   });
@@ -222,10 +250,27 @@ export async function loadCalendarData(userId: string, queueType: string) {
     const {
       queueType,
       repostOf: _ro2,
+      quoteOf,
+      quoteOfLongForm,
       ...rest
     } = post as typeof post & {
-      repostOf?: { fileUrl: string[]; postType: string | null } | null;
+      repostOf?: {
+        fileUrl: string[];
+        postType: string | null;
+        signedEvent?: unknown;
+      } | null;
+      quoteOf?: { signedEvent?: unknown } | null;
+      quoteOfLongForm?: { signedEvent?: unknown } | null;
     };
+    const repostOfPast = (
+      post as typeof post & {
+        repostOf?: {
+          fileUrl: string[];
+          postType: string | null;
+          signedEvent?: unknown;
+        } | null;
+      }
+    ).repostOf;
     const { fileUrl, postType } = mergeRepostMedia(post);
     const convertedQueueType: QueueType | undefined = queueType
       ? ((): QueueType => {
@@ -256,6 +301,11 @@ export async function loadCalendarData(userId: string, queueType: string) {
     // Validate Prisma JsonValue with Zod schemas
     const signedEventValue = validateSignedEvent(post.signedEvent);
     const nostrEventValue = validateNostrEvent(post.nostrEvent);
+    const sourcesPast = pickRescheduleSourceSignedEvents({
+      repostOf: repostOfPast,
+      quoteOf,
+      quoteOfLongForm,
+    });
     const result: PostData = {
       ...rest,
       fileUrl,
@@ -263,6 +313,7 @@ export async function loadCalendarData(userId: string, queueType: string) {
       queueType: convertedQueueType,
       signedEvent: signedEventValue,
       nostrEvent: nostrEventValue,
+      ...sourcesPast,
     };
     return result;
   });

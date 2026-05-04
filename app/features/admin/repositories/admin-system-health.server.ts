@@ -23,7 +23,7 @@ const QUEUES: QueueType[] = [
   "broadcast-dm",
 ];
 
-/** No separate worker heartbeat — infer from BullMQ waiting vs active totals. */
+/** No separate worker heartbeat  -  infer from BullMQ waiting vs active totals. */
 function workerHealthFromQueueTotals(
   redisOk: boolean,
   totalWaiting: number,
@@ -41,13 +41,13 @@ function workerHealthFromQueueTotals(
   if (totalWaiting >= 100) {
     return {
       status: "failing",
-      detail: `${totalWaiting} waiting, 0 active — likely no consumers`,
+      detail: `${totalWaiting} waiting, 0 active  -  likely no consumers`,
     };
   }
   if (totalWaiting >= 25) {
     return {
       status: "degraded",
-      detail: `${totalWaiting} waiting, 0 active — verify worker processes`,
+      detail: `${totalWaiting} waiting, 0 active  -  verify worker processes`,
     };
   }
   if (totalWaiting > 0) {

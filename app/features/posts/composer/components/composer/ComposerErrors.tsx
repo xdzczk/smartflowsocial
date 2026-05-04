@@ -70,7 +70,7 @@ export function ComposerErrors({
               ? "Signer approval required."
               : "Waiting for signer approval…"}
             {phaseStatus ? <> {phaseStatus}</> : null}
-            {" — "}
+            {" - "}
             {waitingCopy}
           </span>
           <Button

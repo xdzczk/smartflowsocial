@@ -209,6 +209,16 @@ describe("posts/settings schema branch coverage", () => {
       expect(weekly.weeklySlots?.[0]?.time).toBe("10:30");
     });
 
+    it("parses includeHashtagsInNoteBody false from FormData-style strings", () => {
+      const withFalse = createQueueTypeSchema.parse({
+        name: "Q",
+        scheduleType: "INTERVAL",
+        intervalHours: "4",
+        includeHashtagsInNoteBody: "false",
+      });
+      expect(withFalse.includeHashtagsInNoteBody).toBe(false);
+    });
+
     it("validates top-up cadence/month constraints", () => {
       expect(() =>
         topUpSubscriptionSchema.parse({

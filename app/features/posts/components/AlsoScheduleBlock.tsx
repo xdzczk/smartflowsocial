@@ -1,5 +1,5 @@
 /**
- * Follow-up actions after the main post publishes (publish rail — compact list UI).
+ * Follow-up actions after the main post publishes (publish rail  -  compact list UI).
  */
 
 import { useState } from "react";

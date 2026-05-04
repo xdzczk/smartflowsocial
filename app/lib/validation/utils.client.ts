@@ -181,9 +181,9 @@ export function formDataToFormData<T extends Record<string, unknown>>(
     }
 
     if (typeof value === "boolean") {
-      if (value) {
-        formData.set(key, "on");
-      }
+      // Serialize both poles so server parsers receive explicit values. Omitting
+      // false broke queue "metadata-only hashtags" (Zod defaulted missing → true).
+      formData.set(key, value ? "on" : "false");
     } else if (Array.isArray(value)) {
       // For arrays, join with newlines (common pattern in this codebase)
       formData.set(key, value.join("\n"));

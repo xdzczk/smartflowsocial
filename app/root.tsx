@@ -174,7 +174,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => {
       content: "black-translucent",
     },
     { name: "apple-mobile-web-app-title", content: BRAND_NAME },
-    // Match browser/PWA chrome to page canvas (not brand purple — Android paints a strip from theme-color).
+    // Match browser/PWA chrome to page canvas (not brand purple  -  Android paints a strip from theme-color).
     // Client overrides via `syncThemeColorMeta` for in-app theme vs OS mismatch.
     {
       name: "theme-color",

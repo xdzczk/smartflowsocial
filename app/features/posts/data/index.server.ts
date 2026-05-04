@@ -1,5 +1,5 @@
 /**
- * Posts feature data layer — post and longform DB access.
+ * Posts feature data layer  -  post and longform DB access.
  * Re-exports from ~/features/posts/data for use by server and tests.
  */
 
@@ -14,3 +14,4 @@ export * from "./post.queries.server";
 export * from "./post.read-queries.server";
 export * from "./thread-group.server";
 export * from "./longformpost.server";
+export { pickRescheduleSourceSignedEvents } from "./reschedule-source-events.server";

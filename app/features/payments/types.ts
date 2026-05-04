@@ -94,7 +94,7 @@ export const PLAN_FEATURES = {
     engagement_feed: true,
     broadcasts: true,
   },
-  /** Future tier; not sold yet — browse-all + same execution caps as free. */
+  /** Future tier; not sold yet  -  browse-all + same execution caps as free. */
   teams: {
     basicScheduling: true,
     newPost: true,

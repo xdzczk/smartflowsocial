@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import { PageHeader } from "~/components/layout/PageHeader";
 
-/** Library / queue / settings-style product page title — see `PageHeader` variant `library`. */
+/** Library / queue / settings-style product page title  -  see `PageHeader` variant `library`. */
 export function PublishingPageHeader({
   title,
   subtitle,

@@ -1,5 +1,5 @@
 /**
- * Posts calendar submodule — server API.
+ * Posts calendar submodule  -  server API.
  * Import from ~/features/posts/server/calendar for calendar server logic.
  */
 export {

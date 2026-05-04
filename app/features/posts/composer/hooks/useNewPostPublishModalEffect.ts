@@ -59,7 +59,7 @@ export function useNewPostPublishModalEffect(input: {
     const postId = publishedPostId ?? scheduledPostId;
 
     // No URL param to process, or we already handled this postId.
-    // Note: we intentionally do NOT skip when showPublishModal is true —
+    // Note: we intentionally do NOT skip when showPublishModal is true  -
     // the modal may already be open from an immediate publish intent, and
     // we still need to hydrate it with the real postId and post data.
     if (!postId || modalPostId) {

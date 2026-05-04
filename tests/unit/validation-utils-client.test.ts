@@ -66,7 +66,7 @@ describe("Client-Side Validation Utils", () => {
       expect(formData.get("age")).toBe("30");
     });
 
-    it("should convert boolean true to 'on'", () => {
+    it("should convert booleans to explicit FormData strings", () => {
       const data = {
         enabled: true,
         disabled: false,
@@ -75,7 +75,7 @@ describe("Client-Side Validation Utils", () => {
       const formData = formDataToFormData(data);
 
       expect(formData.get("enabled")).toBe("on");
-      expect(formData.get("disabled")).toBeNull(); // false is skipped
+      expect(formData.get("disabled")).toBe("false");
     });
 
     it("should convert arrays to newline-separated strings", () => {

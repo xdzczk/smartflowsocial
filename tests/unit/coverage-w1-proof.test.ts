@@ -55,7 +55,7 @@ describe("W1 proof coverage", () => {
       });
 
       expect(summary).toContain("Eyebrow");
-      expect(summary).toContain("10 — items");
+      expect(summary).toContain("10 - items");
       expect(summary).toContain("Status: Done");
       expect(summary).toContain("A: 1");
       expect(summary).toContain("SmartFlowSocial");

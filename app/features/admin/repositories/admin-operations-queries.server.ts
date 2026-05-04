@@ -322,7 +322,7 @@ export async function getAdminOperationsPageData(
     queueFailedTotal === 0
   ) {
     headline =
-      "No failed publishes, dead letters, or payout failures in sampled tables — queues look quiet.";
+      "No failed publishes, dead letters, or payout failures in sampled tables  -  queues look quiet.";
   } else {
     const bits: string[] = [];
     if (stuckPublishing > 0) {

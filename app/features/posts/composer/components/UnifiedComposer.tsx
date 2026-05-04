@@ -10,7 +10,10 @@ import type { UseFormReturn } from "react-hook-form";
 
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { ForegroundSignRecoveryBanner as PendingPublishBanner } from "~/features/auth/signing/components/ForegroundSignRecoveryBanner";
+import {
+  ForegroundSignRecoveryBanner as PendingPublishBanner,
+  isForegroundSignRecoveryBannerVisible,
+} from "~/features/auth/signing/components/ForegroundSignRecoveryBanner";
 import { pendingPublish } from "~/features/auth/signing/signing-attempts.client";
 import {
   buildFollowUpCollapsedSummary,
@@ -944,7 +947,7 @@ export function UnifiedComposer({
           );
         }
       } else if (publishSubmitInFlight && !data?.error && pendingId) {
-        // Successful round-trip — collapse the state machine so the next
+        // Successful round-trip  -  collapse the state machine so the next
         // user click starts a fresh attempt with a brand-new submissionId.
         pendingPublish.markCompleted(pendingId);
       }
@@ -1261,30 +1264,36 @@ export function UnifiedComposer({
         onOpenTemplates={() => openDraftPicker("templates")}
       />
     ) : null;
-  const signerStatusContent =
-    !isTemplateMode && !hidePublishingRail ? (
-      <>
-        <PendingPublishBanner
-          attempt={pendingAttempt}
-          onRetryClick={() => primarySubmitRef.current?.click()}
-          inRail
-        />
-        <ComposerErrors
-          isSigning={isSigning}
-          signerLabel={signerLabel}
-          inRail
-          onCancelSigning={cancelSigningState}
-          signingError={signingError}
-          onDismissSigningError={() => {
-            setSigningError(null);
-            setLastPublishFailed(false);
-          }}
-          onRetry={() => primarySubmitRef.current?.click()}
-          disabled={disabled}
-          signerReady={signerReady}
-        />
-      </>
-    ) : null;
+  const showSignerStatusRail =
+    !isTemplateMode &&
+    !hidePublishingRail &&
+    (isForegroundSignRecoveryBannerVisible(pendingAttempt) ||
+      isSigning ||
+      signingError != null);
+
+  const signerStatusContent = showSignerStatusRail ? (
+    <>
+      <PendingPublishBanner
+        attempt={pendingAttempt}
+        onRetryClick={() => primarySubmitRef.current?.click()}
+        inRail
+      />
+      <ComposerErrors
+        isSigning={isSigning}
+        signerLabel={signerLabel}
+        inRail
+        onCancelSigning={cancelSigningState}
+        signingError={signingError}
+        onDismissSigningError={() => {
+          setSigningError(null);
+          setLastPublishFailed(false);
+        }}
+        onRetry={() => primarySubmitRef.current?.click()}
+        disabled={disabled}
+        signerReady={signerReady}
+      />
+    </>
+  ) : null;
 
   return (
     <div

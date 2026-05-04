@@ -193,7 +193,7 @@ export function buildProofCardLines(
       return {
         eyebrow: EYEBROW_RANGE_PERFORMANCE,
         headline: "Light activity",
-        headlineSub: `Few publishes in ${data.rangeLabel} — honest read, not hype.`,
+        headlineSub: `Few publishes in ${data.rangeLabel}  -  honest read, not hype.`,
         support: [
           {
             label: "Short posts (range)",
@@ -326,7 +326,7 @@ export function buildProofCardLines(
     } else {
       addSupport(support, {
         label: "Referral sats (to date)",
-        value: "0 — program live",
+        value: "0  -  program live",
       });
     }
     return {
@@ -395,7 +395,7 @@ export function buildProofCardLines(
 export function proofCardSummaryText(lines: ProofCardLines): string {
   return [
     lines.eyebrow,
-    `${lines.headline} — ${lines.headlineSub}`,
+    `${lines.headline}  -  ${lines.headlineSub}`,
     ...lines.support.map((s) => `${s.label}: ${s.value}`),
     ...lines.footerLines,
   ].join("\n");

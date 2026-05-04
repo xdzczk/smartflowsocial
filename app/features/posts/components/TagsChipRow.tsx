@@ -225,7 +225,7 @@ export function TagsChipRow({
           onChange={(e) => setManualInput(e.target.value)}
           onKeyDown={onManualKeyDown}
           disabled={disabled}
-          placeholder="Add tag — Enter or comma"
+          placeholder="Add tag  -  Enter or comma"
           className="border-border/50 bg-surface-hover/10 shadow-1 h-8 min-w-0 flex-1 basis-[12rem] text-xs"
           aria-label="Add hashtag"
         />

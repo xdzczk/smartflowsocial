@@ -275,7 +275,7 @@ export async function handleSearchEvent(eventInput: string) {
   } else {
     eventIdNorm = decoded.eventId.toLowerCase();
     // `thread_view` can auto-fetch missing events; `events` often returns the full kind 1 body
-    // from cache. Run both in parallel and merge — thread payloads may omit note content early.
+    // from cache. Run both in parallel and merge  -  thread payloads may omit note content early.
     const [threadSettled, eventsSettled] = await Promise.allSettled([
       connectToPrimalCache("thread_view", {
         event_id: decoded.eventId,

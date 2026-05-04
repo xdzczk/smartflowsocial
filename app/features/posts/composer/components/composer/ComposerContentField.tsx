@@ -1,6 +1,6 @@
 /**
  * Presentational content field: textarea, char count, shortcut hint, error.
- * Intended inside ComposerLeftCanvas — no outer card; drafts live in canvas header.
+ * Intended inside ComposerLeftCanvas  -  no outer card; drafts live in canvas header.
  */
 
 import { useCallback, useLayoutEffect, useRef } from "react";
@@ -19,12 +19,12 @@ export interface ComposerContentFieldProps {
   id?: string;
   className?: string;
   /**
-   * `embedded` — borderless in parent canvas (default).
-   * `card` — legacy bordered block if used outside the unified canvas.
+   * `embedded`  -  borderless in parent canvas (default).
+   * `card`  -  legacy bordered block if used outside the unified canvas.
    */
   surface?: "embedded" | "card";
   /**
-   * `campaignSource` — shorter default height + auto-expand (contest/giveaway source post embed).
+   * `campaignSource`  -  shorter default height + auto-expand (contest/giveaway source post embed).
    */
   density?: "default" | "campaignSource";
 }

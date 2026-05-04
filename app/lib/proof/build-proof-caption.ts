@@ -4,7 +4,7 @@ import { buildProofSummary } from "./build-proof-summary";
 import type { ProofCardPayload } from "./types";
 
 /**
- * Short social caption — compact single-paragraph feel where possible.
+ * Short social caption  -  compact single-paragraph feel where possible.
  */
 export function buildProofCaption(payload: ProofCardPayload): string {
   if (payload.domain === "giveaway" && payload.cardType === "public-summary") {

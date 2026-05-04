@@ -22,7 +22,7 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 }
 
 /**
- * POST /api/signer-reconnect — NIP-46 background reconnect outcome (narrow telemetry).
+ * POST /api/signer-reconnect  -  NIP-46 background reconnect outcome (narrow telemetry).
  */
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {

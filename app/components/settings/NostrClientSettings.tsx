@@ -1,5 +1,5 @@
 /**
- * Preferred Nostr Client — where "View note/article" links open.
+ * Preferred Nostr Client  -  where "View note/article" links open.
  */
 
 import { useFetcher, useRevalidator } from "@remix-run/react";

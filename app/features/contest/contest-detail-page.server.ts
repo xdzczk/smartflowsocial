@@ -52,7 +52,7 @@ function buildWinnerAnnouncement(contest: Contest, planned: number): string {
   const title = contest.title?.trim() ?? "Contest";
   const metric = contest.rankingMetric.toLowerCase();
   const n = contest.winnerCount;
-  return `${title}: complete — top ${n} direct replies by ${metric}. ${planned.toLocaleString()} sats planned payout. Results locked from the frozen snapshot.`;
+  return `${title}: complete  -  top ${n} direct replies by ${metric}. ${planned.toLocaleString()} sats planned payout. Results locked from the frozen snapshot.`;
 }
 
 // eslint-disable-next-line sonarjs/cognitive-complexity -- single loader aggregates contest dashboard data
@@ -140,7 +140,7 @@ export async function getContestDetailPageData(
   if (contest.status === "LIVE" && contest.sourceNoteId) {
     const nowUnix = Math.floor(Date.now() / 1000);
     const endUnix = Math.floor(contest.contestEndAt.getTime() / 1000);
-    /** Rank as-of now: replies up to min(now, end) — documented product rule. */
+    /** Rank as-of now: replies up to min(now, end)  -  documented product rule. */
     const deadlineUnix = Math.min(nowUnix, endUnix);
     const resolved = await resolveContestEntries({
       userId,

@@ -1,6 +1,6 @@
 /**
  * Normalize Prisma `Date` fields for React props after Remix `defer` resolves on
- * the client — JSON turns dates into ISO strings, so `.toISOString()` is not
+ * the client  -  JSON turns dates into ISO strings, so `.toISOString()` is not
  * always available.
  */
 export function dateLikeToIsoString(value: Date | string): string {

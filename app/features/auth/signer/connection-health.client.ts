@@ -11,7 +11,7 @@
  * Relay sync via `switch_relays` used to live here as well. It was removed
  * after we discovered that Primal Signer never replies to it, so every
  * call timed out 8s, contributed to per-client rate limits on damus.io,
- * and — most importantly — left Primal's session in a state where the
+ * and  -  most importantly  -  left Primal's session in a state where the
  * NEXT NIP-46 RPC was silently dropped. The relay set captured at login
  * is sufficient for ongoing use; if the user changes relays inside their
  * signer app to a non-overlapping set, they re-pair. Mirrors Nostrify's
@@ -62,7 +62,7 @@ export async function verifySignerConnection(
 /**
  * Cheap, synchronous transport-health check based on the shared pool's
  * WebSocket state. Returns true if at least one of the bunker's relays has an
- * open socket. We do not RPC the bunker here — that would add a per-call
+ * open socket. We do not RPC the bunker here  -  that would add a per-call
  * ping, which is what the periodic monitor used to do and which we
  * intentionally removed.
  */

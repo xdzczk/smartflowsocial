@@ -247,14 +247,15 @@ function createSlotInUserTimezone(
   }
 }
 
-function isSameDay(date1: Date, date2: Date): boolean {
-  const zoned1 = fromDate(date1, "UTC");
-  const zoned2 = fromDate(date2, "UTC");
-  return (
-    zoned1.year === zoned2.year &&
-    zoned1.month === zoned2.month &&
-    zoned1.day === zoned2.day
-  );
+/** Same calendar day in the user's timezone (not UTC  -  avoids wrong "today" near DST/midnight). */
+function isSameCalendarDayInUserTimezone(
+  a: Date,
+  b: Date,
+  userTimezone: string
+): boolean {
+  const za = fromDate(a, userTimezone);
+  const zb = fromDate(b, userTimezone);
+  return za.year === zb.year && za.month === zb.month && za.day === zb.day;
 }
 
 function findNextSlotWithLastPost(
@@ -375,7 +376,7 @@ function findNextSlotWithoutLastPost(
       if (!isValidDate(slot) || slot < baseTime) {
         return false;
       }
-      return isSameDay(slot, baseTime);
+      return isSameCalendarDayInUserTimezone(slot, baseTime, userTimezone);
     });
 
   // No previous posts, find next available slot today
@@ -388,8 +389,8 @@ function findNextSlotWithoutLastPost(
 
   // If no slots today work, get first slot of tomorrow
   if (sortedSlots.length > 0) {
-    const baseZoned = fromDate(baseTime, "UTC");
-    const tomorrowZoned = addDays(baseZoned, 1);
+    const baseZonedLocal = fromDate(baseTime, userTimezone);
+    const tomorrowZoned = addDays(baseZonedLocal, 1);
     const tomorrow = toDate(tomorrowZoned);
     const firstSlot = sortedSlots[0];
     if (firstSlot) {

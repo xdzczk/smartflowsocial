@@ -412,19 +412,19 @@ METRICS_PORT=3010
 
 Signed-in users whose **npub** appears in `ADMIN_NPUBS` (comma-separated) can open:
 
-- **`/dashboard/admin`** — Overview (KPIs, alerts, publishing health, referrals snapshot, system
+- **`/dashboard/admin`** - Overview (KPIs, alerts, publishing health, referrals snapshot, system
   probes).
-- **`/dashboard/admin/analytics`**, **`/users`**, **`/operations`** — Charts, user directory,
+- **`/dashboard/admin/analytics`**, **`/users`**, **`/operations`** - Charts, user directory,
   failures / queues / outbox.
-- **`/dashboard/admin/referrals`** — Referral tables, CSV export, payout ledger
+- **`/dashboard/admin/referrals`** - Referral tables, CSV export, payout ledger
   (`referral_payout_audit_log`), batch + manual Lightning payouts, retry failed earnings.
-- **`/dashboard/admin/earnings`** — Redirects to Referrals (legacy path).
+- **`/dashboard/admin/earnings`** - Redirects to Referrals (legacy path).
 
 **Payouts from the UI** use the same logic as the cron job:
 
 - **`OWNER_NWC`** must be set; otherwise payout buttons stay disabled.
 - **Batch payout** processes referrers with **≥ 1000 sats** pending commission, **https/http LNURL**
-  payout destination, and valid invoice fetch — see `runReferralPayoutBatch` in the codebase
+  payout destination, and valid invoice fetch - see `runReferralPayoutBatch` in the codebase
   (mirrors `cron.referral-payout`).
 - **Manual payout** accepts a BOLT11 invoice and marks pending earnings paid up to that amount (must
   not exceed the referrer’s pending balance).

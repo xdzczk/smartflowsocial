@@ -22,7 +22,7 @@ import { useEffect, useState } from "react";
  * Consumers should write their JSX so that `isMobile === false` produces a
  * layout that is valid on small screens too (even if visually non-ideal for
  * one frame). Do NOT conditionally mount/unmount large subtrees on this
- * value — prefer CSS-driven responsive behavior where possible.
+ * value  -  prefer CSS-driven responsive behavior where possible.
  */
 export function useIsMobile(breakpointPx = 768): boolean {
   const [isMobile, setIsMobile] = useState<boolean>(false);

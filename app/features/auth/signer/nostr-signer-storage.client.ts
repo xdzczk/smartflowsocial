@@ -21,7 +21,7 @@ export type ActiveSignerConfig =
        * the bunker URL on every read. Historically this field could also be
        * overwritten by a `switch_relays` response; that path was removed
        * because Primal Signer never replied to it and it broke the next RPC
-       * — see `connection-health.client.ts` for the full rationale.
+       *  -  see `connection-health.client.ts` for the full rationale.
        */
       relays?: string[];
     }

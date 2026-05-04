@@ -14,9 +14,9 @@ export function buildContestFairnessProofLines(input: {
     `Fairness · ${input.title}`,
     input.eligibleEntries != null
       ? `Eligible entries (frozen snapshot): ${input.eligibleEntries}`
-      : "Eligible entries (frozen snapshot): —",
+      : "Eligible entries (frozen snapshot):  - ",
     `Entry type: ${input.entryType}`,
-    input.tieBreakRule ? `Tie-break: ${input.tieBreakRule}` : "Tie-break: —",
+    input.tieBreakRule ? `Tie-break: ${input.tieBreakRule}` : "Tie-break:  - ",
     `Locked / completed: ${input.lockedOrCompletedAt}`,
     "",
     poweredByBrand,

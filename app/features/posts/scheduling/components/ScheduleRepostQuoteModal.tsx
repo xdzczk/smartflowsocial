@@ -556,7 +556,7 @@ export function ScheduleRepostQuoteModal({
                         return phase ? <> {phase}</> : null;
                       })()}
                       {shouldShowManualRecovery(signAttempt?.phase)
-                        ? " — Open your remote signer to approve. If your session expired, reconnect from Settings."
+                        ? " - Open your remote signer to approve. If your session expired, reconnect from Settings."
                         : null}
                     </span>
                     <Button

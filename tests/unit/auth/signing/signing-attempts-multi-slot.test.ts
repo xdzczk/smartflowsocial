@@ -5,7 +5,7 @@
  * signing recovery plan).
  *
  * Single-slot behavior (flag OFF) is covered by the existing
- * `tests/unit/posts/composer/pending-publish.test.ts` suite — those tests
+ * `tests/unit/posts/composer/pending-publish.test.ts` suite  -  those tests
  * MUST still pass byte-identical because the composer is built around the
  * single-slot contract until the rest of the migrations land.
  *

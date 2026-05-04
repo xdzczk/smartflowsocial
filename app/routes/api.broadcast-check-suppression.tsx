@@ -19,7 +19,7 @@ function parsePubkeysFromJson(body: unknown): string[] {
 }
 
 /**
- * POST JSON { pubkeys: string[] } — which lower-hex pubkeys are on suppression list.
+ * POST JSON { pubkeys: string[] }  -  which lower-hex pubkeys are on suppression list.
  */
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {

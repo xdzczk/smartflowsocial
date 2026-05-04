@@ -1,5 +1,5 @@
 /**
- * Settings area navigation — single source of truth for shell nav, URL ?tab=, and visibility rules.
+ * Settings area navigation  -  single source of truth for shell nav, URL ?tab=, and visibility rules.
  */
 
 export type SettingsTabId =

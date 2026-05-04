@@ -13,7 +13,7 @@
  * `signingAttempts.maybeResume()` on the healthy event. That meant a
  * Like, NIP-65 publish, DM, or feedback DM left in `awaiting_signer`
  * on a non-composer page (e.g. notifications, settings, search) would
- * never auto-resume — the user had to navigate to a composer host or
+ * never auto-resume  -  the user had to navigate to a composer host or
  * manually re-trigger the action. Acceptance criterion #1 of the
  * unified-signing-recovery plan ("reopening Primal auto-completes the
  * like") explicitly requires the resume to happen regardless of which

@@ -100,7 +100,7 @@ function getSignedEventId(value: unknown): string | null {
  *
  * Prefers the client-supplied `submissionId` (UUID minted at the publish
  * click) because it is the only key with cross-session uniqueness for two
- * unrelated publish clicks of the same content — fixing the cold-restart
+ * unrelated publish clicks of the same content  -  fixing the cold-restart
  * "duplicate idempotency collision" that silently dropped fresh signed
  * events into a historic PUBLISHED row.
  *

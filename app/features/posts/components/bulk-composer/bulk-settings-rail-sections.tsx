@@ -54,7 +54,7 @@ export const REPOST_CONDITION_FIELDS = [
   ["minSats", "Sats"],
 ] as const;
 
-/** Grouped counts only — details stay on post cards. */
+/** Grouped counts only  -  details stay on post cards. */
 export function bulkRailValidationSummaryLines(aggregate: {
   cap: number;
   sched: number;

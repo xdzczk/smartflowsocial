@@ -188,7 +188,7 @@ describe("Nostr Edge Cases", () => {
 
       // First sign attempt fails with a sign-timeout: the bunker app didn't
       // approve in time. We must NOT classify this as a connection error and
-      // must NOT spin up new signers / retry — that is exactly the storm that
+      // must NOT spin up new signers / retry  -  that is exactly the storm that
       // bombards Primal and rate-limits Damus.
       const signTimeoutErr = new RemoteSignerTimeoutError(
         "Remote signer did not respond. Open your signer app (e.g. Primal) and approve the request."
@@ -234,7 +234,7 @@ describe("Nostr Edge Cases", () => {
       vi.resetModules();
 
       // Surface a raw `bunker:sign_event timeout` (the inner RPC's own error)
-      // — we must treat it the same as the wrapped sign-timeout: no retry.
+      //  -  we must treat it the same as the wrapped sign-timeout: no retry.
       const bunkerErr = new Error("bunker:sign_event timeout");
       const mockConfiguredSign = vi.fn().mockRejectedValue(bunkerErr);
       const getActiveSigner = vi.fn().mockResolvedValue({

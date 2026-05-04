@@ -28,7 +28,7 @@ missing (see `defaultRangeForAdminPath`).
 
 - **Active paid users**: `Subscription.status === ACTIVE` and `planId` is not the built-in free plan
   (`free`). Current count only (no historical delta without a time series table).
-- **Referrals snapshot — Active seats (all plans)**: all `Subscription.status === ACTIVE` rows,
+- **Referrals snapshot - Active seats (all plans)**: all `Subscription.status === ACTIVE` rows,
   including free tier.
 - **New users**: `User.createdAt` in `[from, to)`.
 - **Posts published**: short posts with `currentState === PUBLISHED` and `publishedAt` in range;
@@ -45,7 +45,7 @@ missing (see `defaultRangeForAdminPath`).
 - **Queues**: BullMQ `getJobCounts` from the Remix server process (requires Redis reachable like
   workers).
 - **Outbox**: `getOutboxBacklogCounts`.
-- **Workers (heuristic)**: no heartbeat — derived from summed `waiting` / `active` across the same
+- **Workers (heuristic)**: no heartbeat - derived from summed `waiting` / `active` across the same
   queues. Healthy when jobs are active or backlog is small; degraded at ≥25 waiting with 0 active;
   failing at ≥100 waiting with 0 active.
 

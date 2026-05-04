@@ -123,7 +123,11 @@ export async function getScheduledPosts({
           queueType: true,
           hashTagPreset: true,
           template: true,
-          repostOf: { select: { fileUrl: true, postType: true } },
+          repostOf: {
+            select: { fileUrl: true, postType: true, signedEvent: true },
+          },
+          quoteOf: { select: { signedEvent: true } },
+          quoteOfLongForm: { select: { signedEvent: true } },
         },
         orderBy: [{ scheduledAtUtc: "asc" }, { id: "asc" }],
         skip,

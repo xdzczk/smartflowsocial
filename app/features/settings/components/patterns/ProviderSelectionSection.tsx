@@ -13,7 +13,7 @@ export interface ProviderSelectionSectionProps {
 }
 
 /**
- * Pattern C — mutually exclusive infrastructure choices (storage provider, relay source).
+ * Pattern C  -  mutually exclusive infrastructure choices (storage provider, relay source).
  */
 export function ProviderSelectionSection({
   title,

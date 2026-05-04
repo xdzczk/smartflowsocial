@@ -1,5 +1,5 @@
 /**
- * Posts publishing submodule — server API.
+ * Posts publishing submodule  -  server API.
  * Import from ~/features/posts/server/publishing for publishing/recyclables server logic.
  */
 export {

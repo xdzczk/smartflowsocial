@@ -278,7 +278,7 @@ interface PublishResultModalProps {
   /** For bulk schedule: queue name -> count. */
   queueSummary?: Record<string, number> | string;
   /**
-   * When true, the modal was opened immediately on publish intent — before
+   * When true, the modal was opened immediately on publish intent  -  before
    * a postId or relay data is available. Shows staged substatus copy and a
    * relay skeleton placeholder. Transitions automatically when postId arrives.
    */
@@ -313,7 +313,7 @@ export default function PublishResultModal({
   const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hasTimedOut, setHasTimedOut] = useState(false);
 
-  // Elapsed ms since publish intent, updated on an interval — never read
+  // Elapsed ms since publish intent, updated on an interval  -  never read
   // Date.now() during render (react-hooks/purity).
   const [stagedElapsedMs, setStagedElapsedMs] = useState(0);
   const runStagedSubstatusTicker =
@@ -852,13 +852,13 @@ export default function PublishResultModal({
             {hasTimedOut ? (
               <span className="text-text-secondary text-center text-sm">
                 Relay responses are taking longer than usual. Your post was
-                published—you can close this and check Published.
+                published - you can close this and check Published.
               </span>
             ) : null}
           </div>
         ) : null}
 
-        {/* Hide action buttons during the immediate progress phase — no postId
+        {/* Hide action buttons during the immediate progress phase  -  no postId
             means there's nothing to navigate to yet. Show them once the post
             is known or when a terminal state is reached. */}
         {!immediateProgress ||

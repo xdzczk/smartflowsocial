@@ -14,7 +14,7 @@ import { createHash } from "crypto";
  *
  * NOTE: This content-hash form has no time component for immediate publishes
  * (`scheduledFor` undefined collapses to the literal "now"), so two unrelated
- * publish attempts of the same exact content will collide forever — across
+ * publish attempts of the same exact content will collide forever  -  across
  * sessions, cold restarts, etc. Prefer {@link generateSubmissionIdempotencyKey}
  * when the client can supply a per-attempt submission id; fall back to this
  * helper only for legacy clients that do not yet send `submissionId`.

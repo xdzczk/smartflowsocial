@@ -101,7 +101,7 @@ export async function checkNip07Readiness(
 
   const now = Date.now();
   if (now - lastGetPublicKeyCheckTime < NIP07_GET_PUBLIC_KEY_THROTTLE_MS) {
-    // Skip to avoid spamming "allow app to get public key" — at most 1 prompt per minute.
+    // Skip to avoid spamming "allow app to get public key"  -  at most 1 prompt per minute.
     return;
   }
 

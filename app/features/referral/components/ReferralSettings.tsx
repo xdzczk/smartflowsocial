@@ -59,7 +59,7 @@ export function ReferralSettings({
           <div className="space-y-4">
             {zeroEarnings ? (
               <p className="text-text-secondary text-sm">
-                No referral earnings yet. Share your referral link below—when
+                No referral earnings yet. Share your referral link below - when
                 referred users upgrade to a paid plan, you earn sats.
               </p>
             ) : null}

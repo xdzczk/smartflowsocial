@@ -168,7 +168,7 @@ export async function resolveNip46SignerFromConfig(
     // connection event) instead of doing a fresh `get_public_key` RPC. On
     // cold reopen the bunker app may be backgrounded/sleeping, and a
     // network round-trip here races the user's first `signEvent` for the
-    // signer's reply — exactly the bug behind "I logged back in but the
+    // signer's reply  -  exactly the bug behind "I logged back in but the
     // first publish hangs and times out". Mirrors `connectViaBunker` and
     // matches `@nostrify` `NConnectSigner` which never validates on
     // construction. The fallback only fires for the truly fresh URI flow

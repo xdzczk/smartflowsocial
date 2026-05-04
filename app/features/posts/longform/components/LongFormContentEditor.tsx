@@ -1,6 +1,6 @@
 /**
  * Content editor for LongFormPost: Tiptap + markdown sync.
- * `surface="editorial"` — unified chrome for article composer; `legacy` — form / modal layout.
+ * `surface="editorial"`  -  unified chrome for article composer; `legacy`  -  form / modal layout.
  */
 
 import { EditorContent } from "@tiptap/react";
@@ -22,7 +22,7 @@ interface LongFormContentEditorProps {
   onOpenAssetBrowser: () => void;
   /** When false, hide the "Content *" label (legacy hero). Default true. */
   showLabel?: boolean;
-  /** `editorial` — article composer chrome; `legacy` — existing form behavior. */
+  /** `editorial`  -  article composer chrome; `legacy`  -  existing form behavior. */
   surface?: "legacy" | "editorial";
   /** When surface is editorial, toggle body view. */
   bodyView?: "edit" | "preview";
@@ -37,7 +37,7 @@ interface LongFormContentEditorProps {
   /** Tiptap editor instance (null before client mount). */
   editor: React.ComponentProps<typeof EditorContent>["editor"];
   /**
-   * When true with `surface="editorial"`, editor sits inside `ComposerLeftCanvas` — no nested card chrome.
+   * When true with `surface="editorial"`, editor sits inside `ComposerLeftCanvas`  -  no nested card chrome.
    */
   containedInComposerCard?: boolean;
 }

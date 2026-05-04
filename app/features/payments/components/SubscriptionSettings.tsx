@@ -122,7 +122,7 @@ function UpgradePlanSection() {
         <p className="font-medium">Upgrade plan</p>
         <p className="text-text-secondary mt-1 text-sm">
           Paid plans add calendars, drafts and templates, bulk scheduling, and
-          premium infrastructure—choose what fits you.
+          premium infrastructure - choose what fits you.
         </p>
       </div>
       <ul className="text-text-secondary list-inside list-disc space-y-1 text-sm">
@@ -360,7 +360,7 @@ export function SubscriptionSettings({
             </div>
           ) : null}
 
-          {/* Subscription details — paid price */}
+          {/* Subscription details  -  paid price */}
           {subscription.plan?.price && Number(subscription.plan.price) > 0 ? (
             <div className="grid gap-4 md:grid-cols-2">
               <div className="cluster-loose rounded-lg border p-4">

@@ -128,7 +128,7 @@ export function BtcpayConfirmationWatchBar() {
 
       if (data.success && data.paid) {
         clearBtcpayConfirmationWatch();
-        toast.success("Bitcoin payment confirmed — your plan is active.");
+        toast.success("Bitcoin payment confirmed  -  your plan is active.");
         revalidator.revalidate();
         return;
       }
@@ -165,7 +165,7 @@ export function BtcpayConfirmationWatchBar() {
           aria-hidden
         />
         <p className="text-warning-foreground min-w-0 flex-1">
-          Bitcoin payment seen — waiting for the first on-chain confirmation.
+          Bitcoin payment seen - waiting for the first on-chain confirmation.
           Your plan activates after one block. You can keep using the app; we
           will update automatically.
         </p>

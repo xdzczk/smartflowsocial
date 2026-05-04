@@ -256,7 +256,7 @@ function BroadcastAudiencesRouteLoaded({
     []
   );
 
-  /** Always boolean — never `null` (React `disabled` is boolean | undefined only). */
+  /** Always boolean  -  never `null` (React `disabled` is boolean | undefined only). */
   const disableEditAudienceSubmit: boolean =
     editAudienceType === "CUSTOM" && editSelectedPubkeys.length === 0;
   const disableCreateAudienceSubmit: boolean =

@@ -98,14 +98,14 @@ export function AdminProofOfWorkSection({
       <div>
         <h2 className="text-lg font-semibold">Proof Studio</h2>
         <p className="text-text-secondary mt-1 max-w-xl text-sm">
-          Public proof-of-work cards for the selected analytics range — same
+          Public proof-of-work cards for the selected analytics range - same
           engine as giveaway and contest proof exports.
         </p>
       </div>
 
       {reliabilitySampleLow ? (
         <p className="text-text-secondary border-border border-warning/20 bg-warning/5 rounded-lg border px-3 py-2 text-xs leading-snug">
-          Low sample for 30d reliability stats — interpret exports carefully or
+          Low sample for 30d reliability stats - interpret exports carefully or
           pick a longer window in the admin range before sharing.
         </p>
       ) : null}

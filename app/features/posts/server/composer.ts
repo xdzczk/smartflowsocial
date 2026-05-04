@@ -1,5 +1,5 @@
 /**
- * Posts composer submodule — server API.
+ * Posts composer submodule  -  server API.
  * Import from ~/features/posts/server/composer for new-post/composer server logic.
  */
 export {

@@ -64,7 +64,7 @@ export const SCOPE_TYPE_OPTIONS: ReadonlyArray<{
   {
     value: "SINGLE_POST",
     title: "Single post",
-    desc: "Engagement on that note only — not nested replies deeper in the thread",
+    desc: "Engagement on that note only  -  not nested replies deeper in the thread",
   },
   {
     value: "FOLLOWERS",

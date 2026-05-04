@@ -779,7 +779,7 @@ export function GiveawayDetailPage({
                     ) : scopeIsFollowGraphAccountPool(giveaway.scopeType) ? (
                       <p className="text-text-secondary text-sm">
                         Winners are picked at random from eligible accounts in
-                        your follower or following list — not from note
+                        your follower or following list - not from note
                         engagement.
                       </p>
                     ) : (
@@ -914,7 +914,7 @@ export function GiveawayDetailPage({
                   <p className="text-text-secondary text-sm">
                     This action locks the current winner selection and starts
                     payout tracking. The finalization fee covers official
-                    locking, audit trail, payout checklist, and receipt tools —
+                    locking, audit trail, payout checklist, and receipt tools -
                     not custody of prize funds.
                   </p>
                   {finalizationQuote ? (
