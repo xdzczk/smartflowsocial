@@ -47,6 +47,8 @@ import {
   isRepostContent,
 } from "../utils/content-helpers";
 
+import { ThreadSegmentsMenu } from "./ThreadSegmentsMenu";
+
 // Helper to safely access formData from a fetcher
 function getFetcherFormData(
   fetcher: PostFetcher | undefined
@@ -56,6 +58,8 @@ function getFetcherFormData(
 
 interface ContentTableRowProps {
   item: CombinedContent;
+  /** Later segments of the same thread (shown in a dropdown; root row is `item`). */
+  threadSegments?: CombinedContent[];
   type: "scheduled" | "draft" | "published";
   userTimezone?: string;
   userTimeFormat?: "12h" | "24h";
@@ -84,6 +88,7 @@ interface ContentTableRowProps {
 
 export function ContentTableRow({
   item,
+  threadSegments = [],
   type,
   userTimezone,
   userTimeFormat = "12h",
@@ -237,6 +242,16 @@ export function ContentTableRow({
               ? " · Offset from parent"
               : " · Fixed date/time"}
           </p>
+        ) : null}
+        {(type === "scheduled" || type === "published") &&
+        threadSegments.length > 0 ? (
+          <ThreadSegmentsMenu
+            segments={threadSegments}
+            listType={type === "scheduled" ? "scheduled" : "published"}
+            userTimezone={userTimezone}
+            userTimeFormat={userTimeFormat}
+            onSelectSegment={(seg) => onPostSelect?.(seg)}
+          />
         ) : null}
       </td>
       <td

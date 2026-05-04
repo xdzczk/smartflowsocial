@@ -42,6 +42,7 @@ import type {
   LongFormPostData,
   QueueType,
 } from "../types";
+import { dedupeFlowItemsByThreadGroup } from "../utils/flow-thread-dedupe";
 
 import { filterPostsByQueueType } from "./post-filtering.server";
 
@@ -338,10 +339,12 @@ export async function loadFlowData({
       )
     );
 
-    const combined = [
-      ...pastPostsData.map((p) => postToCombinedContent(p)),
-      ...pastLongFormData.map((p) => longFormPostToCombinedContent(p)),
-    ].sort((a, b) => getGoLiveAt(a) - getGoLiveAt(b));
+    const combined = dedupeFlowItemsByThreadGroup(
+      [
+        ...pastPostsData.map((p) => postToCombinedContent(p)),
+        ...pastLongFormData.map((p) => longFormPostToCombinedContent(p)),
+      ].sort((a, b) => getGoLiveAt(a) - getGoLiveAt(b))
+    );
 
     const hasMorePast = combined.length > pastLimit;
     const slice = combined.slice(0, pastLimit);
@@ -443,12 +446,14 @@ export async function loadFlowData({
         )
     );
 
-    const combined = [
-      ...scheduledPostsData.map((p) => postToCombinedContent(p)),
-      ...scheduledLongFormData.map((p) => longFormPostToCombinedContent(p)),
-    ]
-      .filter((item) => isAfterFutureCursor(item, futureCursor))
-      .sort(compareFlowItems);
+    const combined = dedupeFlowItemsByThreadGroup(
+      [
+        ...scheduledPostsData.map((p) => postToCombinedContent(p)),
+        ...scheduledLongFormData.map((p) => longFormPostToCombinedContent(p)),
+      ]
+        .filter((item) => isAfterFutureCursor(item, futureCursor))
+        .sort(compareFlowItems)
+    );
 
     const hasMoreFuture = combined.length > futureLimit;
     const slice = combined.slice(0, futureLimit);
@@ -576,12 +581,14 @@ export async function loadFlowData({
   );
 
   const nowMs = now.getTime();
-  const allCombined = [
-    ...pastPostsData.map((p) => postToCombinedContent(p)),
-    ...pastLongFormData.map((p) => longFormPostToCombinedContent(p)),
-    ...scheduledPostsData.map((p) => postToCombinedContent(p)),
-    ...scheduledLongFormData.map((p) => longFormPostToCombinedContent(p)),
-  ].sort(compareFlowItems);
+  const allCombined = dedupeFlowItemsByThreadGroup(
+    [
+      ...pastPostsData.map((p) => postToCombinedContent(p)),
+      ...pastLongFormData.map((p) => longFormPostToCombinedContent(p)),
+      ...scheduledPostsData.map((p) => postToCombinedContent(p)),
+      ...scheduledLongFormData.map((p) => longFormPostToCombinedContent(p)),
+    ].sort(compareFlowItems)
+  );
 
   const pastItems = allCombined.filter((i) => getGoLiveAt(i) <= nowMs);
   const futureItems = allCombined.filter((i) => getGoLiveAt(i) > nowMs);

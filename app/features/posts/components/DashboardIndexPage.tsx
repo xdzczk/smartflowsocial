@@ -959,7 +959,10 @@ export default function DashboardIndexPage() {
           onEdit={(p) => {
             setSelectedLongFormPost(null);
             navigate(
-              `/dashboard/compose?type=article&scheduled=${encodeURIComponent(String(p.id))}`
+              buildComposeEditUrl(
+                { mode: "edit_scheduled", scheduledActionId: String(p.id) },
+                { composeType: "article" }
+              )
             );
           }}
           onReschedule={(p) => {

@@ -22,6 +22,7 @@ import {
   RAIL_PAD_X,
   RAIL_ZONE_PY,
 } from "~/features/posts/components/publishing-rail";
+import { buildComposeEditUrl } from "~/features/posts/composer";
 import { optimisticallyRemovePostIdsFromViews } from "~/features/posts/hooks/post-cache-prune";
 import { invalidateDependentCaches } from "~/features/posts/hooks/useRefreshPostViews";
 import { getQueueColor } from "~/features/posts/queue-colors";
@@ -747,7 +748,10 @@ export default function LongFormDetailsModal({
           <ScheduledPostActionBar
             onEdit={onEdit ? () => onEdit(post) : undefined}
             onReschedule={onReschedule ? () => onReschedule(post) : undefined}
-            openFullEditorHref={`/dashboard/compose?scheduled=${post.id}`}
+            openFullEditorHref={buildComposeEditUrl(
+              { mode: "edit_scheduled", scheduledActionId: String(post.id) },
+              { composeType: "article" }
+            )}
             openFullEditorLabel="Open in full editor"
             deleteForm={deleteForm}
           />

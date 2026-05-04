@@ -162,7 +162,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       const templateId = url.searchParams.get("templateId");
       const payload = await loadNewLongFormData(
         userId,
-        templateId && templateId.length > 0 ? templateId : null
+        templateId && templateId.length > 0 ? templateId : null,
+        composerContext
       );
       return json({
         ...payload,

@@ -140,6 +140,12 @@ describe("compose-route-contract", () => {
           parentActionId: "p1",
         })
       ).toContain("parentActionId=p1");
+      expect(
+        buildComposeEditUrl(
+          { mode: "edit_scheduled", scheduledActionId: "lf1" },
+          { composeType: "article" }
+        )
+      ).toContain("type=article");
     });
   });
 });

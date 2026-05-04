@@ -2,11 +2,21 @@
  * Scheduled posts table component
  */
 
+import type { FetcherWithComponents } from "@remix-run/react";
 import { useFetcher } from "@remix-run/react";
+import type { QueryClient } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { MoreHorizontal, Quote, Repeat } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type Key } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type Key,
+  type MutableRefObject,
+} from "react";
 
 import { Checkbox } from "~/components/ui/checkbox";
 import {
@@ -38,12 +48,17 @@ import {
   PUBLISHING_LIST_SURFACE_CLASS,
   PUBLISHING_TABLE_ROW_CLASS,
 } from "~/features/posts/components/publishing-suite/constants";
+import { ThreadSegmentsMenu } from "~/features/posts/components/ThreadSegmentsMenu";
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
 import { invalidateDependentCaches } from "~/features/posts/hooks/useRefreshPostViews";
 import type { CombinedContent, PostData } from "~/features/posts/types";
 import { getPostRowThumbnailBadge } from "~/features/posts/utils/content-helpers";
 import { buildActionUrl } from "~/features/posts/utils/remix-action-url";
 import { isPureRepostSourcePost } from "~/features/posts/utils/repost-chain-policy";
+import {
+  buildPostThreadRows,
+  comparePostDataByScheduledSort,
+} from "~/features/posts/utils/thread-list-grouping";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import {
@@ -82,6 +97,8 @@ interface ScheduledPostsTableProps {
   sentinelRef?: React.Ref<HTMLDivElement | null>;
   isFetchingNextPage?: boolean;
   onScrollContainerReady?: (el: HTMLDivElement | null) => void;
+  /** Thread roots only — for “select all” when rows are merged by thread. */
+  selectableRootIds: string[];
 }
 
 interface SortableHeaderProps {
@@ -110,6 +127,112 @@ const SortableHeader = ({
   </th>
 );
 
+interface ScheduledPostTableRowActionsProps {
+  post: PostData;
+  blockRepostQuoteChain: boolean;
+  onEditPost: (post: PostData) => void;
+  onReschedulePost: (post: PostData) => void;
+  onScheduleRepost?: (post: PostData) => void;
+  onScheduleQuote?: (post: PostData) => void;
+  moveToDraftFetcher: FetcherWithComponents<{ success?: boolean }>;
+  bulkDeleteState: string;
+  deletingPostId: string | null;
+  handleDeleteWithCascade: (
+    postId: string,
+    postType: "post" | "longform"
+  ) => void;
+  queryClient: QueryClient;
+  lastMoveSubmissionRef: MutableRefObject<{ postId: string } | null>;
+}
+
+function ScheduledPostTableRowActions({
+  post,
+  blockRepostQuoteChain,
+  onEditPost,
+  onReschedulePost,
+  onScheduleRepost,
+  onScheduleQuote,
+  moveToDraftFetcher,
+  bulkDeleteState,
+  deletingPostId,
+  handleDeleteWithCascade,
+  queryClient,
+  lastMoveSubmissionRef,
+}: ScheduledPostTableRowActionsProps) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          onClick={(e) => e.stopPropagation()}
+          className="focus-ring border-border bg-surface text-text hover:bg-surface-hover inline-flex h-8 w-8 items-center justify-center rounded-lg border"
+          aria-label="Actions"
+        >
+          <MoreHorizontal className={INLINE_ICON_SIZE_CLASS} />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenuItem onSelect={() => onEditPost(post)}>
+          Edit
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onReschedulePost(post)}>
+          Reschedule
+        </DropdownMenuItem>
+        {onScheduleRepost && !blockRepostQuoteChain ? (
+          <DropdownMenuItem onSelect={() => onScheduleRepost(post)}>
+            Schedule repost
+          </DropdownMenuItem>
+        ) : null}
+        {onScheduleQuote && !blockRepostQuoteChain ? (
+          <DropdownMenuItem onSelect={() => onScheduleQuote(post)}>
+            Schedule quote
+          </DropdownMenuItem>
+        ) : null}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          disabled={
+            moveToDraftFetcher.state !== "idle" ||
+            deletingPostId != null ||
+            bulkDeleteState !== "idle"
+          }
+          onSelect={() => {
+            queryClient.setQueriesData(
+              { queryKey: scheduledPostsKeys.all },
+              (old) => pruneScheduledQueryData(old, new Set([post.id]))
+            );
+            lastMoveSubmissionRef.current = {
+              postId: post.id,
+            };
+            const fd = new FormData();
+            fd.set("postId", post.id);
+            fd.set("_action", "moveToDraft");
+            fd.set("type", "post");
+            moveToDraftFetcher.submit(fd, { method: "post" });
+          }}
+        >
+          {moveToDraftFetcher.state !== "idle" &&
+          moveToDraftFetcher.formData?.get("_action") === "moveToDraft" &&
+          /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- formData can be undefined during submit */
+          moveToDraftFetcher.formData?.get("postId") === post.id
+            ? "Moving..."
+            : "Move to drafts"}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          disabled={
+            moveToDraftFetcher.state !== "idle" ||
+            deletingPostId != null ||
+            bulkDeleteState !== "idle"
+          }
+          className="text-danger focus:text-danger"
+          onSelect={() => handleDeleteWithCascade(post.id, "post")}
+        >
+          {deletingPostId === post.id ? "Deleting..." : "Delete"}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function ScheduledPostsTable({
   posts,
   sortConfig,
@@ -132,6 +255,7 @@ export function ScheduledPostsTable({
   sentinelRef,
   isFetchingNextPage = false,
   onScrollContainerReady,
+  selectableRootIds,
 }: ScheduledPostsTableProps) {
   const { dateLocale } = useFormattedDate();
   const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
@@ -190,10 +314,20 @@ export function ScheduledPostsTable({
     [queryClient]
   );
 
-  const combinedContent = posts.map((post) => postToCombinedContent(post));
+  const threadRows = useMemo(() => {
+    const built = buildPostThreadRows(posts, "scheduled");
+    return [...built].sort((a, b) =>
+      comparePostDataByScheduledSort(a.root, b.root, sortConfig)
+    );
+  }, [posts, sortConfig]);
+
+  const combinedContent = useMemo(
+    () => threadRows.map((r) => postToCombinedContent(r.root)),
+    [threadRows]
+  );
 
   const rowVirtualizer = useVirtualizer({
-    count: combinedContent.length,
+    count: threadRows.length,
     getScrollElement: () =>
       useDedicatedScroll && mobileScrollContainerRef.current
         ? mobileScrollContainerRef.current
@@ -202,7 +336,7 @@ export function ScheduledPostsTable({
           : null,
     estimateSize: () => 98 + CONTENT_LIST_CARD_GAP_PX,
     overscan: 3,
-    getItemKey: (index) => combinedContent[index]?.id ?? String(index),
+    getItemKey: (index) => threadRows[index]?.root.id ?? String(index),
   });
   const virtualItems = rowVirtualizer.getVirtualItems();
   const [openMenuRowKey, setOpenMenuRowKey] = useState<Key | null>(null);
@@ -322,8 +456,10 @@ export function ScheduledPostsTable({
                   <Checkbox
                     id="scheduled-select-all"
                     checked={
-                      posts.length > 0
-                        ? selectedPosts.size === posts.length
+                      selectableRootIds.length > 0
+                        ? selectableRootIds.every((id) =>
+                            selectedPosts.has(id)
+                          ) && selectedPosts.size === selectableRootIds.length
                         : false
                     }
                     onCheckedChange={() => onToggleSelectAll()}
@@ -359,7 +495,8 @@ export function ScheduledPostsTable({
               </tr>
             </thead>
             <tbody>
-              {posts.map((post) => {
+              {threadRows.map((row) => {
+                const post = row.root;
                 const blockRepostQuoteChain = isPureRepostSourcePost(post);
                 const rowThumbBadge = getPostRowThumbnailBadge({
                   contentKind: "post",
@@ -462,6 +599,22 @@ export function ScheduledPostsTable({
                             : " · Fixed date/time"}
                         </p>
                       ) : null}
+                      {row.threadSegments.length > 0 ? (
+                        <ThreadSegmentsMenu
+                          segments={row.threadSegments.map((p) =>
+                            postToCombinedContent(p)
+                          )}
+                          listType="scheduled"
+                          userTimezone={userTimezone ?? undefined}
+                          userTimeFormat={
+                            userTimeFormat === "24h" ? "24h" : "12h"
+                          }
+                          onSelectSegment={(c) =>
+                            onPostClick(c.originalData as PostData)
+                          }
+                          triggerClassName="mt-1"
+                        />
+                      ) : null}
                     </td>
                     <td className={cn("p-3", PUBLISHING_DATETIME_CELL_CLASS)}>
                       {formatDate(post.scheduledAtUtc)}
@@ -509,97 +662,20 @@ export function ScheduledPostsTable({
                       )}
                     </td>
                     <td className="p-3 text-center">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            onClick={(e) => e.stopPropagation()}
-                            className="focus-ring border-border bg-surface text-text hover:bg-surface-hover inline-flex h-8 w-8 items-center justify-center rounded-lg border"
-                            aria-label="Actions"
-                          >
-                            <MoreHorizontal
-                              className={INLINE_ICON_SIZE_CLASS}
-                            />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="end"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <DropdownMenuItem onSelect={() => onEditPost(post)}>
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onSelect={() => onReschedulePost(post)}
-                          >
-                            Reschedule
-                          </DropdownMenuItem>
-                          {onScheduleRepost && !blockRepostQuoteChain ? (
-                            <DropdownMenuItem
-                              onSelect={() => onScheduleRepost(post)}
-                            >
-                              Schedule repost
-                            </DropdownMenuItem>
-                          ) : null}
-                          {onScheduleQuote && !blockRepostQuoteChain ? (
-                            <DropdownMenuItem
-                              onSelect={() => onScheduleQuote(post)}
-                            >
-                              Schedule quote
-                            </DropdownMenuItem>
-                          ) : null}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            disabled={
-                              moveToDraftFetcher.state !== "idle" ||
-                              deletingPostId != null ||
-                              bulkDeleteState !== "idle"
-                            }
-                            onSelect={() => {
-                              queryClient.setQueriesData(
-                                { queryKey: scheduledPostsKeys.all },
-                                (old) =>
-                                  pruneScheduledQueryData(
-                                    old,
-                                    new Set([post.id])
-                                  )
-                              );
-                              lastMoveSubmissionRef.current = {
-                                postId: post.id,
-                              };
-                              const fd = new FormData();
-                              fd.set("postId", post.id);
-                              fd.set("_action", "moveToDraft");
-                              fd.set("type", "post");
-                              moveToDraftFetcher.submit(fd, { method: "post" });
-                            }}
-                          >
-                            {moveToDraftFetcher.state !== "idle" &&
-                            moveToDraftFetcher.formData?.get("_action") ===
-                              "moveToDraft" &&
-                            /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- formData can be undefined during submit */
-                            moveToDraftFetcher.formData?.get("postId") ===
-                              post.id
-                              ? "Moving..."
-                              : "Move to drafts"}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            disabled={
-                              moveToDraftFetcher.state !== "idle" ||
-                              deletingPostId != null ||
-                              bulkDeleteState !== "idle"
-                            }
-                            className="text-danger focus:text-danger"
-                            onSelect={() =>
-                              handleDeleteWithCascade(post.id, "post")
-                            }
-                          >
-                            {deletingPostId === post.id
-                              ? "Deleting..."
-                              : "Delete"}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <ScheduledPostTableRowActions
+                        post={post}
+                        blockRepostQuoteChain={blockRepostQuoteChain}
+                        onEditPost={onEditPost}
+                        onReschedulePost={onReschedulePost}
+                        onScheduleRepost={onScheduleRepost}
+                        onScheduleQuote={onScheduleQuote}
+                        moveToDraftFetcher={moveToDraftFetcher}
+                        bulkDeleteState={bulkDeleteState}
+                        deletingPostId={deletingPostId}
+                        handleDeleteWithCascade={handleDeleteWithCascade}
+                        queryClient={queryClient}
+                        lastMoveSubmissionRef={lastMoveSubmissionRef}
+                      />
                     </td>
                   </tr>
                 );
@@ -677,8 +753,9 @@ export function ScheduledPostsTable({
                     }}
                   >
                     {virtualItems.map((virtualRow) => {
+                      const row = threadRows[virtualRow.index];
                       const item = combinedContent[virtualRow.index];
-                      if (!item) return null;
+                      if (!item || !row) return null;
                       return (
                         <div
                           key={virtualRow.key}
@@ -698,6 +775,9 @@ export function ScheduledPostsTable({
                         >
                           <ContentListCard
                             item={item}
+                            threadSegments={row.threadSegments.map((p) =>
+                              postToCombinedContent(p)
+                            )}
                             type="scheduled"
                             userTimezone={userTimezone ?? undefined}
                             userTimeFormat={userTimeFormat ?? undefined}
@@ -750,8 +830,9 @@ export function ScheduledPostsTable({
               }}
             >
               {virtualItems.map((virtualRow) => {
+                const row = threadRows[virtualRow.index];
                 const item = combinedContent[virtualRow.index];
-                if (!item) return null;
+                if (!item || !row) return null;
                 return (
                   <div
                     key={virtualRow.key}
@@ -769,6 +850,9 @@ export function ScheduledPostsTable({
                   >
                     <ContentListCard
                       item={item}
+                      threadSegments={row.threadSegments.map((p) =>
+                        postToCombinedContent(p)
+                      )}
                       type="scheduled"
                       userTimezone={userTimezone ?? undefined}
                       userTimeFormat={userTimeFormat ?? undefined}

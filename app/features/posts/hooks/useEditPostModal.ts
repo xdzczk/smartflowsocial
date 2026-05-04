@@ -56,6 +56,15 @@ function getStringValue(
   return "";
 }
 
+function getLongformContentFromPost(post: PostData | LongFormPostData): string {
+  if (typeof post !== "object" || !("content" in post)) {
+    return "";
+  }
+  const raw = (post as { content?: unknown }).content;
+  if (raw == null) return "";
+  return typeof raw === "string" ? raw : "";
+}
+
 function getQueueTypeName(post: PostData | LongFormPostData): string {
   if (
     typeof post === "object" &&
@@ -150,7 +159,7 @@ function getLongformInitialValues(post: PostData | LongFormPostData): {
   return {
     title: getStringValue(post, "title"),
     summary: getStringValue(post, "summary"),
-    content: "",
+    content: getLongformContentFromPost(post),
     image: getStringValue(post, "image"),
     scheduledFor: formatScheduledForFromDate(scheduledCandidate, "UTC"),
     queueType: getQueueTypeName(post),
@@ -246,12 +255,10 @@ export function useEditPostModal({
 
   // Load initial content for longform posts into form (editor gets it via initialMarkdown prop)
   useEffect(() => {
-    if (isLongform && typeof post === "object" && "content" in post) {
-      const postContent = typeof post.content === "string" ? post.content : "";
-      if (postContent) {
-        form.setValue("content", postContent);
-      }
+    if (!isLongform || typeof post !== "object" || !("content" in post)) {
+      return;
     }
+    form.setValue("content", getLongformContentFromPost(post));
   }, [isLongform, post, form]);
 
   const formatDateTimeForInput = (date: Date) => {

@@ -2,6 +2,7 @@ import { useFetcher, useNavigate } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 
+import { getSelectableRootIdsForMixedListing } from "~/features/posts/components/all-content-listing-selectable";
 import { buildComposeEditUrl } from "~/features/posts/composer";
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
 import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
@@ -15,6 +16,11 @@ import type {
   PostData,
 } from "~/features/posts/types";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
+import {
+  buildPostThreadRows,
+  filterPostsBySearchWithThreads,
+  selectableRootIdsFromPostRows,
+} from "~/features/posts/utils/thread-list-grouping";
 import { skipInfiniteQueries } from "~/lib/query/is-infinite-query-data";
 import { difference, fromDate, nowInTimezone } from "~/lib/temporal";
 
@@ -193,10 +199,29 @@ export function useScheduledState({
         : currentTab === "reposts"
           ? sortedPosts.filter((p) => isRepostPost(p))
           : sortedPosts;
-    return byTab.filter((post) =>
-      post.caption?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    return filterPostsBySearchWithThreads(byTab, searchTerm);
   }, [sortedPosts, searchTerm, currentTab]);
+
+  /** One selectable id per visible row (thread roots only). */
+  const selectablePostIds = useMemo(
+    () =>
+      selectableRootIdsFromPostRows(
+        buildPostThreadRows(filteredPosts, "scheduled")
+      ),
+    [filteredPosts]
+  );
+
+  /** Mixed All tab: posts + longform, same grouping/search as AllContentListing. */
+  const selectAllTargetIds = useMemo(() => {
+    if (currentTab === "all") {
+      return getSelectableRootIdsForMixedListing(
+        allContent ?? [],
+        "scheduled",
+        searchTerm
+      );
+    }
+    return selectablePostIds;
+  }, [currentTab, allContent, searchTerm, selectablePostIds]);
 
   const requestSort = (key: string) => {
     setSortConfig((current) => ({
@@ -219,10 +244,14 @@ export function useScheduledState({
   };
 
   const toggleSelectAll = () => {
-    if (selectedPosts.size === filteredPosts.length) {
+    if (
+      selectAllTargetIds.length > 0 &&
+      selectAllTargetIds.every((id) => selectedPosts.has(id)) &&
+      selectedPosts.size === selectAllTargetIds.length
+    ) {
       setSelectedPosts(new Set());
     } else {
-      setSelectedPosts(new Set(filteredPosts.map((post) => post.id)));
+      setSelectedPosts(new Set(selectAllTargetIds));
     }
   };
 
@@ -424,6 +453,7 @@ export function useScheduledState({
     postToEdit,
     postToReschedule,
     filteredPosts,
+    selectablePostIds,
     bulkDeleteFetcher,
     deleteFetcher,
     requestSort,
