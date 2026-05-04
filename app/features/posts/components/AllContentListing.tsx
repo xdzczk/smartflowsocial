@@ -377,8 +377,11 @@ export default function AllContentListing({
         });
 
   const filteredRows = displayRows.filter((row) =>
-    threadListRowMatchesSearch(row, type, (item, t) =>
-      combinedContentMatchesSearch(item, t, searchTerm)
+    threadListRowMatchesSearch(
+      row,
+      type,
+      (item, t) => combinedContentMatchesSearch(item, t, searchTerm),
+      attachedByParentId.get(row.root.id) ?? []
     )
   );
 

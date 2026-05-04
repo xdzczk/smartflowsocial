@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="3" failures="0" errors="0" time="0.012151459">
-    <testsuite name="tests/unit/posts/useBulkPostsPageState.test.ts" timestamp="2026-05-04T12:55:49.982Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.012151459">
-        <testcase classname="tests/unit/posts/useBulkPostsPageState.test.ts" name="useBulkPostsPageState &gt; returns state and handlers" time="0.008689583">
+<testsuites name="vitest tests" tests="5" failures="0" errors="0" time="0.003266167">
+    <testsuite name="tests/unit/posts/thread-list-grouping.test.ts" timestamp="2026-05-04T13:47:11.104Z" hostname="Ivans-MacBook-Pro.local" tests="5" failures="0" errors="0" skipped="0" time="0.003266167">
+        <testcase classname="tests/unit/posts/thread-list-grouping.test.ts" name="thread-list-grouping &gt; buildThreadListRows keeps earliest segment as root" time="0.001442875">
         </testcase>
-        <testcase classname="tests/unit/posts/useBulkPostsPageState.test.ts" name="useBulkPostsPageState &gt; state includes posts, toast, isProcessing, scheduleIntervals, bulkComposerStage" time="0.001783166">
+        <testcase classname="tests/unit/posts/thread-list-grouping.test.ts" name="thread-list-grouping &gt; filterPostsBySearchWithThreads includes full thread when any segment matches" time="0.000487083">
         </testcase>
-        <testcase classname="tests/unit/posts/useBulkPostsPageState.test.ts" name="useBulkPostsPageState &gt; handlers include handleCaptionChange, handleDateChange, handleBulkQueueUpdate" time="0.000930542">
+        <testcase classname="tests/unit/posts/thread-list-grouping.test.ts" name="thread-list-grouping &gt; buildThreadListRows omits attached follow-ups as their own row" time="0.000233">
+        </testcase>
+        <testcase classname="tests/unit/posts/thread-list-grouping.test.ts" name="thread-list-grouping &gt; filterPostsBySearchWithThreads keeps parent when only attached follow-up caption matches" time="0.000120083">
+        </testcase>
+        <testcase classname="tests/unit/posts/thread-list-grouping.test.ts" name="thread-list-grouping &gt; buildPostThreadRows matches combined grouping" time="0.000240542">
         </testcase>
     </testsuite>
 </testsuites>

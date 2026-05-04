@@ -69,6 +69,61 @@ describe("thread-list-grouping", () => {
     expect(out.map((p) => p.id).sort()).toEqual(["1", "2"]);
   });
 
+  it("buildThreadListRows omits attached follow-ups as their own row", () => {
+    const parent = {
+      id: "parent-1",
+      caption: "root",
+      scheduledAtUtc: new Date("2025-06-01T10:00:00Z"),
+      userId: "u",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      status: "SCHEDULED",
+      currentState: "SCHEDULED",
+      fileUrl: [],
+    };
+    const followUp = {
+      ...parent,
+      id: "child-1",
+      caption: "follow-up",
+      dependencyMode: "attached" as const,
+      parentScheduledActionId: "parent-1",
+      threadGroupId: null,
+    };
+    const combined = [parent, followUp].map((p) =>
+      postToCombinedContent(p as never)
+    );
+    const rows = buildThreadListRows(combined, "scheduled");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.root.id).toBe("parent-1");
+    expect(rows[0]?.threadSegments).toHaveLength(0);
+  });
+
+  it("filterPostsBySearchWithThreads keeps parent when only attached follow-up caption matches", () => {
+    const parent = {
+      id: "p1",
+      caption: "alpha",
+      scheduledAtUtc: new Date(),
+      userId: "u",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      status: "SCHEDULED",
+      currentState: "SCHEDULED",
+      fileUrl: [],
+    };
+    const attached = {
+      ...parent,
+      id: "c1",
+      caption: "beta unique",
+      dependencyMode: "attached" as const,
+      parentScheduledActionId: "p1",
+    };
+    const out = filterPostsBySearchWithThreads(
+      [parent, attached] as never,
+      "unique"
+    );
+    expect(out.map((p) => p.id).sort()).toEqual(["c1", "p1"]);
+  });
+
   it("buildPostThreadRows matches combined grouping", () => {
     const posts = [
       {

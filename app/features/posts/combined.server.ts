@@ -164,6 +164,9 @@ export function postToCombinedContent(post: PostData): CombinedContent {
   result.replyToEventId = post.replyToEventId ?? undefined;
   result.replyToPostId = post.replyToPostId ?? undefined;
   result.dependencyMode = post.dependencyMode;
+  if (post.parentScheduledActionId != null) {
+    result.parentScheduledActionId = post.parentScheduledActionId;
+  }
 
   return result;
 }
