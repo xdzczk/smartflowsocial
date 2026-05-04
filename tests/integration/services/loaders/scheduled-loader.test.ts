@@ -5,12 +5,17 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock dependencies (single mock so all exports are available)
-vi.mock("~/features/posts/server", () => ({
-  getScheduledLongFormPosts: vi.fn(),
-  getScheduledPosts: vi.fn(),
-  getScheduledRepostsCount: vi.fn(),
-}));
+// Stub fetch helpers; keep pure utilities the loader needs (see scheduled-loader.server imports)
+vi.mock("~/features/posts/server", async () => {
+  const { pickRescheduleSourceSignedEvents } =
+    await import("~/features/posts/data/reschedule-source-events.server");
+  return {
+    getScheduledLongFormPosts: vi.fn(),
+    getScheduledPosts: vi.fn(),
+    getScheduledRepostsCount: vi.fn(),
+    pickRescheduleSourceSignedEvents,
+  };
+});
 
 vi.mock("~/features/user", () => ({
   getUserById: vi.fn(),

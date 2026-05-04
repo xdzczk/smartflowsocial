@@ -376,8 +376,15 @@ describe("Post Model Functions", () => {
             queueType: true,
             hashTagPreset: true,
             template: true,
+            repostOf: {
+              select: { fileUrl: true, postType: true, signedEvent: true },
+            },
+            quoteOf: { select: { signedEvent: true } },
+            quoteOfLongForm: { select: { signedEvent: true } },
           }),
-          orderBy: { scheduledAtUtc: "asc" },
+          orderBy: [{ scheduledAtUtc: "asc" }, { id: "asc" }],
+          skip: 0,
+          take: 20,
         })
       );
       /* eslint-enable @typescript-eslint/no-unsafe-assignment */
@@ -418,8 +425,15 @@ describe("Post Model Functions", () => {
             queueType: true,
             hashTagPreset: true,
             template: true,
+            repostOf: {
+              select: { fileUrl: true, postType: true, signedEvent: true },
+            },
+            quoteOf: { select: { signedEvent: true } },
+            quoteOfLongForm: { select: { signedEvent: true } },
           }),
-          orderBy: { scheduledAtUtc: "asc" },
+          orderBy: [{ scheduledAtUtc: "asc" }, { id: "asc" }],
+          skip: 0,
+          take: 20,
         })
       );
       /* eslint-enable @typescript-eslint/no-unsafe-assignment */
