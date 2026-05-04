@@ -54,7 +54,9 @@ function checkVitestBudgets(config) {
     config.vitest?.resultsPath ?? path.resolve("test-results", "results.json");
   const results = readJsonIfExists(resultsPath);
   if (!results) {
-    ok(`No vitest JSON results found at ${resultsPath}; skipping budget checks.`);
+    ok(
+      `No vitest JSON results found at ${resultsPath}; skipping budget checks.`
+    );
     return;
   }
 
@@ -65,7 +67,9 @@ function checkVitestBudgets(config) {
 
 function checkK6Budgets(config, args) {
   const summariesDir =
-    args.dir ?? config.k6?.summariesDir ?? path.resolve("tests", "performance", "results");
+    args.dir ??
+    config.k6?.summariesDir ??
+    path.resolve("tests", "performance", "results");
   const summaryFiles = collectFiles(summariesDir, ".json").filter((file) =>
     file.includes("summary")
   );
@@ -99,12 +103,13 @@ function checkK6Budgets(config, args) {
     );
   }
 
-  ok(`k6 performance budget check passed for ${summaryFiles.length} summary files.`);
+  ok(
+    `k6 performance budget check passed for ${summaryFiles.length} summary files.`
+  );
 }
 
 function checkBundleBudgets(config) {
-  const buildDir =
-    config.bundle?.directory ?? path.resolve("public", "build");
+  const buildDir = config.bundle?.directory ?? path.resolve("public", "build");
   if (!fs.existsSync(buildDir)) {
     fail(`Build directory does not exist: ${buildDir}`);
   }
@@ -113,16 +118,18 @@ function checkBundleBudgets(config) {
   const jsFiles = files.filter((file) => file.endsWith(".js"));
   const cssFiles = files.filter((file) => file.endsWith(".css"));
 
-  const jsSizes = jsFiles.map((file) =>
-    fs.statSync(path.join(buildDir, file)).size
+  const jsSizes = jsFiles.map(
+    (file) => fs.statSync(path.join(buildDir, file)).size
   );
-  const cssSizes = cssFiles.map((file) =>
-    fs.statSync(path.join(buildDir, file)).size
+  const cssSizes = cssFiles.map(
+    (file) => fs.statSync(path.join(buildDir, file)).size
   );
 
   const totalJsMb = toMegabytes(jsSizes.reduce((acc, value) => acc + value, 0));
-  const totalCssMb = toMegabytes(cssSizes.reduce((acc, value) => acc + value, 0));
-  const largestJsKb = (Math.max(...jsSizes, 0) / 1024);
+  const totalCssMb = toMegabytes(
+    cssSizes.reduce((acc, value) => acc + value, 0)
+  );
+  const largestJsKb = Math.max(...jsSizes, 0) / 1024;
 
   const budgets = config.bundle ?? {};
   ensureWithinBudget(

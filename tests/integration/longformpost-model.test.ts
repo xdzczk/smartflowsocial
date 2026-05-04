@@ -493,9 +493,7 @@ describe("LongFormPost Model Functions", () => {
         include: {
           queueType: true,
         },
-        orderBy: {
-          scheduledAtUtc: "asc",
-        },
+        orderBy: [{ scheduledAtUtc: "asc" }, { id: "asc" }],
         skip: 0,
         take: 20,
       });

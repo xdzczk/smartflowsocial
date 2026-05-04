@@ -144,12 +144,9 @@ export function PollComposer({
   const [pollEndMode, setPollEndMode] = useState<PollEndMode>("relative");
   const [pollEndHoursAfterPublish, setPollEndHoursAfterPublish] = useState(24);
   const [selectedHashtags, setSelectedHashtags] = useState("");
-  const [includeHashtagsInNoteBody, setIncludeHashtagsInNoteBody] =
-    useState(true);
-  const [
-    hasManualIncludeHashtagsPreference,
-    setHasManualIncludeHashtagsPreference,
-  ] = useState(false);
+  const [includeHashtagsInNoteBody, setIncludeHashtagsInNoteBody] = useState(
+    () => defaultIncludeHashtagsForQueueSelection(initialQueue, queueTypes)
+  );
   const [hashTagPresetId, setHashTagPresetId] = useState<string | null>(null);
   const [isRecyclable, setIsRecyclable] = useState(false);
   const [scheduleRandomWindowMinutes, setScheduleRandomWindowMinutes] =
@@ -263,19 +260,11 @@ export function PollComposer({
     setScheduledFor,
   ]);
 
-  const pollQueueEffectFirstRef = useRef(true);
   useEffect(() => {
-    if (pollQueueEffectFirstRef.current) {
-      pollQueueEffectFirstRef.current = false;
-      return;
-    }
-    if (hasManualIncludeHashtagsPreference) {
-      return;
-    }
     setIncludeHashtagsInNoteBody(
       defaultIncludeHashtagsForQueueSelection(selectedQueue, queueTypes)
     );
-  }, [selectedQueue, queueTypes, hasManualIncludeHashtagsPreference]);
+  }, [selectedQueue, queueTypes]);
 
   const relayUrls =
     relayOverride && relayOverride.length > 0 ? relayOverride : defaultRelays;
@@ -389,7 +378,7 @@ export function PollComposer({
       return;
     }
     const tagLine = selectedHashtags.trim();
-    const appendTagsToQuestion = includeHashtagsInNoteBody;
+    const appendTagsToQuestion = includeHashtagsInNoteBody !== false;
     const questionForEvent = pollQuestionForSignedEvent(
       q,
       tagLine,
@@ -706,7 +695,6 @@ export function PollComposer({
         : 24
     );
     setSelectedHashtags(pollDraftRestored.selectedHashtags);
-    setHasManualIncludeHashtagsPreference(true);
     setIncludeHashtagsInNoteBody(
       pollDraftRestored.includeHashtagsInNoteBody !== false
     );
@@ -763,7 +751,6 @@ export function PollComposer({
       setEndsAtLocal("");
     }
     setSelectedHashtags(initialPollRestore.selectedHashtags);
-    setHasManualIncludeHashtagsPreference(true);
     setIncludeHashtagsInNoteBody(
       initialPollRestore.includeHashtagsInNoteBody !== false
     );
@@ -1211,7 +1198,6 @@ export function PollComposer({
                 disabled={disabled}
                 includeHashtagsInNoteBody={includeHashtagsInNoteBody}
                 onIncludeHashtagsInNoteBodyChange={(value) => {
-                  setHasManualIncludeHashtagsPreference(true);
                   setIncludeHashtagsInNoteBody(value);
                 }}
               />
