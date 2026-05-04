@@ -120,7 +120,7 @@ export function filterPostsBySearchWithThreads(
       groupsWithMatch.add(p.threadGroupId);
     }
     if (
-      p.dependencyMode === "attached" &&
+      p.dependencyMode !== "standalone" &&
       p.parentScheduledActionId &&
       p.caption?.toLowerCase().includes(term)
     ) {

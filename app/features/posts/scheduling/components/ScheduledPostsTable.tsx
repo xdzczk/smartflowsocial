@@ -57,6 +57,7 @@ import { invalidateDependentCaches } from "~/features/posts/hooks/useRefreshPost
 import type { CombinedContent, PostData } from "~/features/posts/types";
 import {
   attachedPostsByParentId,
+  attachedPostsForThreadRow,
   isAttachedFollowUpPost,
 } from "~/features/posts/utils/attached-follow-up-rows";
 import { getPostRowThumbnailBadge } from "~/features/posts/utils/content-helpers";
@@ -780,9 +781,10 @@ export function ScheduledPostsTable({
                           handleDeleteWithCascade={handleDeleteWithCascade}
                           queryClient={queryClient}
                           lastMoveSubmissionRef={lastMoveSubmissionRef}
-                          attachedFollowUps={
-                            attachedByParentId.get(post.id) ?? []
-                          }
+                          attachedFollowUps={attachedPostsForThreadRow(
+                            attachedByParentId,
+                            row
+                          )}
                         />
                       )}
                     </td>
@@ -908,11 +910,10 @@ export function ScheduledPostsTable({
                             onScheduleRepost={onScheduleRepost}
                             onScheduleQuote={onScheduleQuote}
                             onDelete={handleDeleteWithCascade}
-                            attachedFollowUpItems={
-                              attachedByParentId
-                                .get(item.id)
-                                ?.map((p) => postToCombinedContent(p)) ?? []
-                            }
+                            attachedFollowUpItems={attachedPostsForThreadRow(
+                              attachedByParentId,
+                              row
+                            ).map((p) => postToCombinedContent(p))}
                             onMenuOpenChange={(open) =>
                               setOpenMenuRowKey(open ? virtualRow.key : null)
                             }
@@ -988,11 +989,10 @@ export function ScheduledPostsTable({
                       onScheduleRepost={onScheduleRepost}
                       onScheduleQuote={onScheduleQuote}
                       onDelete={handleDeleteWithCascade}
-                      attachedFollowUpItems={
-                        attachedByParentId
-                          .get(item.id)
-                          ?.map((p) => postToCombinedContent(p)) ?? []
-                      }
+                      attachedFollowUpItems={attachedPostsForThreadRow(
+                        attachedByParentId,
+                        row
+                      ).map((p) => postToCombinedContent(p))}
                       onMenuOpenChange={(open) =>
                         setOpenMenuRowKey(open ? virtualRow.key : null)
                       }

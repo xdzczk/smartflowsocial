@@ -29,7 +29,10 @@ import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
 import { invalidateDependentCaches } from "~/features/posts/hooks/useRefreshPostViews";
 import { pruneScheduledQueryData } from "~/features/posts/scheduling/hooks/useScheduledPostsCache";
 import { scheduledPostsKeys } from "~/features/posts/scheduling/hooks/useScheduledPostsQuery";
-import { attachedCombinedByParentId } from "~/features/posts/utils/attached-follow-up-rows";
+import {
+  attachedCombinedByParentId,
+  attachedCombinedForThreadRow,
+} from "~/features/posts/utils/attached-follow-up-rows";
 import { buildActionUrl } from "~/features/posts/utils/remix-action-url";
 import {
   buildThreadListRows,
@@ -388,7 +391,7 @@ export default function AllContentListing({
       row,
       type,
       (item, t) => combinedContentMatchesSearch(item, t, searchTerm),
-      attachedByParentId.get(row.root.id) ?? []
+      attachedCombinedForThreadRow(attachedByParentId, row)
     )
   );
 
@@ -530,9 +533,10 @@ export default function AllContentListing({
                         onScheduleQuote={onScheduleQuote}
                         onBeforeDelete={onBeforeDelete}
                         onDelete={scheduledDeleteHandler}
-                        attachedFollowUpItems={
-                          attachedByParentId.get(row.root.id) ?? []
-                        }
+                        attachedFollowUpItems={attachedCombinedForThreadRow(
+                          attachedByParentId,
+                          row
+                        )}
                       />
                     ))}
               </tbody>
@@ -643,9 +647,10 @@ export default function AllContentListing({
                             onScheduleQuote={onScheduleQuote}
                             onBeforeDelete={onBeforeDelete}
                             onDelete={scheduledDeleteHandler}
-                            attachedFollowUpItems={
-                              attachedByParentId.get(item.id) ?? []
-                            }
+                            attachedFollowUpItems={attachedCombinedForThreadRow(
+                              attachedByParentId,
+                              row
+                            )}
                             onMenuOpenChange={(open) =>
                               setOpenMenuRowKey(open ? virtualRow.key : null)
                             }
@@ -726,9 +731,10 @@ export default function AllContentListing({
                       onScheduleQuote={onScheduleQuote}
                       onBeforeDelete={onBeforeDelete}
                       onDelete={scheduledDeleteHandler}
-                      attachedFollowUpItems={
-                        attachedByParentId.get(item.id) ?? []
-                      }
+                      attachedFollowUpItems={attachedCombinedForThreadRow(
+                        attachedByParentId,
+                        row
+                      )}
                       onMenuOpenChange={(open) =>
                         setOpenMenuRowKey(open ? virtualRow.key : null)
                       }

@@ -1,15 +1,19 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="5" failures="0" errors="0" time="0.003266167">
-    <testsuite name="tests/unit/posts/thread-list-grouping.test.ts" timestamp="2026-05-04T13:47:11.104Z" hostname="Ivans-MacBook-Pro.local" tests="5" failures="0" errors="0" skipped="0" time="0.003266167">
-        <testcase classname="tests/unit/posts/thread-list-grouping.test.ts" name="thread-list-grouping &gt; buildThreadListRows keeps earliest segment as root" time="0.001442875">
+<testsuites name="vitest tests" tests="6" failures="0" errors="0" time="0.00531375">
+    <testsuite name="tests/unit/posts/attached-follow-up-rows.test.ts" timestamp="2026-05-04T14:19:02.057Z" hostname="Ivans-MacBook-Pro.local" tests="1" failures="0" errors="0" skipped="0" time="0.001935291">
+        <testcase classname="tests/unit/posts/attached-follow-up-rows.test.ts" name="attached-follow-up-rows &gt; attachedCombinedForThreadRow collects follow-ups keyed to root or any thread segment" time="0.00123475">
         </testcase>
-        <testcase classname="tests/unit/posts/thread-list-grouping.test.ts" name="thread-list-grouping &gt; filterPostsBySearchWithThreads includes full thread when any segment matches" time="0.000487083">
+    </testsuite>
+    <testsuite name="tests/unit/posts/thread-list-grouping.test.ts" timestamp="2026-05-04T14:19:02.058Z" hostname="Ivans-MacBook-Pro.local" tests="5" failures="0" errors="0" skipped="0" time="0.003378459">
+        <testcase classname="tests/unit/posts/thread-list-grouping.test.ts" name="thread-list-grouping &gt; buildThreadListRows keeps earliest segment as root" time="0.001568291">
         </testcase>
-        <testcase classname="tests/unit/posts/thread-list-grouping.test.ts" name="thread-list-grouping &gt; buildThreadListRows omits attached follow-ups as their own row" time="0.000233">
+        <testcase classname="tests/unit/posts/thread-list-grouping.test.ts" name="thread-list-grouping &gt; filterPostsBySearchWithThreads includes full thread when any segment matches" time="0.000462417">
         </testcase>
-        <testcase classname="tests/unit/posts/thread-list-grouping.test.ts" name="thread-list-grouping &gt; filterPostsBySearchWithThreads keeps parent when only attached follow-up caption matches" time="0.000120083">
+        <testcase classname="tests/unit/posts/thread-list-grouping.test.ts" name="thread-list-grouping &gt; buildThreadListRows omits attached follow-ups as their own row" time="0.000230458">
         </testcase>
-        <testcase classname="tests/unit/posts/thread-list-grouping.test.ts" name="thread-list-grouping &gt; buildPostThreadRows matches combined grouping" time="0.000240542">
+        <testcase classname="tests/unit/posts/thread-list-grouping.test.ts" name="thread-list-grouping &gt; filterPostsBySearchWithThreads keeps parent when only attached follow-up caption matches" time="0.000127333">
+        </testcase>
+        <testcase classname="tests/unit/posts/thread-list-grouping.test.ts" name="thread-list-grouping &gt; buildPostThreadRows matches combined grouping" time="0.000233542">
         </testcase>
     </testsuite>
 </testsuites>

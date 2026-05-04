@@ -4,7 +4,10 @@
  */
 
 import type { CombinedContent } from "~/features/posts/types";
-import { attachedCombinedByParentId } from "~/features/posts/utils/attached-follow-up-rows";
+import {
+  attachedCombinedByParentId,
+  attachedCombinedForThreadRow,
+} from "~/features/posts/utils/attached-follow-up-rows";
 import {
   buildThreadListRows,
   threadListRowMatchesSearch,
@@ -28,7 +31,7 @@ export function getSelectableRootIdsForMixedListing(
       row,
       listType,
       (item, t) => combinedContentMatchesSearch(item, t, searchTerm),
-      attachedByParentId.get(row.root.id) ?? []
+      attachedCombinedForThreadRow(attachedByParentId, row)
     )
   );
   return filteredRows.map((row) => row.root.id);
