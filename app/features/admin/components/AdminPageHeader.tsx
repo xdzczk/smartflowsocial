@@ -5,7 +5,7 @@ import { Button } from "~/components/ui/button";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 
 /**
- * Admin sub-page title row — `PageHeader` `admin` variant + refresh.
+ * Admin sub-page title row  -  `PageHeader` `admin` variant + refresh.
  * Horizontal padding comes from `DashboardLayoutPage`’s main band; border spans
  * the band width.
  */

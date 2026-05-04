@@ -73,7 +73,7 @@ export interface FlowViewProps {
   onHasLiveEdgeChange?: (hasLiveEdge: boolean) => void;
   /** True when first-run is done but no scheduled/published items exist yet. */
   isPostActivationEmpty?: boolean;
-  /** Server time at document render — aligns relative labels with SSR for hydration. */
+  /** Server time at document render  -  aligns relative labels with SSR for hydration. */
   serverNowMs?: number;
   /**
    * Optional desktop (non-mobile) Flow card content height in px; clamped by the

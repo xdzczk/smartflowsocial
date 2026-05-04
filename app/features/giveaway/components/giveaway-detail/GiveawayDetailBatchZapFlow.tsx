@@ -369,7 +369,7 @@ export function GiveawayDetailBatchZapFlow({
             <AlertDialogTitle>Complete with pending payouts?</AlertDialogTitle>
             <AlertDialogDescription>
               Not all winners are marked paid or sent. {BRAND_NAME} does not
-              custody prizes — you are responsible for actual payouts. Complete
+              custody prizes - you are responsible for actual payouts. Complete
               anyway only if you accept leaving some payouts untracked here.
               Enter a short reason (at least 10 characters); it is stored in
               your audit log.

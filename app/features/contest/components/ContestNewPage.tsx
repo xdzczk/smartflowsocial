@@ -1133,7 +1133,7 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
 
           {presetDefaults?.id ? (
             <CompactStatusMessage variant="info">
-              Preset loaded — set source post and end time, then save or launch.
+              Preset loaded - set source post and end time, then save or launch.
             </CompactStatusMessage>
           ) : null}
 

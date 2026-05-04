@@ -60,7 +60,7 @@ export function useLongFormEditor({
         },
       }),
       Placeholder.configure({
-        // Only when the whole doc is empty — not on every new paragraph after Enter
+        // Only when the whole doc is empty  -  not on every new paragraph after Enter
         // (showOnlyCurrent + empty new block would repeat the full hint otherwise).
         placeholder: ({ editor }) =>
           editor.isEmpty ? "Start writing your article…" : "",

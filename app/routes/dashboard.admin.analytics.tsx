@@ -144,7 +144,7 @@ function AdminAnalyticsPageLoaded({
           id="narrative"
           eyebrow="Narrative"
           title="Insight summary"
-          description="Rule-based read on this range — low volume stays intentionally cautious."
+          description="Rule-based read on this range  -  low volume stays intentionally cautious."
         >
           <ul className="border-border bg-surface space-y-2 rounded-xl border p-4 text-sm">
             {d.takeaways.map((t) => (
@@ -230,7 +230,7 @@ function AdminAnalyticsPageLoaded({
                   : `ARR run-rate (${unit})`
               }
               value={formatSats(d.monetization.arrRunRateSats, dateLocale)}
-              definition="MRR × 12 — run-rate, not recognized revenue."
+              definition="MRR × 12  -  run-rate, not recognized revenue."
             />
             <MetricCard
               title="Active paid subscribers"
@@ -317,7 +317,7 @@ function AdminAnalyticsPageLoaded({
           id="product-usage"
           eyebrow="Product usage"
           title="Sessions"
-          description="Distinct users with dashboard session beacons — not auth sessions."
+          description="Distinct users with dashboard session beacons  -  not auth sessions."
         >
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <MetricCard

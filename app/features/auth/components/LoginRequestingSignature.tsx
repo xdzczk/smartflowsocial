@@ -46,7 +46,8 @@ export function LoginRequestingSignature({
     if (isVerifying) {
       return {
         headline: "Verifying your sign-in",
-        subcopy: "Hang tight — we're confirming your signature on our servers.",
+        subcopy:
+          "Hang tight  -  we're confirming your signature on our servers.",
       };
     }
     if (signerFlow === "nip46") {

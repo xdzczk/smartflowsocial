@@ -31,7 +31,7 @@ function stripInvisible(value: string): string {
 
 /**
  * Session `user.npub` is stored as 64-char hex (Nostr auth v2). Operators often paste `npub1…`
- * from wallets into ADMIN_NPUBS — normalize both to lowercase hex for comparison.
+ * from wallets into ADMIN_NPUBS  -  normalize both to lowercase hex for comparison.
  */
 function tryPubkeyLowerHex(value: string): string | null {
   const t = stripInvisible(value);

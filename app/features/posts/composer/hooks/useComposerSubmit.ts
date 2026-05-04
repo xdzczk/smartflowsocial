@@ -453,7 +453,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
             setIsSigning(false);
           } else {
             // Stale attempts must not surface their late errors as a UI
-            // banner — the user already moved on.
+            // banner  -  the user already moved on.
             return;
           }
           const { handleAsyncError } =
@@ -662,7 +662,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
         } catch (error) {
           if (isAttemptStale(submissionId)) {
             // Stale attempts must not surface their late errors as a UI
-            // banner — the user already moved on.
+            // banner  -  the user already moved on.
             return;
           }
           const { handleAsyncError } =
@@ -711,8 +711,8 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
         onPublishIntent?.();
       }
 
-      // Single entry point: every publish click — fresh or partial-thread
-      // retry — hands off to the signing-attempts state machine. The store
+      // Single entry point: every publish click  -  fresh or partial-thread
+      // retry  -  hands off to the signing-attempts state machine. The store
       // owns the resumable-attempt lifecycle (awaiting_signer / resuming /
       // expired) and re-invokes `dispatch` on `nostr-connection-healthy`
       // with the same submissionId so the server-side
@@ -720,7 +720,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
       //
       // intent.idempotencyKey reuses `submissionId` so the server-side
       // `/api/publish` once-only guard collapses every resume of this
-      // attempt onto a single side-effect run — same key the route
+      // attempt onto a single side-effect run  -  same key the route
       // already feeds into the publish-attempt-dedupe utility.
       pendingPublish.start({
         performSignAndSubmit: dispatch,
@@ -792,7 +792,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
 
   /**
    * Adapter for `useComposerSignerReconnect.onHealthyWhileSigning`. Returns
-   * true iff the pending-publish store actually started a resume — in
+   * true iff the pending-publish store actually started a resume  -  in
    * which case the reconnect hook skips its `clearSigningState` fallback.
    * No legacy ref-based retry remains; the state machine is now the
    * single source of truth for "is there a publish click to autocomplete?"

@@ -121,7 +121,7 @@ export function resolveDashboardPageLabel(args: {
     const name = (
       leafData as BroadcastCampaignData | null
     )?.campaign?.name?.trim();
-    /* Empty trimmed title should fall back like missing — `??` only covers nullish */
+    /* Empty trimmed title should fall back like missing  -  `??` only covers nullish */
     return (name && name.length > 0 ? name : undefined) ?? "Broadcast";
   }
 

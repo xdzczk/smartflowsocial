@@ -67,7 +67,7 @@ export interface PostBlockProps {
   slotExpandRows?: number;
   /** When true (Day/Week view), compact block does not show thumbnail/icon next to time. */
   hideTimeRowPreview?: boolean;
-  /** Day/week: post is the one open in the sidebar — show brand-strong selection ring only then. */
+  /** Day/week: post is the one open in the sidebar  -  show brand-strong selection ring only then. */
   isCalendarSelected?: boolean;
 }
 

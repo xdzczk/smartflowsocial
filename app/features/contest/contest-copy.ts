@@ -10,18 +10,18 @@ export const contestCopy = {
   backToContests: "Back to contests",
   cancelContest: "Cancel contest",
   markContestComplete: "Mark contest complete",
-  bannerDraft: "Draft — configure rules and launch when you're ready.",
+  bannerDraft: "Draft  -  configure rules and launch when you're ready.",
   bannerScheduledLaunch:
-    "Scheduled — contest will activate at the chosen time (source post will publish first if new).",
-  bannerLive: "Live — entries are being ranked in real time.",
+    "Scheduled  -  contest will activate at the chosen time (source post will publish first if new).",
+  bannerLive: "Live  -  entries are being ranked in real time.",
   bannerEndedReview:
-    "Ended — leaderboard frozen. Review before locking winners.",
+    "Ended  -  leaderboard frozen. Review before locking winners.",
   bannerLocked:
-    "Winners locked — placements are fixed. Prize funds stay in your wallet until payout.",
-  bannerCompleted: "Completed — receipt and proof available below.",
-  bannerCancelled: "Cancelled — this contest is no longer active.",
+    "Winners locked  -  placements are fixed. Prize funds stay in your wallet until payout.",
+  bannerCompleted: "Completed  -  receipt and proof available below.",
+  bannerCancelled: "Cancelled  -  this contest is no longer active.",
   bannerPayout:
-    "Payouts in progress — sending from your connected wallet or manual fallback.",
+    "Payouts in progress  -  sending from your connected wallet or manual fallback.",
   railSourceOk: "Selected",
   railSourceMissing: "Not selected",
   railSourceModeExisting: "Published post",
@@ -47,11 +47,11 @@ export const contestCopy = {
   railWarnNoSourceExisting: "Choose a published post as the source.",
   railWarnEndInvalid: "Set a valid end time.",
   railWarnEndPast: "End time is in the past.",
-  railWarnEndSoon: "Ends within 1 hour — confirm that is intended.",
+  railWarnEndSoon: "Ends within 1 hour  -  confirm that is intended.",
   railWarnZeroPayout: "Prize pool is 0 sats.",
   railWarnRankedIncomplete: "Add at least one rank prize above 0.",
   railWarnNoFairness:
-    "No eligibility filters — consider muted / blocked / low-trust exclusions.",
+    "No eligibility filters  -  consider muted / blocked / low-trust exclusions.",
   completeWithPendingConfirm:
     "Some payouts are still pending. Mark the contest complete anyway?",
   leaderboard: "Leaderboard",
@@ -82,7 +82,7 @@ export const contestCopy = {
     "Save ranking metric, prize structure, and eligibility filters. Start a new contest from this preset and choose the source post there.",
   presetNamePlaceholder: "Preset name",
   sourceModuleCreate:
-    "Anchor note for entries — publish or schedule from the contest rail.",
+    "Anchor note for entries  -  publish or schedule from the contest rail.",
   sourceModuleExisting: "Pick a published note as the contest anchor.",
   entryRuleShort: "Direct replies to the source post count as entries.",
   tieBreakShort: "Ties break by score, then reply time.",
@@ -94,5 +94,5 @@ export const contestCopy = {
   prizeRankedTileDesc: "Different sats for 1st, 2nd, 3rd…",
   rankingSectionLead: "Entries are ranked by the metric until the end time.",
   eligibilitySectionTitle: "4. Eligibility filters",
-  eligibilitySectionLead: "Optional — applied when results freeze.",
+  eligibilitySectionLead: "Optional  -  applied when results freeze.",
 } as const;

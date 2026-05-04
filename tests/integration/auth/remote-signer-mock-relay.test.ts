@@ -213,7 +213,7 @@ describe("remote-signer-mock-relay integration", () => {
   it("(6) lazy cold rebuild defers transport errors until the first RPC", async () => {
     // Cold rebuild now mirrors `@nostrify`'s `NConnectSigner` and skips the
     // probe `getPublicKey()` round-trip on construction. So an unreachable
-    // relay no longer throws here — the failure surfaces on the first real
+    // relay no longer throws here  -  the failure surfaces on the first real
     // RPC the user makes (which times out via the per-RPC timeout in
     // `Nip46Signer.rpc`). This keeps boot/cold-reopen cheap and prevents the
     // bootstrap call from racing the user's first sign for the bunker reply.

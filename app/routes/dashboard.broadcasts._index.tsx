@@ -427,7 +427,7 @@ function BroadcastsIndexPage() {
           className="border-border bg-surface shadow-1 rounded-xl border"
           icon={<Megaphone />}
           title="No broadcasts match these filters"
-          description="Create a campaign to reach your audience with signed direct messages—use meaningful updates, not noise."
+          description="Create a campaign to reach your audience with signed direct messages - use meaningful updates, not noise."
           action={
             <Button asChild>
               <Link to="/dashboard/broadcasts/new">New broadcast</Link>

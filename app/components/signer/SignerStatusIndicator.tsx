@@ -47,7 +47,7 @@ function Nip46Status({ status }: { status: ConnectionStatus }) {
       </div>
     );
   }
-  // status is "disconnected" or "inactive" — visually neutral, both rendered the
+  // status is "disconnected" or "inactive"  -  visually neutral, both rendered the
   // same way; the label distinguishes them.
   return (
     <div className="text-text-secondary cluster-tight text-xs">

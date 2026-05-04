@@ -65,7 +65,7 @@ export function useNotificationActions({
   const [isQuoting, setIsQuoting] = useState(false);
   const [isLoadingReplies, setIsLoadingReplies] = useState(false);
 
-  // PR 4 — ephemeral intents expose their attemptId so callers can render
+  // PR 4  -  ephemeral intents expose their attemptId so callers can render
   // the SubtleSignPending / CompactSignStatus tier in-row. `null` when no
   // attempt is in flight or the most recent attempt has been cancelled
   // out of the store.
@@ -173,7 +173,7 @@ export function useNotificationActions({
       }
 
       // Recoverable failure (fatal / expired / cancelled). Surface a
-      // toast so the user knows to try again — the recovery banner is
+      // toast so the user knows to try again  -  the recovery banner is
       // already showing for `awaiting_signer`/`expired`, so the toast
       // here is the secondary signal for the non-banner branches.
       const { handleAsyncError } = await import("~/lib/error-handler.client");
@@ -248,7 +248,7 @@ export function useNotificationActions({
       }
 
       // For ephemeral intents, the per-row CompactSignStatus owns the
-      // recovery affordance — only surface a toast for fatal/expired so
+      // recovery affordance  -  only surface a toast for fatal/expired so
       // we don't double up while the in-row pill is still visible.
       if (result.reason === "fatal" || result.reason === "expired") {
         const { handleAsyncError } = await import("~/lib/error-handler.client");
@@ -590,7 +590,7 @@ export function useNotificationActions({
     isQuoting,
     isLoadingReplies,
 
-    // Ephemeral attempt ids (PR 4) — feed into useSigningAttemptById
+    // Ephemeral attempt ids (PR 4)  -  feed into useSigningAttemptById
     // + SubtleSignPending / CompactSignStatus to render in-row recovery.
     likeAttemptId,
     repostAttemptId,

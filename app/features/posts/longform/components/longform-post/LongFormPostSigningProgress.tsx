@@ -34,7 +34,7 @@ export function LongFormPostSigningProgress({
             Waiting for signer approval…
             {phaseStatus ? <> {phaseStatus}</> : null}
             {showRecovery
-              ? " — Open your remote signer to approve. If your session expired, reconnect from Settings."
+              ? " - Open your remote signer to approve. If your session expired, reconnect from Settings."
               : null}
           </span>
           <Button

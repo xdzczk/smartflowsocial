@@ -23,7 +23,7 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 }
 
 /**
- * POST /api/product-session — start | heartbeat | end for dashboard product usage.
+ * POST /api/product-session  -  start | heartbeat | end for dashboard product usage.
  */
 export const action = withCSRFProtection(
   async ({ request }: ActionFunctionArgs) => {

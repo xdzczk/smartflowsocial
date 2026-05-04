@@ -55,7 +55,7 @@ sidebar, dashboard, and future features stay consistent.
 ## Styling
 
 - **Nav**: 18px, stroke 2.25. Implemented in `DashboardHeader` and `ExpandableNavigationSection`; do
-  not change here — keep nav constants in those components.
+  not change here - keep nav constants in those components.
 - **Inline/button/table icons**: Default `h-4 w-4` (16px), `strokeWidth={2}` for Lucide. Use
   `h-3 w-3` only for small badges (e.g. table cell badges). Do not use stroke 1.5; use 2 for
   consistency.

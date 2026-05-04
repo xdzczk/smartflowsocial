@@ -337,7 +337,7 @@ export function RelayListSection({
             </p>
             {profileDirty ? (
               <p className="text-warning dark:text-warning text-xs">
-                Unpublished changes — sign and publish to update your profile
+                Unpublished changes - sign and publish to update your profile
                 relay list on Nostr.
               </p>
             ) : null}

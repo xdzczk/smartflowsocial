@@ -328,8 +328,8 @@ export async function buildAndSignQuoteSchedules(
 
 /**
  * Settle the foreground attempt left in `submitting` by the batch
- * helper. These inner-bulk loops have no separate submit phase — the
- * caller embeds the signed entries in the outer bulk fetcher submit —
+ * helper. These inner-bulk loops have no separate submit phase  -  the
+ * caller embeds the signed entries in the outer bulk fetcher submit  -
  * so we mark the attempt completed (or failed for partial outcomes) so
  * the recovery banner clears once all signatures are in hand.
  */

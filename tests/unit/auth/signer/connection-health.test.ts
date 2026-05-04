@@ -6,7 +6,7 @@
  * `syncRelaysWithRemoteSigner` used to live alongside these helpers and had a
  * matching describe block here; both were removed when we deleted the
  * `switch_relays` path entirely (Primal Signer never replied to it and it
- * broke the next NIP-46 RPC — see the file-level comment in
+ * broke the next NIP-46 RPC  -  see the file-level comment in
  * `connection-health.client.ts` for the full rationale).
  */
 

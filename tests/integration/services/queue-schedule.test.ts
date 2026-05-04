@@ -10,6 +10,7 @@ vi.mock("~/features/user", () => ({
   getQueueTypes: vi.fn(),
   getUserTimezone: vi.fn(),
   getQueueTypeByIdForUser: vi.fn(),
+  getQueueTypeByNameForUser: vi.fn(),
 }));
 
 vi.mock("~/features/posts/scheduling/services/schedulers", () => ({
@@ -25,7 +26,11 @@ import {
   calculateQueueScheduleTime,
   parseQueueScheduleRequest,
 } from "~/features/posts/server/scheduling";
-import { getUserTimezone, getQueueTypeByIdForUser } from "~/features/user";
+import {
+  getUserTimezone,
+  getQueueTypeByIdForUser,
+  getQueueTypeByNameForUser,
+} from "~/features/user";
 import { NotFoundError, ValidationError } from "~/lib/errors";
 
 describe("Queue Schedule Service", () => {
@@ -35,10 +40,9 @@ describe("Queue Schedule Service", () => {
 
   describe("calculateQueueScheduleTime", () => {
     it("should return empty scheduledTime for 'unassigned' queue type", async () => {
-      const result = await calculateQueueScheduleTime(
-        TEST_USER_ID,
-        "unassigned"
-      );
+      const result = await calculateQueueScheduleTime(TEST_USER_ID, {
+        queueTypeId: "unassigned",
+      });
 
       expect(getUserTimezone).not.toHaveBeenCalled();
       const response =
@@ -79,7 +83,9 @@ describe("Queue Schedule Service", () => {
         formattedTime
       );
 
-      const result = await calculateQueueScheduleTime(TEST_USER_ID, "queue-1");
+      const result = await calculateQueueScheduleTime(TEST_USER_ID, {
+        queueTypeId: "queue-1",
+      });
 
       expect(getUserTimezone).toHaveBeenCalledWith(TEST_USER_ID);
       expect(getQueueTypeByIdForUser).toHaveBeenCalledWith(
@@ -117,7 +123,9 @@ describe("Queue Schedule Service", () => {
       );
 
       await expect(
-        calculateQueueScheduleTime(TEST_USER_ID, "non-existent")
+        calculateQueueScheduleTime(TEST_USER_ID, {
+          queueTypeId: "non-existent",
+        })
       ).rejects.toThrow(NotFoundError);
     });
 
@@ -143,7 +151,9 @@ describe("Queue Schedule Service", () => {
         formattedTime
       );
 
-      await calculateQueueScheduleTime(TEST_USER_ID, "queue-1");
+      await calculateQueueScheduleTime(TEST_USER_ID, {
+        queueTypeId: "queue-1",
+      });
 
       expect(calculateNextScheduleTime).toHaveBeenCalledWith({
         queueType: mockQueueType,
@@ -183,11 +193,73 @@ describe("Queue Schedule Service", () => {
       expect(() => parseQueueScheduleRequest(123)).toThrow(ValidationError);
     });
 
-    it("should throw ValidationError when queueTypeId is missing", () => {
+    it("should throw ValidationError when queueTypeId and queueTypeName are missing", () => {
       expect(() => parseQueueScheduleRequest({})).toThrow(ValidationError);
-      expect(() => parseQueueScheduleRequest({ queueTypeId: "" })).toThrow(
-        ValidationError
+      expect(() =>
+        parseQueueScheduleRequest({ queueTypeId: "", queueTypeName: "" })
+      ).toThrow(ValidationError);
+    });
+
+    it("should parse body with queueTypeName only", () => {
+      expect(parseQueueScheduleRequest({ queueTypeName: "Morning" })).toEqual({
+        queueTypeName: "Morning",
+      });
+    });
+  });
+
+  describe("calculateQueueScheduleTime by name", () => {
+    it("should resolve queueTypeId from queueTypeName", async () => {
+      const mockQueueType = {
+        id: "queue-1",
+        name: "Morning",
+        scheduleType: "INTERVAL",
+        scheduleConfig: { intervalHours: 4 },
+      };
+
+      const mockNextTime = new Date("2024-01-15T14:00:00Z");
+      const formattedTime = "2024-01-15T10:00";
+
+      (getUserTimezone as ReturnType<typeof vi.fn>).mockResolvedValue(
+        "America/New_York"
       );
+      (getQueueTypeByNameForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
+        { id: "queue-1" }
+      );
+      (getQueueTypeByIdForUser as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockQueueType
+      );
+      (calculateNextScheduleTime as ReturnType<typeof vi.fn>).mockResolvedValue(
+        mockNextTime
+      );
+      (formatScheduleTimeForInput as ReturnType<typeof vi.fn>).mockReturnValue(
+        formattedTime
+      );
+
+      const result = await calculateQueueScheduleTime(TEST_USER_ID, {
+        queueTypeName: "Morning",
+      });
+
+      expect(getQueueTypeByNameForUser).toHaveBeenCalledWith(
+        TEST_USER_ID,
+        "Morning"
+      );
+      expect(getQueueTypeByIdForUser).toHaveBeenCalledWith(
+        TEST_USER_ID,
+        "queue-1"
+      );
+
+      const response =
+        result instanceof Response
+          ? result
+          : new Response(JSON.stringify(result));
+      const jsonResultRaw: unknown = await response.json();
+      const jsonResult =
+        jsonResultRaw &&
+        typeof jsonResultRaw === "object" &&
+        !Array.isArray(jsonResultRaw)
+          ? (jsonResultRaw as { scheduledTime?: string; error?: string })
+          : {};
+      expect(jsonResult).toEqual({ scheduledTime: formattedTime });
     });
   });
 });

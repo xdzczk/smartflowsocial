@@ -58,7 +58,7 @@ export function LoginNip07ExtensionProgress({
           </p>
           <ul className="text-text-secondary list-disc space-y-1.5 pl-4 text-left text-xs leading-relaxed">
             <li>Unlock your extension and check the toolbar icon.</li>
-            <li>Pop-ups may be blocked — allow them for this site.</li>
+            <li>Pop-ups may be blocked - allow them for this site.</li>
             <li>Try another browser profile if you use multiple.</li>
           </ul>
         </div>

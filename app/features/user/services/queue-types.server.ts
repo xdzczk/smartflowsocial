@@ -19,7 +19,7 @@ export type QueueTypeWithPresetRelation = Awaited<
 
 /**
  * Creates default queue types for a new user.
- * We no longer create an "Unassigned" queue—unassigned is represented by null queueTypeId.
+ * We no longer create an "Unassigned" queue - unassigned is represented by null queueTypeId.
  */
 export async function createDefaultQueueTypes(_userId: string): Promise<void> {
   // No default queue types. Users create their own queues.

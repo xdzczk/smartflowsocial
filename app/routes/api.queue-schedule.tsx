@@ -36,9 +36,9 @@ export const action = withCSRFProtection(
         });
       }
 
-      const { queueTypeId } = parseQueueScheduleRequest(requestBody);
+      const parsed = parseQueueScheduleRequest(requestBody);
 
-      return await calculateQueueScheduleTime(userId, queueTypeId);
+      return await calculateQueueScheduleTime(userId, parsed);
     } catch (error) {
       // If error is a Response (e.g., redirect from requireUserId), return it
       if (error instanceof Response) {

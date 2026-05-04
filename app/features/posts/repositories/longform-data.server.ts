@@ -180,6 +180,10 @@ export async function runScheduleLongFormPostInTransaction(
         enqueueIdempotencyKey: data.enqueueIdempotencyKey,
         currentState: "SCHEDULED",
         signedEvent: data.signedEvent as Prisma.InputJsonValue,
+        queueHoldStatus: "NONE",
+        queueHeldAtUtc: null,
+        queueHeldOriginalScheduledAtUtc: null,
+        queueHeldByQueueTypeId: null,
       },
     });
     await tx.longFormPostStateTransition.create({

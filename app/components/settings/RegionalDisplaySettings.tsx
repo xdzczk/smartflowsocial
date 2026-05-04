@@ -1,5 +1,5 @@
 /**
- * Regional & display — timezone, 12/24h time, and date ordering in one section.
+ * Regional & display  -  timezone, 12/24h time, and date ordering in one section.
  */
 
 import { useFetcher, useRevalidator } from "@remix-run/react";

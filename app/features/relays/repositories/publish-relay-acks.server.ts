@@ -13,7 +13,7 @@ import { mapPublisherOkToAckStatus } from "../relay-resolution.server";
  *   The original ACK persistence path only wrote rows for relays that the
  *   publisher actually returned a result for, which made it impossible to
  *   tell a "publisher silently skipped this relay" failure from a "this
- *   relay was never in the intended set" success — the user-visible bug
+ *   relay was never in the intended set" success  -  the user-visible bug
  *   manifested as `PublishResultModal` showing a 3-relay subset even when
  *   the user had configured 8+ relays. By inserting one PENDING row per
  *   intended relay before fanout, the modal can always render the full

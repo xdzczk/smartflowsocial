@@ -6,7 +6,7 @@ import { getUserById } from "~/features/user";
 import { nostrAdapter } from "~/lib/nostr-adapter.server";
 
 /**
- * GET ?type=MUTUALS — estimated graph audience size (cache-based).
+ * GET ?type=MUTUALS  -  estimated graph audience size (cache-based).
  */
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);

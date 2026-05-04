@@ -33,7 +33,7 @@ export type LoginError =
   | "UNKNOWN";
 
 export const PROFILE_MISMATCH_MESSAGE =
-  "Different signer profile detected — re-authentication required";
+  "Different signer profile detected  -  re-authentication required";
 
 /** Delay before resuming NIP-46 after visibility return; longer on mobile to let WebSockets stabilize. */
 export function getResumeDelayMs(): number {
@@ -87,7 +87,7 @@ export function getErrorSuggestions(
           "Install or enable a NIP-07 browser extension (e.g. Alby or nos2x)."
         );
         suggestions.push(
-          "Or use Remote signer — your keys stay in Amber, nsecBunker, etc."
+          "Or use Remote signer  -  your keys stay in Amber, nsecBunker, etc."
         );
       } else {
         suggestions.push(
@@ -104,7 +104,7 @@ export function getErrorSuggestions(
         )
       ) {
         suggestions.push(
-          "On mobile, after approving in the signer app, return here and tap Try again — the same connection string is reused."
+          "On mobile, after approving in the signer app, return here and tap Try again  -  the same connection string is reused."
         );
       }
 
@@ -135,7 +135,7 @@ export function getErrorSuggestions(
     case "SIGNER_TIMEOUT":
       if (context?.lastFailureOrigin === "nip07_init") {
         suggestions.push(
-          "Your extension didn’t respond in time — unlock it and try again."
+          "Your extension didn’t respond in time  -  unlock it and try again."
         );
       } else {
         suggestions.push(
@@ -163,7 +163,7 @@ export function getErrorSuggestions(
       break;
     case "PERMISSION_DENIED":
       suggestions.push(
-        "You declined the request — approve it in your extension or remote signer and try again."
+        "You declined the request  -  approve it in your extension or remote signer and try again."
       );
       suggestions.push(
         "Unlock the signer and check for a hidden popup or blocked pop-ups."

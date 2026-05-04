@@ -471,7 +471,7 @@ export function GiveawayNewBuilder({
                 <SourcePostModule
                   id="giveaway-single-post-heading"
                   title="Source post"
-                  description="Engagement on this note only — not nested replies deeper in the thread."
+                  description="Engagement on this note only  -  not nested replies deeper in the thread."
                   compactTiles
                   mode={singlePostSourceMode}
                   onModeChange={(m) => {
@@ -505,7 +505,7 @@ export function GiveawayNewBuilder({
                       />
                       {selectedSinglePostId.trim() ? (
                         <CompactStatusMessage variant="info">
-                          Source post set — you can create the giveaway draft
+                          Source post set - you can create the giveaway draft
                           below.
                         </CompactStatusMessage>
                       ) : null}
@@ -790,7 +790,7 @@ export function GiveawayNewBuilder({
                 </RewardSummaryLine>
                 {simpleSats === 0 ? (
                   <p className="text-text-secondary/85 text-[11px] leading-snug">
-                    Selection-only — no payout.
+                    Selection-only - no payout.
                   </p>
                 ) : null}
               </div>
@@ -835,7 +835,7 @@ export function GiveawayNewBuilder({
                 </div>
                 <p className="text-text-secondary text-xs">
                   Winner count for selection uses the sum of per-type winners
-                  above (or the simple field if all zero — keep advanced rows
+                  above (or the simple field if all zero - keep advanced rows
                   filled).
                 </p>
               </div>

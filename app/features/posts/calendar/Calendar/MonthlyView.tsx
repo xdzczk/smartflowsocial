@@ -116,7 +116,7 @@ function MonthlyPostTile({
         isMobile ? "p-0.5" : "p-1"
       }`}
       title={
-        isMobile ? "Open post details" : `${timeString} — Open post details`
+        isMobile ? "Open post details" : `${timeString}  -  Open post details`
       }
       style={queueColorStyle ? tileStyle : undefined}
     >

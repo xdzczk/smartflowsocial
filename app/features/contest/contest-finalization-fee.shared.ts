@@ -8,7 +8,7 @@ export function stableSortRankRewards(
   return [...rankRewards].sort((a, b) => a.rank - b.rank);
 }
 
-/** Planned prize pool (sats) from contest prize settings — shared by quotes and builder UI. */
+/** Planned prize pool (sats) from contest prize settings  -  shared by quotes and builder UI. */
 export function computePlannedPayoutSats(input: {
   prizeMode: ContestPrizeMode;
   winnerCount: number;

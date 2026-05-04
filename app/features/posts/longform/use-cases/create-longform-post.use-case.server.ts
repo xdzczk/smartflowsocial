@@ -92,7 +92,7 @@ export class CreateLongFormPostUseCase {
     // We deliberately do NOT pre-mark the post as PUBLISHED here. Doing so used
     // to make that publish flow treat the very first publish as a
     // duplicate (its idempotency guard reads `currentState`), silently skip the
-    // call to the Nostr publisher, and report success — leaving an event that
+    // call to the Nostr publisher, and report success  -  leaving an event that
     // never actually reached any relay. We also do NOT persist signedEvent /
     // nostrEvent / scheduledAtUtc at create time for this path: the signed event
     // carries a `published_at` tag set to "now", which `calculateLongFormStatus`

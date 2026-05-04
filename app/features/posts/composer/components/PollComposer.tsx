@@ -655,24 +655,25 @@ export function PollComposer({
   });
 
   const primaryActionLoading = isSubmitting || isSigning;
-  const signerStatusContent = (
-    <ComposerErrors
-      isSigning={isSigning}
-      signerLabel={null}
-      inRail
-      onCancelSigning={clearSigningState}
-      signingError={signingError}
-      onDismissSigningError={() => {
-        setSigningError(null);
-        setLastPublishFailed(false);
-      }}
-      onRetry={() => {
-        void submitPoll(pollAction);
-      }}
-      disabled={disabled}
-      signerReady={user != null}
-    />
-  );
+  const signerStatusContent =
+    isSigning || signingError != null ? (
+      <ComposerErrors
+        isSigning={isSigning}
+        signerLabel={null}
+        inRail
+        onCancelSigning={clearSigningState}
+        signingError={signingError}
+        onDismissSigningError={() => {
+          setSigningError(null);
+          setLastPublishFailed(false);
+        }}
+        onRetry={() => {
+          void submitPoll(pollAction);
+        }}
+        disabled={disabled}
+        signerReady={user != null}
+      />
+    ) : null;
 
   useEffect(() => {
     if (

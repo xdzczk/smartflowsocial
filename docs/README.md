@@ -226,7 +226,7 @@ We welcome contributions! See our [Documentation Contributing Guide](./meta/cont
 
 <div align="center">
 
-**SmartFlowSocial Documentation** — Built with ❤️ for the community
+**SmartFlowSocial Documentation** - Built with ❤️ for the community
 
 [Report Documentation Issue](https://github.com/xdzczk/SmartFlowSocial/issues) •
 [Improve This Page](./meta/contributing.md)

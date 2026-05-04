@@ -20,7 +20,7 @@
  *   - `"compact"`: attempt is in `awaiting_signer` for at least
  *     {@link EPHEMERAL_ESCALATION_MS}, or in `expired`.
  *
- * Durable attempts are intentionally NOT auto-escalated — their host UI
+ * Durable attempts are intentionally NOT auto-escalated  -  their host UI
  * decides whether to render the foreground banner or the compact pill.
  * The hook still returns `"compact"` for any non-ephemeral
  * `awaiting_signer`/`expired`, so per-row durable surfaces can opt in by
@@ -45,7 +45,7 @@ export function useEphemeralSignTier(
     if (attempt?.state !== "awaiting_signer" || attempt.awaitingSince == null) {
       return;
     }
-    // Already past the escalation point — no need to re-tick.
+    // Already past the escalation point  -  no need to re-tick.
     const elapsed = Date.now() - attempt.awaitingSince;
     if (elapsed >= EPHEMERAL_ESCALATION_MS) return;
     const remaining = EPHEMERAL_ESCALATION_MS - elapsed;

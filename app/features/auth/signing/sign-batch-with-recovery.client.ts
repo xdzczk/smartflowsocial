@@ -17,7 +17,7 @@
  *   - Bails out on signer-unavailable errors (sign-timeout / connection
  *     errors) so the attempt parks in `awaiting_signer`. On
  *     `nostr-connection-healthy` the loop resumes from the next
- *     unsigned index — already-signed items are not re-signed.
+ *     unsigned index  -  already-signed items are not re-signed.
  *   - Collects fatal per-item errors into `failedIndices` without
  *     cancelling the batch. After the main pass, runs an optional
  *     retry pass (with a re-acquired signer) over the failures, then
@@ -84,7 +84,7 @@ export interface SignBatchInput<TItem, TSigned> {
   /**
    * Optional hook fired when an item fails with a non-recoverable
    * error (recoverable signer-unavailable errors are NOT surfaced here
-   * — they park the attempt and re-enter through the recovery flow).
+   *  -  they park the attempt and re-enter through the recovery flow).
    */
   onItemFailed?: (error: unknown, index: number, pass: SignBatchPass) => void;
   /**
@@ -161,7 +161,7 @@ export async function signBatchWithRecovery<TItem, TSigned>(
   const retryPassDelayMs = input.retryPassDelayMs ?? 1500;
   const reacquireOnRetry = input.reacquireSignerOnRetry ?? true;
 
-  // Persistent across resumes — captured by the closure so a parked
+  // Persistent across resumes  -  captured by the closure so a parked
   // attempt can pick up exactly where it left off.
   const signedByIndex = new Map<number, TSigned>();
   const failedIndices = new Set<number>();
@@ -331,7 +331,7 @@ export async function signBatchWithRecovery<TItem, TSigned>(
           });
           return;
         default:
-          // idle / signing / awaiting_signer / resuming — keep listening.
+          // idle / signing / awaiting_signer / resuming  -  keep listening.
           return;
       }
     };

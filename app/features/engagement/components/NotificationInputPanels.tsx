@@ -138,7 +138,7 @@ export function ReplyInputPanel({
                   <span className="font-medium">/{t.slug}</span>
                   {t.body.length > 40 ? (
                     <span className="text-text-secondary ml-1">
-                      — {t.body.slice(0, 40)}…
+                      - {t.body.slice(0, 40)}…
                     </span>
                   ) : null}
                 </button>

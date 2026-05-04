@@ -17,11 +17,11 @@ import { cn } from "~/lib/utils";
 interface TiptapToolbarProps {
   editor: Editor | null;
   onInsertImage?: () => void;
-  /** `editorial` — quieter chrome for article composer; `default` — modal / legacy. */
+  /** `editorial`  -  quieter chrome for article composer; `default`  -  modal / legacy. */
   density?: "default" | "editorial";
   /**
-   * When `density="editorial`: `standalone` — own card strip; `embedded` — under mode row;
-   * `inComposerCanvas` — inside main composer card; slightly stronger band for the writing surface.
+   * When `density="editorial`: `standalone`  -  own card strip; `embedded`  -  under mode row;
+   * `inComposerCanvas`  -  inside main composer card; slightly stronger band for the writing surface.
    */
   editorialChrome?: "standalone" | "embedded" | "inComposerCanvas";
 }

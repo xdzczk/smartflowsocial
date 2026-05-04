@@ -21,7 +21,7 @@ const inFlightRefs = vi.hoisted(() => ({
   configJson: null as string | null,
 }));
 
-/** 64-char hex pubkey — required when post-connect steps call getPublicKey → convertToHex */
+/** 64-char hex pubkey  -  required when post-connect steps call getPublicKey → convertToHex */
 const MOCK_SIGNER_HEX_PUBKEY = "a".repeat(64);
 const mockCachedSigner: NostrSigner = {
   type: "nip46",

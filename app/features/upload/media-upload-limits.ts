@@ -2,7 +2,7 @@
  * Shared client-side limits for image/video uploads across composer, bulk, and preflight.
  */
 
-/** Accepted attachment MIME types (image/*, video/*) — same semantics as composer filter. */
+/** Accepted attachment MIME types (image/*, video/*)  -  same semantics as composer filter. */
 export const MEDIA_UPLOAD_ACCEPT_MIME = /^image\/|^video\//;
 
 export const MEDIA_UPLOAD_MAX_IMAGE_BYTES = 10 * 1024 * 1024;

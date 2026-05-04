@@ -6,7 +6,7 @@
  * background reconnect dispatches `nostr-connection-healthy`).
  *
  * Previously this module also exposed periodic polling and an on-demand
- * refetch via `testConnection`, but no consumer used either path — Settings
+ * refetch via `testConnection`, but no consumer used either path  -  Settings
  * has its own dedicated "Test connection" button and we deliberately do not
  * ping the bunker on a timer.
  */

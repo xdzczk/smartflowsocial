@@ -180,7 +180,7 @@ export function HashtagPresetsSettings({
     <>
       <ManagementListSection
         title="Hashtag presets"
-        description="Reusable hashtag sets for posts and queue defaults—keep campaigns consistent and publish faster."
+        description="Reusable hashtag sets for posts and queue defaults - keep campaigns consistent and publish faster."
         primaryAction={
           <Dialog
             open={isCreateDialogOpen}
@@ -306,7 +306,7 @@ export function HashtagPresetsSettings({
             </p>
             <p className="mx-auto mb-5 max-w-md text-xs leading-relaxed">
               Presets store hashtag sets you reuse across posts and attach to
-              queue types—faster publishing and consistent campaigns.
+              queue types - faster publishing and consistent campaigns.
             </p>
             <Button
               type="button"
@@ -534,8 +534,8 @@ export function HashtagPresetsSettings({
                   <p>
                     {pendingDeleteLinkedCount} queue
                     {pendingDeleteLinkedCount === 1 ? " uses" : "s use"} this
-                    preset—they will lose the linked preset (queues stay; timing
-                    unchanged).
+                    preset - they will lose the linked preset (queues stay;
+                    timing unchanged).
                   </p>
                 ) : null}
               </div>

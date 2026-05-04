@@ -425,7 +425,7 @@ function AdminUsersPageLoaded({
                       {sheetUser.segment.replace("_", " ")}
                     </Badge>
                     <p className="text-text-secondary mt-2 text-xs">
-                      Heuristic only — based on recency, volume, and plan.
+                      Heuristic only - based on recency, volume, and plan.
                     </p>
                   </div>
                   <dl className="grid gap-2 sm:grid-cols-2">

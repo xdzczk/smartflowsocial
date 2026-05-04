@@ -52,7 +52,7 @@ export interface PublishingSessionStripProps {
   signerLabel: string | null;
 }
 
-/** Recyclable / distribution toggle — lives in the rail only. */
+/** Recyclable / distribution toggle  -  lives in the rail only. */
 export interface PublishingRecyclableControlProps {
   switchId: string;
   checked: boolean;
@@ -200,7 +200,7 @@ function RecyclableRailRow(props: PublishingRecyclableControlProps) {
   );
 }
 
-/** SectionBlock — only for deprecated followUpSection fallback (plain lines + controls). */
+/** SectionBlock  -  only for deprecated followUpSection fallback (plain lines + controls). */
 function SectionBlockFallback({
   title,
   lines = [],

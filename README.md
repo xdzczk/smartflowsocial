@@ -20,7 +20,7 @@ Professional Nostr social media management for creators, teams, and communities.
 
 Nostr teams usually juggle three pressures at once: **fast product UX**, **reliable scheduling and
 media**, and **signing that stays under the user’s control**. SmartFlowSocial is built for that
-intersection — a full publishing and engagement surface where browser extension (NIP-07) or remote
+intersection - a full publishing and engagement surface where browser extension (NIP-07) or remote
 signer (NIP-46) flows stay first-class, while drafts, queues, calendars, and background jobs keep
 day-to-day operations predictable.
 
@@ -195,12 +195,12 @@ Deep dive: [Architecture documentation](./docs/getting-started/architecture.md)
 
 ## Repository layout
 
-- `app/` — Remix routes, features, UI, and server modules
-- `prisma/` — schema, migrations, and seed entrypoints
-- `docs/` — user guides, reference, tutorials, and operations material
-- `tests/` — unit, integration, E2E (Cypress), security, and performance suites
-- `scripts/` — build, maintenance, and developer automation helpers
-- `public/` — static assets and PWA/OG imagery
+- `app/` - Remix routes, features, UI, and server modules
+- `prisma/` - schema, migrations, and seed entrypoints
+- `docs/` - user guides, reference, tutorials, and operations material
+- `tests/` - unit, integration, E2E (Cypress), security, and performance suites
+- `scripts/` - build, maintenance, and developer automation helpers
+- `public/` - static assets and PWA/OG imagery
 
 ---
 

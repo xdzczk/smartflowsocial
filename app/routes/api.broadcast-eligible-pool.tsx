@@ -4,7 +4,7 @@ import { requireUserId } from "~/features/auth";
 import { getBroadcastEligiblePoolPubkeys } from "~/features/broadcast/broadcast-recipient-picker.server";
 
 /**
- * GET ?pool=followers|mutuals — eligible pubkey list for recipient picker (cache-based).
+ * GET ?pool=followers|mutuals  -  eligible pubkey list for recipient picker (cache-based).
  */
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);

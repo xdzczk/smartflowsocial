@@ -15,12 +15,12 @@
  * This module mirrors what Ditto does in `NostrProvider.tsx`: the moment the
  * app mounts and a NIP-46 login is present, eagerly construct the signer
  * bound to the shared pool so the bunker REQ subscription is live before any
- * user action. We deliberately do NOT proactively `ping()` the bunker — that
+ * user action. We deliberately do NOT proactively `ping()` the bunker  -  that
  * was a leftover from the old shaky implementation. The first real sign call
  * will discover liveness on its own and the existing retry/reconnect layer
  * handles failure.
  *
- * Best-effort throughout — boot-time failures are swallowed; the user-driven
+ * Best-effort throughout  -  boot-time failures are swallowed; the user-driven
  * sign path still has its own reconnect-and-retry layer.
  */
 

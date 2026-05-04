@@ -84,13 +84,13 @@ function dispatchSignerNudge(phase: SignerNudgePhase, startedAt: number): void {
 }
 
 /**
- * Sign-timeout messages mean "the bunker did not approve in time" — the
+ * Sign-timeout messages mean "the bunker did not approve in time"  -  the
  * underlying NIP-46 transport (subscription, sockets, signer cache) is fine,
  * the user just needs to open their signer app and approve. We must NOT
  * classify these as "connection-like" because doing so triggers
  * `reconnectAndRetrySign` which builds a fresh `Nip46Signer` and fires
  * another `sign_event` on top of the still-pending one, and the cycle
- * repeats every ~30s — flooding the relays (Damus rate-limits us) and
+ * repeats every ~30s  -  flooding the relays (Damus rate-limits us) and
  * overwhelming Primal. Ditto's `signerWithNudge` does the same thing:
  * one attempt, one error, no auto-retry, no reconnect.
  */
@@ -464,7 +464,7 @@ function ensureNip07ReadyOrThrow(): void {
  * refreshes its bunker subscription on every RPC, and the per-RPC timeout
  * inside `Nip46Signer` already bounds how long a single sign can hang. There
  * is nothing here for us to recover that the underlying transport can't, so
- * we don't try — every "auto-recovery" attempt we used to make just piled
+ * we don't try  -  every "auto-recovery" attempt we used to make just piled
  * another `sign_event` on top of the unresponsive bunker and made the
  * problem worse (relay rate-limits, duplicate event IDs, and a UI that
  * never settled). When this single attempt fails, the user gets one error
@@ -622,7 +622,7 @@ export const nostrAdapter = {
   },
 
   /**
-   * NIP-88 kind 1068 poll — builds tags via `buildPollTags`, then signs
+   * NIP-88 kind 1068 poll  -  builds tags via `buildPollTags`, then signs
    * like a normal event. Single-attempt; recovery is handled by the
    * `signing-attempts` state machine (see `signLongFormEvent`).
    */

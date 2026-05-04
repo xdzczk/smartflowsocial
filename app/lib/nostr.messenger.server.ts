@@ -67,7 +67,7 @@ function parseNip65ReadRelaysFromEventTags(tags: unknown): string[] {
   return relays;
 }
 
-/** NIP-17 kind:10050 inbox list — `relay` tags only (no merge with defaults). */
+/** NIP-17 kind:10050 inbox list  -  `relay` tags only (no merge with defaults). */
 function parseKind10050RelayTags(tags: unknown): string[] {
   if (!Array.isArray(tags)) return [];
   const relays: string[] = [];

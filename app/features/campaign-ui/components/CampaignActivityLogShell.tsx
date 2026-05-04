@@ -29,8 +29,9 @@ export function CampaignActivityLogShell({
             <span>
               <span className="text-text-secondary font-mono text-xs">
                 {item.type}
-              </span>{" "}
-              — {item.message}
+              </span>
+              {" - "}
+              {item.message}
             </span>
           </li>
         ))}

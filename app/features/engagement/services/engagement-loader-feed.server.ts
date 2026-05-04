@@ -135,7 +135,7 @@ export async function loadEngagementFeedData(
   const followedPubkeysPromise = getFollowedPubkeys(userPubkeyHex);
 
   // Global mentions + quotes from Primal (not scoped to app-published roots).
-  // `get_notifications` is on Primal public caches; open-source app.jl may omit it — use
+  // `get_notifications` is on Primal public caches; open-source app.jl may omit it  -  use
   // MENTIONS_USE_PRIMAL_GET_NOTIFICATIONS=false or rely on relay fallback when empty/failed.
   const notificationsResultPromise = loadPrimalGetNotificationsResult({
     pubkey: userPubkeyHex,

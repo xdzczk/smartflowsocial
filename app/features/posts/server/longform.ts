@@ -1,5 +1,5 @@
 /**
- * Posts longform submodule — server API.
+ * Posts longform submodule  -  server API.
  * Import from ~/features/posts/server/longform for longform server logic.
  */
 export {

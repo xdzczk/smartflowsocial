@@ -1,5 +1,5 @@
 /**
- * StatusIcon — canonical icon + tone color + size for status communication.
+ * StatusIcon  -  canonical icon + tone color + size for status communication.
  *
  * Phase 1h. Before this primitive, the codebase used a mix of `Check` /
  * `CheckCircle` / `CheckCircle2` for success, `AlertTriangle` / `TriangleAlert`
@@ -19,7 +19,7 @@
  *
  *   size "xs" → 12px (size-3)     dense table cells, badges
  *   size "sm" → 14px (size-3.5)   inline next to small text
- *   size "md" → 16px (size-4)     default — body text, alerts
+ *   size "md" → 16px (size-4)     default  -  body text, alerts
  *   size "lg" → 20px (size-5)     section headers, larger badges
  *   size "xl" → 24px (size-6)     hero, modal headers
  *
@@ -84,7 +84,7 @@ export interface StatusIconProps extends Omit<
   React.SVGAttributes<SVGSVGElement>,
   "color"
 > {
-  /** Semantic tone — picks default icon + canonical color class. */
+  /** Semantic tone  -  picks default icon + canonical color class. */
   tone: StatusTone;
   /** Size step on the design system's icon ladder. Defaults to "md" (16px). */
   size?: StatusIconSize;

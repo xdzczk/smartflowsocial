@@ -19,12 +19,12 @@ const SCHEDULED_ICON_WELL_CLASS =
 const PUBLISHED_ICON_WELL_CLASS =
   "bg-green-500/7 text-success/78 dark:bg-green-400/9 dark:text-success/75";
 
-/** Orange/warning runway band — matches semantic `warning` tokens (dashboard language). */
+/** Orange/warning runway band  -  matches semantic `warning` tokens (dashboard language). */
 const RUNWAY_ORANGE_ICON_WELL_CLASS =
   "bg-warning/7 text-warning/78 dark:bg-warning/9 dark:text-warning/74";
 
 /**
- * Yellow runway band — chart accent (golden), distinct from warning orange on the ladder.
+ * Yellow runway band  -  chart accent (golden), distinct from warning orange on the ladder.
  */
 const RUNWAY_YELLOW_ICON_WELL_CLASS =
   "bg-chart-5/8 text-chart-5/82 dark:bg-chart-5/10 dark:text-chart-5/84";

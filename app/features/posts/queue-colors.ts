@@ -20,7 +20,7 @@ export const QUEUE_COLOR_TOKENS = [
 
 export type QueueColorToken = (typeof QUEUE_COLOR_TOKENS)[number];
 
-/** Premium muted palette (dots, strips, badges — surfaces use rgba from these via getQueueColorBundle). */
+/** Premium muted palette (dots, strips, badges  -  surfaces use rgba from these via getQueueColorBundle). */
 export const QUEUE_COLOR_ACCENTS: Record<QueueColorToken, string> = {
   slate: "#7C8FA8",
   blue: "#3F6FD8",
@@ -38,7 +38,7 @@ export const QUEUE_COLOR_ACCENTS: Record<QueueColorToken, string> = {
 
 /**
  * Queue color bundle: base, surface tint, and text/accent for calendar and other UI.
- * Queue color base, surface tint, text color, border logic — locked system-wide for calendar.
+ * Queue color base, surface tint, text color, border logic  -  locked system-wide for calendar.
  * Surface is luminance-safe (light mode: tinted surface; dark: slightly elevated). Use accent for text on surface.
  */
 export interface QueueColorBundle {

@@ -1,5 +1,5 @@
 /**
- * Normalized proof card model — templates and copy helpers read only this shape.
+ * Normalized proof card model  -  templates and copy helpers read only this shape.
  */
 
 export type ProofDomain = "admin" | "giveaway" | "contest";

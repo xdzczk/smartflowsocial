@@ -7,7 +7,7 @@ export interface ToggleRowSectionProps {
   control: React.ReactNode;
   /** Optional content below the row when expanded (e.g. sub-options). */
   children?: React.ReactNode;
-  /** `bordered` — default card-like row; `plain` — no border, for stacked rows with separators. */
+  /** `bordered`  -  default card-like row; `plain`  -  no border, for stacked rows with separators. */
   variant?: "bordered" | "plain";
   className?: string;
 }

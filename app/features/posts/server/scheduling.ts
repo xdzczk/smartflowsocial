@@ -1,5 +1,5 @@
 /**
- * Posts scheduling submodule — server API.
+ * Posts scheduling submodule  -  server API.
  * Import from ~/features/posts/server/scheduling for scheduling-specific server logic.
  */
 export {

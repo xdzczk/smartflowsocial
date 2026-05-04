@@ -8,7 +8,7 @@ export interface DestructiveSectionProps {
 }
 
 /**
- * Pattern E — cancel subscription, dangerous resets. Keep visually separated from neutral controls.
+ * Pattern E  -  cancel subscription, dangerous resets. Keep visually separated from neutral controls.
  */
 export function DestructiveSection({
   title,

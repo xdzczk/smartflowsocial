@@ -60,7 +60,7 @@ export function TemplateKindChip({ label }: { label: string }) {
   return <span className={PUBLISHING_CONTENT_KIND_BADGE_CLASS}>{label}</span>;
 }
 
-/** Scheduled / published / draft row status — lifecycle text, not queue-style pills. */
+/** Scheduled / published / draft row status  -  lifecycle text, not queue-style pills. */
 export function ContentStatusChip({ item }: { item: CombinedContent }) {
   return (
     <span

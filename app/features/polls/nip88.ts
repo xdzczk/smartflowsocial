@@ -1,5 +1,5 @@
 /**
- * NIP-88 Polls — parse, build, validate, aggregate (pure).
+ * NIP-88 Polls  -  parse, build, validate, aggregate (pure).
  * @see https://nips.nostr.com/88
  */
 
@@ -242,7 +242,7 @@ export function validateVoteAgainstPoll(
 
   const t = nowSec ?? Math.floor(Date.now() / 1000);
   if (parsed.endsAt !== undefined && t > parsed.endsAt) {
-    // Poll already closed — still allow publishing historical sync; clients disable UI.
+    // Poll already closed  -  still allow publishing historical sync; clients disable UI.
     // Server may reject if policy requires; we only validate event consistency here.
   }
 

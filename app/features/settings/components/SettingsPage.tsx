@@ -575,7 +575,7 @@ export default function SettingsPage() {
   // Derive the destination tab during an in-flight tab navigation so the rail
   // highlights the next item immediately and the panel switches without a skeleton.
   // shouldRevalidate returns false on ?tab= changes, so all data is already
-  // in memory — there is nothing to wait for.
+  // in memory  -  there is nothing to wait for.
   const isNavigatingToSettings =
     navigation.state === "loading" &&
     navigation.location.pathname === "/dashboard/settings";

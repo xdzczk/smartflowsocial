@@ -5,7 +5,7 @@
  * publish under the foreground recovery banner instead of dropping it as a
  * silent failure. The idempotency key is derived from the relay list
  * fingerprint so a resumed retry collapses onto the same server-side dedupe
- * slot (NIP-65 is a kind-10002 replaceable event — re-publishing is a no-op
+ * slot (NIP-65 is a kind-10002 replaceable event  -  re-publishing is a no-op
  * at the relay layer, but the route's post-publish side effects must run
  * exactly once).
  */

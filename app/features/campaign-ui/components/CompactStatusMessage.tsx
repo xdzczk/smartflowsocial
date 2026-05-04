@@ -17,7 +17,7 @@ const shells: Record<CompactStatusVariant, string> = {
 };
 
 /**
- * Thin inline status: neutral info, warning, or error — not full slabs.
+ * Thin inline status: neutral info, warning, or error  -  not full slabs.
  */
 export function CompactStatusMessage({
   variant,

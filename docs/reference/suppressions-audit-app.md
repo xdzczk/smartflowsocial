@@ -8,9 +8,9 @@ in `app/`. Every suppression must be justified (visa standard) and categorized.
 - **Every** `eslint-disable`, `@ts-ignore`, or `@ts-expect-error` in `app/` must have a **trailing
   comment** explaining why.
 - **Categories:**
-  - **Acceptable** — Documented interop or known-safe escape hatch. One-line comment; no expiry.
-  - **Temporary** — Migration/refactor in progress. Comment + `TODO(TICKET-XXX): remove after …`.
-  - **Must fix** — Code smell or missing/weak comment. Remove when touching the file or
+  - **Acceptable** - Documented interop or known-safe escape hatch. One-line comment; no expiry.
+  - **Temporary** - Migration/refactor in progress. Comment + `TODO(TICKET-XXX): remove after …`.
+  - **Must fix** - Code smell or missing/weak comment. Remove when touching the file or
     re-categorize with proper comment.
 
 Any disable without a trailing comment is treated as **Must fix** until justified or removed.
@@ -64,6 +64,6 @@ Add this to CI or pre-commit to enforce the visa standard on new code.
 
 ## See also
 
-- [CONTRIBUTING.md §6 Lint and type suppression policy](../../CONTRIBUTING.md) — visa standard and
+- [CONTRIBUTING.md §6 Lint and type suppression policy](../../CONTRIBUTING.md) - visa standard and
   when to fix.
-- [CONTRIBUTING.md §10 Type safety](../../CONTRIBUTING.md) — any and unsafe casts.
+- [CONTRIBUTING.md §10 Type safety](../../CONTRIBUTING.md) - any and unsafe casts.

@@ -9,7 +9,7 @@
  *   - `maybeResume()` only re-runs the original sign+submit closure when
  *     the attempt is still inside that window and is currently parked.
  *   - Once the window elapses, the attempt is `expired` and a reconnect
- *     never silently autocompletes — the user must explicitly retry.
+ *     never silently autocompletes  -  the user must explicitly retry.
  *   - A late callback from a previous generation cannot mutate the store
  *     after `cancel()` or a fresh `start()`.
  */

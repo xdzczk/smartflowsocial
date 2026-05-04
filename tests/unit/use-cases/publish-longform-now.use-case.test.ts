@@ -220,7 +220,7 @@ describe("PublishLongFormNowUseCase", () => {
     it("should still publish when currentState is PUBLISHED but publishAttemptId is missing (regression: pre-marked PUBLISHED must not silently skip)", async () => {
       // Regression for the bug where CreateLongFormPostUseCase pre-set
       // currentState to PUBLISHED before this use case ran, causing the
-      // very first publish to be treated as a duplicate and skipped — the
+      // very first publish to be treated as a duplicate and skipped  -  the
       // event never reached any relay yet the UI showed "Published".
       (
         mockPrisma.longFormPost.findFirst as ReturnType<typeof vi.fn>

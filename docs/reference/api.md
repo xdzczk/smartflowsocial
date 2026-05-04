@@ -714,7 +714,7 @@ Unsubscribe from push notifications.
 
 Get Lightning address (lud16) for a Nostr pubkey for NIP-57 zap flow. No authentication required.
 
-**Query Parameters:** `npub` (required) — Nostr public key (npub or hex).
+**Query Parameters:** `npub` (required) - Nostr public key (npub or hex).
 
 **Response:**
 
@@ -730,7 +730,7 @@ Get Lightning address (lud16) for a Nostr pubkey for NIP-57 zap flow. No authent
 
 Get display name for a Nostr pubkey (e.g. for "Signing in as username"). No authentication required.
 
-**Query Parameters:** `pubkey` (optional) — Nostr public key (npub or hex).
+**Query Parameters:** `pubkey` (optional) - Nostr public key (npub or hex).
 
 **Response:**
 

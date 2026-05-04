@@ -18,7 +18,7 @@ export type PageContentProps = {
   fullBleed?: boolean;
   /**
    * Child of `DashboardLayoutPage` where the outer main band already applies
-   * horizontal padding — avoids doubling horizontal padding.
+   * horizontal padding  -  avoids doubling horizontal padding.
    */
   fluid?: boolean;
   /**

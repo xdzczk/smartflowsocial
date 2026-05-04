@@ -63,7 +63,7 @@ export function AudienceGraphPanel({
         {failed ? (
           <span className="text-text-secondary text-xs">
             {" "}
-            (graph cache could not be loaded — try again or use a custom list)
+            (graph cache could not be loaded - try again or use a custom list)
           </span>
         ) : null}
       </p>

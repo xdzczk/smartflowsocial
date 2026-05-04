@@ -85,8 +85,8 @@ export function isCompleteDateTimeLocalString(value: string): boolean {
 
 /**
  * Clamp a datetime-local string to `min` only when `value` is complete
- * (`YYYY-MM-DDTHH:mm`). Incomplete values — common while typing in
- * `datetime-local` — are returned unchanged; naive `value < min` would treat
+ * (`YYYY-MM-DDTHH:mm`). Incomplete values  -  common while typing in
+ * `datetime-local`  -  are returned unchanged; naive `value < min` would treat
  * prefixes like `2026-03-31T` as before `min` and reset the input.
  */
 export function clampDateTimeLocalToMin(value: string, min: string): string {

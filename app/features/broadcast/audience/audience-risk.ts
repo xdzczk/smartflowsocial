@@ -9,7 +9,10 @@ export function audienceRiskForSource(
     case "MUTUALS":
       return { level: "low", label: "Lower spam risk" };
     case "FOLLOWERS":
-      return { level: "moderate", label: "Moderate spam risk — broader reach" };
+      return {
+        level: "moderate",
+        label: "Moderate spam risk  -  broader reach",
+      };
     case "CUSTOM":
       return {
         level: "curated",

@@ -35,7 +35,7 @@ export default function ZapButton({
         onZapped?.();
         toast.success("Zap sent");
       } else {
-        toast.success("Opened in new tab — mark as zapped when done");
+        toast.success("Opened in new tab  -  mark as zapped when done");
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Zap failed";

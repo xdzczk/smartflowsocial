@@ -141,7 +141,7 @@ export function AdminCurrencyProvider({
     if (unit !== "USD" && unit !== "EUR") return null;
     if (fx.status === "loading" || fx.status === "idle") return null;
     if (fx.status === "error") {
-      return "Fiat spot unavailable — showing sats.";
+      return "Fiat spot unavailable  -  showing sats.";
     }
     const srcLabel =
       fx.rates.source === "kraken"

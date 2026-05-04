@@ -1,5 +1,5 @@
 /**
- * Skeleton — placeholder shapes that mirror the real design tokens.
+ * Skeleton  -  placeholder shapes that mirror the real design tokens.
  *
  * Phase 1i. Before this set, page skeletons composed raw atomic classes
  * (`<Skeleton className="h-8 w-40" />`) which drifted from the typography,
@@ -42,7 +42,7 @@
  *     <Skeleton.Text w="w-[160px]" />
  *
  * Wrap a group of skeletons in a parent with `animate-pulse` so they all
- * shimmer in sync. The atoms intentionally do NOT carry their own pulse —
+ * shimmer in sync. The atoms intentionally do NOT carry their own pulse  -
  * a single parent pulse reads as a unified loading state, not a bag of
  * individually-shimmering parts. The legacy default export `<Skeleton />`
  * keeps its own `animate-pulse` for backward compatibility.
@@ -65,7 +65,7 @@ function widthClass(w: string | undefined, fallback: string): string {
   return WIDTH_MAP[w] ?? w;
 }
 
-/** Legacy primitive — keep the self-pulse for back-compat with existing call sites. */
+/** Legacy primitive  -  keep the self-pulse for back-compat with existing call sites. */
 function Skeleton({
   className,
   ...props
@@ -152,7 +152,7 @@ type AvatarSize = "xs" | "sm" | "md" | "lg" | "xl";
 const AVATAR_SIZE: Record<AvatarSize, string> = {
   xs: "size-6", // 24px
   sm: "size-8", // 32px
-  md: "size-10", // 40px — default
+  md: "size-10", // 40px  -  default
   lg: "size-12", // 48px
   xl: "size-16", // 64px
 };
@@ -279,7 +279,7 @@ function SkeletonPill({
 }
 
 /* ---------- Block ----------
- * Generic skeleton block — explicit width and height. Use for charts,
+ * Generic skeleton block  -  explicit width and height. Use for charts,
  * thumbnails, irregular shapes that don't fit a semantic atom. Default
  * radius is rounded-md (control tier); pass `r="lg"` for panel tier or
  * `r="xl"` for modal tier.

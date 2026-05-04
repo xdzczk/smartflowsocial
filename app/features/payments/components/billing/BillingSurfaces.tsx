@@ -29,7 +29,7 @@ function bannerCopy(
       };
     case "nwc_renewal_failed_grace":
       return {
-        title: "Renewal issue — grace period",
+        title: "Renewal issue  -  grace period",
         description:
           "We couldn’t renew via NWC. Reconnect your wallet or top up manually before grace ends.",
       };

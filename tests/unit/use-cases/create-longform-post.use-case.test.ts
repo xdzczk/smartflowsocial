@@ -276,7 +276,7 @@ describe("CreateLongFormPostUseCase", () => {
       // Regression for the bug where this use case pre-set currentState to
       // PUBLISHED before any relay publish happened. PublishLongFormNowUseCase
       // then short-circuited as a "duplicate" and the event never reached
-      // any relay — but the UI still showed "Published".
+      // any relay  -  but the UI still showed "Published".
       const mockPost = {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
@@ -312,7 +312,7 @@ describe("CreateLongFormPostUseCase", () => {
       });
 
       // Repo must be called with isPublished:false so it writes
-      // currentState:"DRAFT" — never "PUBLISHED" — at create time.
+      // currentState:"DRAFT"  -  never "PUBLISHED"  -  at create time.
       expect(mockCreateLongFormPost).toHaveBeenCalledWith(
         expect.objectContaining({ isPublished: false })
       );
@@ -327,7 +327,7 @@ describe("CreateLongFormPostUseCase", () => {
       expect(createCall["signedEvent"]).toBeUndefined();
       expect(createCall["nostrEvent"]).toBeUndefined();
       expect(createCall["scheduledAtUtc"]).toBeUndefined();
-      // No PUBLISHED state-machine transition in this use case — that belongs
+      // No PUBLISHED state-machine transition in this use case  -  that belongs
       // to PublishLongFormNowUseCase after relays accept the event.
       expect(mockTransition).not.toHaveBeenCalledWith(
         expect.anything(),

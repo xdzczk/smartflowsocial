@@ -86,7 +86,7 @@ export function shouldRevalidate(args: {
   }
 
   // Skip revalidation when only client-only params changed.
-  // The loader reads ?queueType and ?page — those still trigger revalidation.
+  // The loader reads ?queueType and ?page  -  those still trigger revalidation.
   if (
     normalizeDraftsSearch(args.currentUrl) ===
     normalizeDraftsSearch(args.nextUrl)

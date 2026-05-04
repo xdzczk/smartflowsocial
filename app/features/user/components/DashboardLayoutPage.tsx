@@ -244,7 +244,7 @@ function getPendingNavigationState(
   const hasPendingTarget = pendingPathname.length > 0;
   // Only treat it as a "route change" when the pathname itself changes.
   // Same-pathname filter/search-param changes (e.g. ?tab=, ?queueType=) should
-  // not replace the Outlet with the full-page skeleton — the heading, filter
+  // not replace the Outlet with the full-page skeleton  -  the heading, filter
   // bar, and rail are stable, and the route-level Suspense handles content-area
   // loading if the loader actually re-runs.
   const pendingRouteChanged =

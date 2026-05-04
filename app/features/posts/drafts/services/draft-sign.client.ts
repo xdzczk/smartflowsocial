@@ -1,5 +1,5 @@
 /**
- * Draft signing service — runs in the BROWSER.
+ * Draft signing service  -  runs in the BROWSER.
  *
  * Despite living in `services/` (which is conventionally server code in
  * this repo), this module signs drafts using the user's connected
@@ -10,7 +10,7 @@
  * it out of the server bundle.
  *
  * Called from `useDraftEditState.handleSignAndResume` inside a
- * `startRecoverableSign` boundary — that is the durable signing
+ * `startRecoverableSign` boundary  -  that is the durable signing
  * surface for the "resume scheduled draft" flow.
  */
 

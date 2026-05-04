@@ -265,10 +265,10 @@ function overviewRelayNote(
   relayFailed: number
 ): string {
   if (relayTotal === 0) {
-    return "No relay publish acknowledgements in this range — ratio is not meaningful yet.";
+    return "No relay publish acknowledgements in this range  -  ratio is not meaningful yet.";
   }
   const pct = Math.round((relayAccepted / relayTotal) * 1000) / 10;
-  return `${relayAccepted} accepted vs ${relayFailed} failed/timeout ACKs (${pct}% OK). Mix varies by user-chosen relays — not a pure platform health signal. Overview alerts only if OK rate falls below 25% with enough samples.`;
+  return `${relayAccepted} accepted vs ${relayFailed} failed/timeout ACKs (${pct}% OK). Mix varies by user-chosen relays  -  not a pure platform health signal. Overview alerts only if OK rate falls below 25% with enough samples.`;
 }
 
 function overviewNewUsersLine(
@@ -278,10 +278,10 @@ function overviewNewUsersLine(
   prevNewUsers: number
 ): string {
   if (!prevBounds) {
-    return "No prior period for this range preset — switch to 7d+ for deltas.";
+    return "No prior period for this range preset  -  switch to 7d+ for deltas.";
   }
   if (lowVol) {
-    return "Low signup volume — treat the delta as directional, not definitive.";
+    return "Low signup volume  -  treat the delta as directional, not definitive.";
   }
   if (newUsers > prevNewUsers)
     return "Signups accelerated vs the prior window.";
@@ -299,7 +299,7 @@ function overviewPostsLine(
     return "No prior period for comparison.";
   }
   if (lowPostVol) {
-    return "Low publish volume — swings are noisy.";
+    return "Low publish volume  -  swings are noisy.";
   }
   if (postsTotal > prevPostsTotal) {
     return "Publishing volume is up vs the prior window.";
@@ -330,12 +330,12 @@ function overviewPubSuccessLine(
   if (publishSuccessRate >= publishSuccessPrev) {
     return "Success rate improved or held vs the prior window.";
   }
-  return "Success rate slipped vs the prior window — check Operations for failures.";
+  return "Success rate slipped vs the prior window  -  check Operations for failures.";
 }
 
 function overviewQueueDepthLine(scheduledQueueDepth: number): string {
   if (scheduledQueueDepth > 50) {
-    return `Queue depth is elevated (${scheduledQueueDepth} scheduled/publishing) — expect longer time-to-publish.`;
+    return `Queue depth is elevated (${scheduledQueueDepth} scheduled/publishing)  -  expect longer time-to-publish.`;
   }
   if (scheduledQueueDepth > 0) {
     return `Queue depth looks normal (${scheduledQueueDepth} scheduled/publishing).`;
@@ -417,12 +417,12 @@ function buildOverviewInsights(args: {
   const payoutLine =
     pendingPayoutSats === 0
       ? "Nothing queued for payout right now."
-      : "Referral commissions are waiting — confirm LNURL setup before batch runs.";
+      : "Referral commissions are waiting  -  confirm LNURL setup before batch runs.";
 
   const actionLine =
     actionRequiredCount === 0
-      ? "No open alerts — still scan Operations for backlog."
-      : `${actionRequiredCount} alert(s) need review — start with Operations.`;
+      ? "No open alerts  -  still scan Operations for backlog."
+      : `${actionRequiredCount} alert(s) need review  -  start with Operations.`;
 
   const paidBaseLine = `Paid subscriber base: ${activePaidUsers} active seat(s).`;
 
@@ -669,7 +669,7 @@ export async function getAdminOverviewPageData(
     alerts.push({
       id: "relay-severe",
       severity: "warning",
-      message: `Relay ACK success very low (~${Math.round((relayAccepted / relayTotal) * 100)}% OK in range, ${relayTotal} samples) — check Operations relay section`,
+      message: `Relay ACK success very low (~${Math.round((relayAccepted / relayTotal) * 100)}% OK in range, ${relayTotal} samples)  -  check Operations relay section`,
       href: "/dashboard/admin/operations?focus=relay",
       category: "publishing",
     });

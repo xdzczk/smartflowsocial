@@ -354,7 +354,7 @@ Enable browser console to see:
 - App lifecycle events (backgrounding/foregrounding)
 
 The app automatically retries with exponential backoff, and subsequent attempts usually succeed.
-After returning from background, the first attempt may briefly show reconnecting—this is expected.
+After returning from background, the first attempt may briefly show reconnecting - this is expected.
 The first **sign** after resume should then work without showing "Remote signer did not respond"
 first.
 

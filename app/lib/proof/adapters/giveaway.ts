@@ -156,7 +156,7 @@ export function buildGiveawayProofPayload(
     };
   }
 
-  // receipt — merge into ≤4 stats per product rules
+  // receipt  -  merge into ≤4 stats per product rules
   const fee = dto.finalizationFeeSats ?? 0;
   const stats: ProofCardPayload["stats"] = [
     { label: "Recipients", value: String(dto.winnerCount) },

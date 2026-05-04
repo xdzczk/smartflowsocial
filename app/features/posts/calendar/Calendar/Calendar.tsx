@@ -350,7 +350,7 @@ export function Calendar({
   const [miniCalendarOpen, setMiniCalendarOpen] = useState(false);
   // `miniCalendarMonth` is only rendered when the mini calendar popover is
   // open (initially closed), so its `nowInTimezone()`-based initializer does
-  // not risk a hydration mismatch — the popover isn't in server HTML.
+  // not risk a hydration mismatch  -  the popover isn't in server HTML.
   const [miniCalendarMonth, setMiniCalendarMonth] = useState<Date>(() => {
     const now = nowInTimezone(user?.timezone ?? "Etc/UTC");
     return toDate(now);
@@ -743,7 +743,7 @@ export function Calendar({
           `min-width: auto` pins the item to its min-content width, and the
           Week view's inner grid (explicitly sized to ~233vw on mobile to
           force horizontal overflow) would push these wrappers to 918px on
-          a 430px viewport. That defeats the inner scroll container — its
+          a 430px viewport. That defeats the inner scroll container  -  its
           `clientWidth` matches its `scrollWidth`, so there is nothing to
           pan. See crbug.com/1110989 and related. */}
       <div className="flex min-h-0 min-w-0 flex-1 overflow-visible">

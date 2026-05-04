@@ -1,5 +1,5 @@
 /**
- * Pure audience labels for UI (safe for client bundles — not in *.server.ts).
+ * Pure audience labels for UI (safe for client bundles  -  not in *.server.ts).
  */
 export function formatBroadcastAudienceLabel(
   audienceType: string,

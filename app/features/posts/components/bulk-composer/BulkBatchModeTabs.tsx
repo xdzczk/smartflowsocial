@@ -18,7 +18,7 @@ const BATCH_ITEMS: Array<{
   },
 ];
 
-/** Schedule / Queue tabs — same primitive as publish rail `RailSegmentedTabs`. */
+/** Schedule / Queue tabs  -  same primitive as publish rail `RailSegmentedTabs`. */
 export function BulkBatchModeTabs({
   value,
   onValueChange,

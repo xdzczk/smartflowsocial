@@ -1,5 +1,5 @@
 /**
- * EmptyState — canonical "no data, here's what to do next" primitive.
+ * EmptyState  -  canonical "no data, here's what to do next" primitive.
  *
  * Phase 1i. Before this primitive, the codebase had ~15 ad-hoc inline empty
  * states that all rendered the same shape (an icon, a heading, a body line,
@@ -16,18 +16,18 @@
  *
  * Three sizes:
  *
- *   size "sm" — tight inline empty state for narrow panels and dropdown
+ *   size "sm"  -  tight inline empty state for narrow panels and dropdown
  *               menus. ~py-6, smaller icon, body text.
- *   size "md" — default. Sits inside a card or section. ~py-12.
- *   size "lg" — full-page empty state. Hero icon, generous spacing. ~py-20.
+ *   size "md"  -  default. Sits inside a card or section. ~py-12.
+ *   size "lg"  -  full-page empty state. Hero icon, generous spacing. ~py-20.
  *
- * The icon prop accepts any ReactNode — typically a Lucide icon. The
+ * The icon prop accepts any ReactNode  -  typically a Lucide icon. The
  * primitive sizes the icon container; the icon itself inherits the size
  * via the `[&_svg]:size-N` selector so callers don't need to set a size
  * class on the icon. For decorative-only icons, omit `iconLabel`. For
  * icons that carry meaning (rare in empty states), pass `iconLabel`.
  *
- * `action` is the primary CTA — usually a Button. `secondaryAction` is
+ * `action` is the primary CTA  -  usually a Button. `secondaryAction` is
  * optional. They render side-by-side; on narrow viewports they wrap.
  */
 import * as React from "react";
@@ -80,7 +80,7 @@ export interface EmptyStateProps extends Omit<
   icon?: React.ReactNode;
   /** Optional accessible label for the icon when it conveys meaning. */
   iconLabel?: string;
-  /** Headline. Required — communicates what's missing. */
+  /** Headline. Required  -  communicates what's missing. */
   title: React.ReactNode;
   /** Optional supporting copy. */
   description?: React.ReactNode;

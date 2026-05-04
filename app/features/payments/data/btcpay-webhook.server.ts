@@ -134,7 +134,7 @@ export async function processBtcpayWebhookPayload(
     return;
   }
 
-  // 0-conf: do not grant access here — polling / later webhooks complete after ≥1 conf.
+  // 0-conf: do not grant access here  -  polling / later webhooks complete after ≥1 conf.
   // InvoiceSettled: usually matches store speed policy; we still require confirmations via snapshot.
   if (type === "InvoiceSettled") {
     await settleSubscriptionFromBtcpayInvoiceId(invoiceId);

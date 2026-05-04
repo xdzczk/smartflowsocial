@@ -127,7 +127,7 @@ const NIP46_RPC_TIMEOUTS = {
  * Why retry at all: Primal Signer on iOS replies to roughly every other
  * `get_public_key` we publish (alternating success/failure with ~60 s
  * gaps, both subs catch nothing in failure runs even though all 3 relays
- * `OK` our event). The bunker app is alive and approving — its iOS
+ * `OK` our event). The bunker app is alive and approving  -  its iOS
  * push/wakeup state machine just silently swallows individual events on
  * a cooldown. We can't fix Primal, but a fresh EVENT id + fresh per-RPC
  * REQ a few seconds later usually punches through. Inspired by the way
@@ -154,7 +154,7 @@ const NIP46_RPC_PER_ATTEMPT_TIMEOUT_MS = 7_000;
  * persistent one (see `Nip46Signer.openPerRpcSubscription` for why). When
  * a sign-in fails on iOS, the absence of `rpc-sub:dispatched` for the
  * matching method+id tells us the bunker never replied to either
- * subscription on that attempt — i.e. the failure is on Primal's side or
+ * subscription on that attempt  -  i.e. the failure is on Primal's side or
  * upstream of the relay, not in our subscription handling.
  *
  * `rpc:retry` shows the per-attempt retry loop (see
@@ -190,7 +190,7 @@ interface PublishableEvent {
  * [nip46-diag] Wraps a `SimplePool` so every `publish()` call emits a log
  * line for the EVENT going out plus per-relay OK / FAIL acks. Returns a
  * Proxy; everything except `publish` is forwarded unchanged. Diagnostic
- * only — see block comment above `nip46log`.
+ * only  -  see block comment above `nip46log`.
  */
 function createLoggingPool(pool: SimplePool, label: string): SimplePool {
   if (typeof window === "undefined") return pool;
@@ -491,8 +491,8 @@ export class Nip46Signer implements NostrSigner {
    * EVENT" a hard guarantee at the relay layer.
    *
    * We keep `nostr-tools` `BunkerSigner.sendRequest` for its encryption,
-   * event signing, listener registration and publish fan-out — all the
-   * pieces that benefit from upstream maintenance — and add Nostrify's
+   * event signing, listener registration and publish fan-out  -  all the
+   * pieces that benefit from upstream maintenance  -  and add Nostrify's
    * fresh-sub-per-RPC pattern on top. Both subs route into the same
    * `listeners[id]` dispatch map; whichever one delivers the reply first
    * resolves the bunker's promise, the other one is a no-op (the listener

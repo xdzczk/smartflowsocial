@@ -140,7 +140,7 @@ export function GiveawayNewBuilderStickySummary({
 
   const cautionHint =
     winnerCount > 50
-      ? "High winner count — confirm it fits your plan cap."
+      ? "High winner count  -  confirm it fits your plan cap."
       : null;
 
   const blocker =

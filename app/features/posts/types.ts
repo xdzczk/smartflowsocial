@@ -364,6 +364,12 @@ export interface PostData extends Omit<
   queueType?: QueueType | null;
   hashTagPreset?: HashTagPreset | null;
   hashtags?: string; // Space-separated hashtags string
+  /** Source note signature for rebuilding kind-6 reposts when this row has no `signedEvent`. */
+  repostSourceSignedEvent?: SignedEvent | null;
+  /** Source note signature for rebuilding kind-1 quotes when this row has no `signedEvent`. */
+  quoteSourceSignedEvent?: SignedEvent | null;
+  /** Quoted long-form signature for kind-1 quotes of articles when this row has no `signedEvent`. */
+  quoteLongFormSourceSignedEvent?: SignedEvent | null;
 }
 
 /**

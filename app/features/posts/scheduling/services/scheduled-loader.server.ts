@@ -16,6 +16,7 @@ import {
   getScheduledLongFormPosts,
   getScheduledPosts,
   getScheduledRepostsCount,
+  pickRescheduleSourceSignedEvents,
 } from "~/features/posts/server";
 import { filterPostsByQueueType } from "~/features/posts/services/post-filtering.server";
 import type { PostData, LongFormPostData } from "~/features/posts/types";
@@ -104,9 +105,16 @@ export async function loadScheduledData(
 
   // Convert PostWithQueueType[] to PostData[] for combineContent
   const postsData: PostData[] = posts.map((post) => {
-    const { queueType, repostOf, ...rest } = post as typeof post & {
-      repostOf?: { fileUrl: string[]; postType: string | null } | null;
-    };
+    const { queueType, repostOf, quoteOf, quoteOfLongForm, ...rest } =
+      post as typeof post & {
+        repostOf?: {
+          fileUrl: string[];
+          postType: string | null;
+          signedEvent?: unknown;
+        } | null;
+        quoteOf?: { signedEvent?: unknown } | null;
+        quoteOfLongForm?: { signedEvent?: unknown } | null;
+      };
     // For reposts with no media, use original post's fileUrl/postType for display
     const isRepostWithNoMedia =
       (post.repost || post.postKind === "REPOST") &&
@@ -118,6 +126,11 @@ export async function loadScheduledData(
     // Validate Prisma JsonValue with Zod schemas (prevents DbNull / invalid-shape issues)
     const signedEventValue = validateSignedEvent(post.signedEvent);
     const nostrEventValue = validateNostrEvent(post.nostrEvent);
+    const sources = pickRescheduleSourceSignedEvents({
+      repostOf,
+      quoteOf,
+      quoteOfLongForm,
+    });
     const result: PostData = {
       ...rest,
       fileUrl,
@@ -125,6 +138,7 @@ export async function loadScheduledData(
       queueType: convertPrismaQueueTypeToQueueType(queueType),
       signedEvent: signedEventValue,
       nostrEvent: nostrEventValue,
+      ...sources,
     };
     return result;
   });

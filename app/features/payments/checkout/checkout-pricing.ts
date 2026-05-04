@@ -47,7 +47,7 @@ export function renewalSummaryLine(params: {
         ? "Renews yearly until you cancel"
         : "Renews monthly until you cancel";
     case "lightning_one_time":
-      return "No auto-renew — pay again to extend";
+      return "No auto-renew  -  pay again to extend";
     case "btc_onchain":
       return "One year prepaid (no auto-renew)";
     default:

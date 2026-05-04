@@ -44,7 +44,7 @@ export function isSignTimeoutError(error: unknown): boolean {
  * connection layer.
  *
  * Sign timeouts (the bunker simply didn't approve) are deliberately NOT
- * connection-like — the transport is still healthy.
+ * connection-like  -  the transport is still healthy.
  */
 export function isConnectionLikeError(error: unknown): boolean {
   if (error instanceof RemoteSignerTimeoutError) {

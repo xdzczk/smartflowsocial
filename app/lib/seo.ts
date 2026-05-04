@@ -144,7 +144,7 @@ export function buildSeoMeta(
   return out;
 }
 
-/** Root default: indexable marketing baseline (no canonical — added by `/` route). */
+/** Root default: indexable marketing baseline (no canonical  -  added by `/` route). */
 export function buildRootDefaultMeta(siteOrigin: string): MetaDescriptor[] {
   return buildSeoMeta(
     {

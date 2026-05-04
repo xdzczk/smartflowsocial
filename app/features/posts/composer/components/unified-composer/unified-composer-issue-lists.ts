@@ -110,7 +110,7 @@ export function buildUnifiedComposerTemplateRailWarnings(p: {
     }
   } else if (p.content.trim() === "" && p.attachmentsLength === 0) {
     templateRailWarnings.push(
-      "Template body is empty — you can still save a starter blueprint."
+      "Template body is empty  -  you can still save a starter blueprint."
     );
   }
 

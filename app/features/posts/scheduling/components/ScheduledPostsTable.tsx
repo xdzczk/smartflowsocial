@@ -481,16 +481,32 @@ export function ScheduledPostsTable({
                       </div>
                     </td>
                     <td className="p-3 text-center">
-                      <span className="text-text-secondary text-xs font-medium">
-                        {post.queueHoldStatus === "HELD_BY_QUEUE"
-                          ? "Paused"
-                          : post.queueHoldStatus ===
-                              "NEEDS_RESIGN_AFTER_QUEUE_RESUME"
-                            ? "Needs re-sign"
+                      {post.queueHoldStatus ===
+                      "NEEDS_RESIGN_AFTER_QUEUE_RESUME" ? (
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-text-secondary text-xs font-medium">
+                            Needs re-sign
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onReschedulePost(post);
+                            }}
+                            className="text-primary hover:text-primary/90 text-xs font-semibold underline"
+                          >
+                            Re-sign
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-text-secondary text-xs font-medium">
+                          {post.queueHoldStatus === "HELD_BY_QUEUE"
+                            ? "Paused"
                             : post.signedEvent
                               ? "Signed"
                               : "Scheduled"}
-                      </span>
+                        </span>
+                      )}
                     </td>
                     <td className="p-3 text-center">
                       <DropdownMenu>

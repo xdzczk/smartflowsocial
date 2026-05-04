@@ -63,7 +63,7 @@ export function GiveawayNewBuilderSelection({
       <p className="text-text-secondary/90 text-[11px] leading-snug">
         {isFollowGraphScope
           ? "Preview winners before lock; locked giveaways cannot be edited."
-          : "Preview before lock — locked giveaways cannot be edited."}
+          : "Preview before lock  -  locked giveaways cannot be edited."}
       </p>
     </section>
   );

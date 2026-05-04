@@ -122,7 +122,7 @@ export async function validateUpload(
   }
 
   // If contentType was provided, verify it matches detected type (prevents
-  // spoofing). Skip when the client sent a generic binary type — magic-byte
+  // spoofing). Skip when the client sent a generic binary type  -  magic-byte
   // detection + allowlist above are authoritative in that case.
   if (contentType) {
     const contentTypeParts = contentType.split(";");

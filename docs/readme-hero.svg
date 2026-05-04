@@ -85,7 +85,7 @@
     </text>
 
     <text x="0" y="172" class="sfsBody">
-      <tspan x="0" dy="0">Scheduling, drafts, queues, and delivery—Remix, Postgres, Redis, BullMQ,</tspan>
+      <tspan x="0" dy="0">Scheduling, drafts, queues, and delivery - Remix, Postgres, Redis, BullMQ,</tspan>
       <tspan x="0" dy="24">with metrics and health checks whether you use the hosted service or</tspan>
       <tspan x="0" dy="24">deploy this repository yourself.</tspan>
     </text>

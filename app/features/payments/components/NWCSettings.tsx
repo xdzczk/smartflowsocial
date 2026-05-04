@@ -96,7 +96,7 @@ export function NWCSettings({
   return (
     <PreferenceSection
       title="Auto-renew wallet"
-      description={`Connect a Lightning wallet (NWC) so subscription renewals can be paid automatically. ${BRAND_NAME} never holds your funds—you can disconnect or revoke access at any time.`}
+      description={`Connect a Lightning wallet (NWC) so subscription renewals can be paid automatically. ${BRAND_NAME} never holds your funds - you can disconnect or revoke access at any time.`}
     >
       <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

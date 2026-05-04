@@ -572,7 +572,7 @@ export async function executeCampaignPayoutBatchStep(
         eligible: false,
         eligibilityErrorCode: "nwc_missing",
         eligibilityErrorMessage:
-          "Payout run not found — start batch from step 0",
+          "Payout run not found  -  start batch from step 0",
         totals: {
           items: totalSteps,
           paid: 0,

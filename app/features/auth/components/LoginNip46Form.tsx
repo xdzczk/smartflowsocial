@@ -43,7 +43,7 @@ export function LoginNip46Form({
         </p>
         <p className="text-text-secondary text-sm leading-relaxed">
           Connect with Amber, nsecBunker, or another NIP-46 signer. Your keys
-          stay in the signer — we never ask for your private key.
+          stay in the signer - we never ask for your private key.
         </p>
       </div>
 

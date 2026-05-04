@@ -170,7 +170,7 @@ export function PostDetailRail({
   mediaCount: number;
   pollOptionCount: number | null;
   statusLabel: string;
-  /** Post | Poll — content type, not relationship */
+  /** Post | Poll  -  content type, not relationship */
   contentLabel: string;
   relationshipType: PostDetailRelationshipType;
   inReplyTo?: {

@@ -1,7 +1,7 @@
 /**
  * Shared composition helpers for per-page skeletons.
  *
- * Phase 1i. Several page skeletons share the same recurring structures —
+ * Phase 1i. Several page skeletons share the same recurring structures  -
  * a "page title + subtitle" block, a stat-card grid, a mobile card list,
  * a desktop board placeholder, a chart card. These live here so per-page
  * skeletons compose them rather than re-implementing.
@@ -11,7 +11,7 @@
  * layout changes, the dev sees the skeleton sitting right next to it.
  *
  * Atoms (Skeleton.Text/Avatar/Button/Input/Pill/Block) come from
- * ~/components/ui/skeleton — sizes track the design tokens automatically.
+ * ~/components/ui/skeleton  -  sizes track the design tokens automatically.
  */
 import { Skeleton } from "~/components/ui/skeleton";
 

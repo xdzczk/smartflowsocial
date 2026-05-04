@@ -97,7 +97,7 @@ export function scopeAllowsEngagementEntryTypePick(scopeType: string): boolean {
   return scopeType === "PERIOD" || scopeType === "SINGLE_POST";
 }
 
-/** Followers / following giveaways pick random accounts from the graph — not engagement-based. */
+/** Followers / following giveaways pick random accounts from the graph  -  not engagement-based. */
 export function scopeIsFollowGraphAccountPool(scopeType: string): boolean {
   return scopeType === "FOLLOWERS" || scopeType === "FOLLOWING";
 }

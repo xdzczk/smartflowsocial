@@ -219,7 +219,7 @@ const UserMenuAccountTrigger = forwardRef<
   /**
    * Desktop: fixed-width column, slight vertical bleed clipped by overflow.
    * Mobile: `tap-target` can enlarge the control to 44×44 on coarse pointers while
-   * we keep h-9 w-9 as the visual baseline — fill with absolute inset-0 so the PFP
+   * we keep h-9 w-9 as the visual baseline  -  fill with absolute inset-0 so the PFP
    * never letterboxes inside the button.
    */
   const triggerAvatarClass = cn(

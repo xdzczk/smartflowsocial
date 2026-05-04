@@ -63,7 +63,7 @@ export function GiveawayProofStudio({
     <div>
       <h1 className="text-text text-2xl font-semibold">Proof Studio</h1>
       <p className="text-text-secondary mt-1 max-w-2xl text-sm">
-        Create shareable proof cards for completed giveaways — preview, switch
+        Create shareable proof cards for completed giveaways - preview, switch
         templates, and export PNGs.
       </p>
     </div>

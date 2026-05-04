@@ -1,7 +1,7 @@
 import { cn } from "~/lib/utils";
 
 /**
- * Native `<input>` / `<textarea>` on campaign flows — visual parity with
+ * Native `<input>` / `<textarea>` on campaign flows  -  visual parity with
  * `~/components/ui/input` (surface, shadow-1, focus-ring), without Radix.
  */
 export const campaignFieldClassNames = cn(
@@ -10,7 +10,7 @@ export const campaignFieldClassNames = cn(
   "disabled:cursor-not-allowed disabled:opacity-50"
 );
 
-/** Native `<select>` — same ladder; slightly taller vertical padding for glyphs. */
+/** Native `<select>`  -  same ladder; slightly taller vertical padding for glyphs. */
 export const campaignSelectClassNames = cn(
   campaignFieldClassNames,
   "block py-1.5"

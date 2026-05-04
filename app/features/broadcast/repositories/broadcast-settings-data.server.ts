@@ -1,5 +1,5 @@
 /**
- * User broadcast settings — Prisma confined to repositories.
+ * User broadcast settings  -  Prisma confined to repositories.
  */
 
 import type { Prisma } from "@prisma/client";

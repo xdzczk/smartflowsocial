@@ -1,5 +1,5 @@
 /**
- * PWA / “Add to Home Screen” install UI — presentational pieces only.
+ * PWA / “Add to Home Screen” install UI  -  presentational pieces only.
  *
  * Sidebar rail: same icon/typography language as main nav; light outline, no centered CTAs.
  */

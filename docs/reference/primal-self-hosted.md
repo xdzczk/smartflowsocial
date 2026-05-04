@@ -8,7 +8,7 @@ The engagement feed uses Primal’s cache request `get_notifications` for **quot
 
 In **primal-caching-service**, only symbols listed in `App.exposed_functions` in `src/app.jl` are
 allowed. If `get_notifications` is **not** in that set, the WebSocket handler responds with
-`unknown api request` and **no EVENT rows** are returned—so the Mentions tab stays empty even when
+`unknown api request` and **no EVENT rows** are returned - so the Mentions tab stays empty even when
 the rest of the cache works.
 
 Upstream Primal deployments include this API; older or minimal forks often omit it.

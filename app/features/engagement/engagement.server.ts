@@ -25,7 +25,7 @@ interface ParsedEvent {
   created_at?: number;
 }
 
-/** Nostr event ids are hex; relays/clients may differ in casing — compare case-insensitively. */
+/** Nostr event ids are hex; relays/clients may differ in casing  -  compare case-insensitively. */
 function eventIdsEqual(a: string | undefined, b: string | undefined): boolean {
   if (!a || !b) return false;
   return a.toLowerCase() === b.toLowerCase();
@@ -191,7 +191,7 @@ function contentEmbedsQuotedEvent(
 
 /**
  * Quote (for Mentions tab) vs reply: many clients use an empty e-tag marker and still put
- * nostr:note / nevent for the parent in the body — that is a thread reply, not a quote.
+ * nostr:note / nevent for the parent in the body  -  that is a thread reply, not a quote.
  * Only treat as quote when the e-tag uses the NIP-10-style "mention" marker for the cited post,
  * plus a nostr reference in content (substring or NIP-27 parse).
  * Exported for Primal global-notification quote detection (must match this heuristic).
@@ -225,7 +225,7 @@ function isReply(targetETag: string[] | undefined): boolean {
 
 /**
  * NIP-27: detect profile or address pointers in note content that reference the user's hex pubkey.
- * Complements `p` tags — some clients only embed nostr:npub / nostr:nprofile / nostr:naddr in text.
+ * Complements `p` tags  -  some clients only embed nostr:npub / nostr:nprofile / nostr:naddr in text.
  */
 function contentMentionsUserPubkey(
   content: string | undefined,
@@ -261,7 +261,7 @@ export function doesEventMentionUser(
 
 /**
  * Kind-1 participates in a NIP-10 thread (reply/root markers), not a standalone @mention.
- * Quotes use an `e` tag with marker `mention` — those are excluded here so real quotes
+ * Quotes use an `e` tag with marker `mention`  -  those are excluded here so real quotes
  * still surface in the Mentions tab.
  */
 export function isStructuredThreadReplyKind1(

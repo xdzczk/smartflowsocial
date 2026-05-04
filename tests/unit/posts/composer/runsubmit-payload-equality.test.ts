@@ -8,7 +8,7 @@
  * pending-publish lifecycle that drives `runSubmit`. The fresh attempt
  * fails because the bunker is asleep, the resume callback fires when the
  * signer comes back online, and we capture both FormData objects to verify
- * they are byte-for-byte identical — including the relay override field
+ * they are byte-for-byte identical  -  including the relay override field
  * (which is what the user originally observed regressing) and the
  * submissionId (which guarantees the server-side
  * creationIdempotencyKey collapses both attempts onto one Post row).

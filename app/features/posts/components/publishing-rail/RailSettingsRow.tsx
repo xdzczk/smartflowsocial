@@ -5,7 +5,7 @@ import { cn } from "~/lib/utils";
 
 import { RAIL_SETTINGS_ROW } from "./tokens";
 
-/** Label + trailing control (e.g. Switch) — right column aligns across rows */
+/** Label + trailing control (e.g. Switch)  -  right column aligns across rows */
 export function RailSettingsRow({
   label,
   labelFor,

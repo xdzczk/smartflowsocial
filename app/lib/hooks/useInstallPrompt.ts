@@ -1,10 +1,10 @@
 /**
- * useInstallPrompt — hook backing dashboard PWA install UI (sidebar / drawer panel).
+ * useInstallPrompt  -  hook backing dashboard PWA install UI (sidebar / drawer panel).
  *
  * Captures Chromium's `beforeinstallprompt` event (Android Chrome, desktop
  * Chrome/Edge) so we can render our own install affordance instead of the
  * default mini-infobar. iOS Safari never fires this event (Apple has no
- * programmatic install API) — for iOS we detect it separately and render
+ * programmatic install API)  -  for iOS we detect it separately and render
  * an "Add to Home Screen" instruction card.
  *
  * Dismissal: stored in localStorage with a 30-day TTL. Re-prompting a user
@@ -113,7 +113,7 @@ export function useInstallPrompt(): UseInstallPromptResult {
     queueMicrotask(() => setDismissed(isDismissalCurrent()));
 
     const onBeforeInstall = (e: Event) => {
-      // Suppress Chromium's default mini-infobar — we render our own.
+      // Suppress Chromium's default mini-infobar  -  we render our own.
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };

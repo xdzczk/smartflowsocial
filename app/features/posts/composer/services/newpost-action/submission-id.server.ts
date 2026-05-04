@@ -5,7 +5,7 @@
  * every publish form submission. The same id is reused across signer-reconnect
  * resumes of the same user attempt, so the server uses it as the basis for
  * `creationIdempotencyKey` to dedupe correctly across cold restarts and
- * autocomplete retries — see {@link generateSubmissionIdempotencyKey} in
+ * autocomplete retries  -  see {@link generateSubmissionIdempotencyKey} in
  * `app/lib/idempotency.server.ts` and the rationale in
  * `app/features/posts/publishing/use-cases/publish-now.use-case.server.ts`.
  *

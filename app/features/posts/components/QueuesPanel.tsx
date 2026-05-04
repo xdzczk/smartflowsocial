@@ -29,6 +29,7 @@ import {
 import { buildComposeCreateUrl } from "~/features/posts/composer";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import { isQueuePaused } from "~/features/posts/queue-status";
+import { runQueueResumeAutoResign } from "~/features/posts/scheduling/utils/queue-resume-auto-resign.client";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { cn } from "~/lib/utils";
 
@@ -77,11 +78,11 @@ function buildResumeQueueSuccessFeedback(data: ToggleSuccessData): {
   let message: string;
   let scheduledLink = false;
   if (needsResign > 0 && resumed > 0) {
-    message = `Queue resumed. ${resumed} ${resumed === 1 ? "post" : "posts"} republished; ${needsResign} ${needsResign === 1 ? "still needs" : "still need"} re-signing before publish.`;
-    scheduledLink = true;
+    message = `Queue resumed. ${resumed} ${resumed === 1 ? "post" : "posts"} republished; signing ${needsResign} rescheduled ${needsResign === 1 ? "item" : "items"} now.`;
+    scheduledLink = false;
   } else if (needsResign > 0) {
-    message = `Queue resumed. ${needsResign} scheduled ${needsResign === 1 ? "post" : "posts"} need re-signing before publish.`;
-    scheduledLink = true;
+    message = `Queue resumed. Your signer will authorize ${needsResign} rescheduled ${needsResign === 1 ? "item" : "items"}.`;
+    scheduledLink = false;
   } else if (resumed > 0) {
     message = `Queue resumed; ${resumed} scheduled ${resumed === 1 ? "post is" : "posts are"} back on the calendar.`;
   } else {
@@ -175,6 +176,8 @@ export function QueuesPanel({
   const lastActionMetaRef = useRef<{
     action: "pause_queue" | "resume_queue";
   } | null>(null);
+  /** Queue whose resume action should trigger automatic batch signing on success. */
+  const lastResumeQueueIdRef = useRef<string | null>(null);
 
   const countByName = useMemo(() => {
     const m = new Map<string, number>();
@@ -228,7 +231,36 @@ export function QueuesPanel({
       lastActionMetaRef.current = null;
 
       if (meta?.action === "resume_queue") {
+        const needsResign = data.needsResignCount ?? 0;
+        const queueIdForResign = lastResumeQueueIdRef.current;
+        lastResumeQueueIdRef.current = null;
+
         setFeedback(buildResumeQueueSuccessFeedback(data));
+
+        if (needsResign > 0 && queueIdForResign) {
+          void (async () => {
+            const tid = toast.loading(
+              `Signing ${needsResign} scheduled ${needsResign === 1 ? "item" : "items"}…`
+            );
+            const outcome = await runQueueResumeAutoResign({
+              queueTypeId: queueIdForResign,
+              queueTypes,
+            });
+            toast.dismiss(tid);
+            if (outcome.ok) {
+              if (outcome.signedCount > 0) {
+                toast.success(
+                  outcome.signedCount === 1
+                    ? "1 item signed and scheduled."
+                    : `${outcome.signedCount} items signed and scheduled.`
+                );
+              }
+            } else {
+              toast.error(outcome.message);
+            }
+            revalidator.revalidate();
+          })();
+        }
         return;
       }
 
@@ -236,7 +268,7 @@ export function QueuesPanel({
         setFeedback(buildPauseQueueSuccessFeedback(data));
       }
     });
-  }, [toggleFetcher.data, toggleFetcher.state, revalidator]);
+  }, [toggleFetcher.data, toggleFetcher.state, revalidator, queueTypes]);
 
   const createDisabled = !canCreateMoreQueues || !onCreateQueueClick;
   const createTitle =
@@ -262,6 +294,9 @@ export function QueuesPanel({
     fd.set("id", queue.id);
     lastProcessedFetcherJson.current = null;
     lastActionMetaRef.current = { action };
+    if (action === "resume_queue") {
+      lastResumeQueueIdRef.current = queue.id;
+    }
     setFeedback(null);
     setPendingIntent({ queueId: queue.id, action });
     toggleFetcher.submit(fd, { method: "post", action: "/dashboard/settings" });
@@ -486,7 +521,7 @@ export function QueuesPanel({
                                 </span>
                               ) : (
                                 <span className="text-text-tertiary tabular-nums">
-                                  —
+                                  -
                                 </span>
                               )}
                             </div>

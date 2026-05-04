@@ -26,7 +26,7 @@ export const BRAND_APP_TITLE = `${BRAND_NAME} | Nostr-native publishing platform
 export const BRAND_DESCRIPTION =
   "Schedule posts, manage content calendars, publish threads and articles, and run Bitcoin-native campaigns with SmartFlowSocial, the Nostr-native publishing operating system.";
 
-export const brandLineProofCaption = `— ${BRAND_NAME}`;
+export const brandLineProofCaption = ` - ${BRAND_NAME}`;
 
 export const poweredByBrand = `Powered by ${BRAND_NAME}`;
 

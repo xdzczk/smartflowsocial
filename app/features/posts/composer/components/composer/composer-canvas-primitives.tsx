@@ -15,8 +15,8 @@ export interface ComposerCanvasSectionLabelProps {
   /** When `as` is `"label"`, associates with a control id. */
   htmlFor?: string;
   /**
-   * `default` — utility caps label (poll, media, shortform).
-   * `article` — restrained sentence case for longform editorial hierarchy.
+   * `default`  -  utility caps label (poll, media, shortform).
+   * `article`  -  restrained sentence case for longform editorial hierarchy.
    */
   tone?: "default" | "article";
 }

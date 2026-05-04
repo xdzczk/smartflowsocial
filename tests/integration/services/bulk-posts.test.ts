@@ -102,7 +102,7 @@ describe("Bulk Posts Service", () => {
       { id: "queue-1", name: "Queue 1", isEnabled: true },
       { id: "queue-2", name: "Queue 2", isEnabled: true, status: "archived" },
       { id: "queue-3", name: "Queue 3", isEnabled: true },
-      { id: "queue-4", name: "Queue 4" }, // Missing isEnabled — still shown if not archived
+      { id: "queue-4", name: "Queue 4" }, // Missing isEnabled  -  still shown if not archived
     ]);
     (getUserHashTagPresets as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 

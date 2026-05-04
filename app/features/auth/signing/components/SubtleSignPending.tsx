@@ -14,7 +14,7 @@
  * `use-ephemeral-sign-tier.client.ts` encapsulates that swap.
  *
  * This component renders nothing for non-ephemeral attempts, terminal
- * states, or `null` — the host can mount it unconditionally next to the
+ * states, or `null`  -  the host can mount it unconditionally next to the
  * action button without branching on intent kind.
  */
 

@@ -5,7 +5,7 @@ import { SettingsSectionHeader } from "./SettingsSectionHeader";
 export interface ManagementListSectionProps {
   title: string;
   description?: string;
-  /** Primary list action (e.g. Add queue type) — outline/secondary, not full-width primary. */
+  /** Primary list action (e.g. Add queue type)  -  outline/secondary, not full-width primary. */
   primaryAction?: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode;
@@ -13,7 +13,7 @@ export interface ManagementListSectionProps {
 }
 
 /**
- * Pattern B — repeatable lists (queues, relays, blocklists). Row-first; reserve full cards for dense items.
+ * Pattern B  -  repeatable lists (queues, relays, blocklists). Row-first; reserve full cards for dense items.
  */
 export function ManagementListSection({
   title,

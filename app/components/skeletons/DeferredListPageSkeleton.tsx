@@ -18,7 +18,7 @@ export function DeferredListPageSkeleton({
   subtitle?: string;
   variant?: DeferredListPageSkeletonVariant;
 }) {
-  const label = subtitle ? `${title} — ${subtitle}` : title;
+  const label = subtitle ? `${title} - ${subtitle}` : title;
 
   if (variant === "detail") {
     return (

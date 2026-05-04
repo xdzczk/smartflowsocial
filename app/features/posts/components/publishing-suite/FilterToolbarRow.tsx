@@ -8,7 +8,7 @@ import { cn } from "~/lib/utils";
  * Responsive strategy:
  * - Below sm: row1 = type + queue (side by side when queue is shown), row2 = dates + presets
  * - sm to lg: two-column row for type + queue, dates span below
- * - lg+: single row — type (left), dates + presets (centered in the middle track), queue (right)
+ * - lg+: single row  -  type (left), dates + presets (centered in the middle track), queue (right)
  */
 export function FilterToolbarRow({
   typeControl,

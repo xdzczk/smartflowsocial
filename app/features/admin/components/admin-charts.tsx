@@ -1,5 +1,5 @@
 /**
- * Shared Recharts defaults for admin analytics — theme-aligned strokes and tooltips.
+ * Shared Recharts defaults for admin analytics  -  theme-aligned strokes and tooltips.
  */
 
 import { useCallback } from "react";

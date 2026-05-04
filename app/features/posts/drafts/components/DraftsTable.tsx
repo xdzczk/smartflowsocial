@@ -1,5 +1,5 @@
 /**
- * Drafts table — resume-first layout (desktop table + mobile cards).
+ * Drafts table  -  resume-first layout (desktop table + mobile cards).
  */
 
 import { Link, useFetcher, useNavigate } from "@remix-run/react";

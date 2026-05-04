@@ -30,7 +30,7 @@ export interface SegmentedControlProps extends Omit<
 
 /**
  * Single-choice segmented control (radiogroup). Active segment uses selection
- * tokens — not `action-primary` (reserved for primary CTAs).
+ * tokens  -  not `action-primary` (reserved for primary CTAs).
  */
 export const SegmentedControl = React.forwardRef<
   HTMLDivElement,

@@ -5,7 +5,7 @@ import { SettingsSectionHeader } from "./SettingsSectionHeader";
 export interface PreferenceSectionProps {
   title: string;
   description?: string;
-  /** Optional header actions (rare for Pattern A — prefer inline field actions). */
+  /** Optional header actions (rare for Pattern A  -  prefer inline field actions). */
   headerActions?: React.ReactNode;
   children: React.ReactNode;
   /** Optional footer row (inline save, hints). */
@@ -15,7 +15,7 @@ export interface PreferenceSectionProps {
 }
 
 /**
- * Pattern A — lightweight app preferences (timezone, formats, toggles).
+ * Pattern A  -  lightweight app preferences (timezone, formats, toggles).
  * Prefer surfaces + spacing over heavy cards; pair with autosave or inline save, not full-width primary slabs.
  */
 export function PreferenceSection({

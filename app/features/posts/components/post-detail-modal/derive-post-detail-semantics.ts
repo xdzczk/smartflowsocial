@@ -1,6 +1,6 @@
 /**
  * Derives content type vs relationship semantics for Post Detail Modal (V2.2).
- * Pure functions — safe for client and server.
+ * Pure functions  -  safe for client and server.
  */
 
 import * as nip27 from "nostr-tools/nip27";
@@ -272,7 +272,7 @@ export function derivePostDetailSemantics(args: {
   };
 }
 
-/** Primary header label: Post | Poll (not relationship — use chip for that). */
+/** Primary header label: Post | Poll (not relationship  -  use chip for that). */
 export function getPrimaryContentTypeLabel(args: {
   innerVariant: Exclude<PostDetailContentVariant, "thread">;
 }): string {

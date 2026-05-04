@@ -144,7 +144,7 @@ export function getStatusColor(
 const PAST_POST_QUEUE_OPACITY = 0.65;
 
 /**
- * Queue color base, surface tint, text color, border logic — locked system-wide for calendar.
+ * Queue color base, surface tint, text color, border logic  -  locked system-wide for calendar.
  * Derives from getQueueColorBundle; no random color math in components.
  */
 export function getQueueColorStyle(
@@ -189,7 +189,7 @@ export function getQueueColorStyle(
     };
   }
 
-  // Unassigned: same greys as Next 7 days — lighter by default (opacity-65 equivalent), darker on hover/focus/touch (opacity-100)
+  // Unassigned: same greys as Next 7 days  -  lighter by default (opacity-65 equivalent), darker on hover/focus/touch (opacity-100)
   const unassignedBgDefault = "hsl(var(--text-secondary) / 0.36)";
   const unassignedBgHover = "hsl(var(--text-secondary) / 0.55)";
   return {

@@ -433,7 +433,7 @@ export default function ContestsIndexRoute() {
                             />
                           ) : (
                             <div className="text-text-secondary flex size-full items-center justify-center text-[10px]">
-                              —
+                              -
                             </div>
                           )}
                         </div>
@@ -577,7 +577,7 @@ export default function ContestsIndexRoute() {
                         />
                       ) : (
                         <div className="text-text-secondary flex size-full items-center justify-center text-xs">
-                          —
+                          -
                         </div>
                       )}
                     </div>

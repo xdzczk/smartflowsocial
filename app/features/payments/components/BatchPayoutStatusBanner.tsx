@@ -65,7 +65,7 @@ export function BatchPayoutStatusBanner({
             </p>
             <p className="text-text-secondary text-xs leading-relaxed">
               Your wallet is paying each Lightning invoice. Progress updates
-              after each payment—keep this tab open until it finishes.
+              after each payment - keep this tab open until it finishes.
             </p>
           </div>
           {progress && progress.totalSteps > 0 ? (

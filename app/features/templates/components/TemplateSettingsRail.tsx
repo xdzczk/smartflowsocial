@@ -93,7 +93,7 @@ export function TemplateSettingsRail({
         <div>
           <RailSectionHeader>Template</RailSectionHeader>
           <p className="text-text-secondary mt-1 text-xs leading-relaxed">
-            Reusable blueprint — not a live post. Publishing happens when you
+            Reusable blueprint - not a live post. Publishing happens when you
             use this template in the composer.
           </p>
           <div className="mt-3 space-y-2">

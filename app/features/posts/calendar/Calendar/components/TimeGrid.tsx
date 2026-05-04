@@ -142,7 +142,7 @@ export function TimeGrid({
         }}
       >
         {/*
-         * Sticky time-label overlay — first flex child so its y=0 matches
+         * Sticky time-label overlay  -  first flex child so its y=0 matches
          * the rows-wrapper's y=0. height:0 keeps it out of the flex column
          * flow; overflow:visible lets the absolutely-positioned labels render
          * at top = N × ROW_HEIGHT_PX. position:sticky left:0 pins the strip

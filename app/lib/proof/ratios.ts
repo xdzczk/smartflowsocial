@@ -10,7 +10,7 @@ export const PROOF_RATIO_PREVIEW: Record<
   landscape: { aspectClass: "aspect-video", maxPreviewPx: 720 },
 };
 
-/** Export dimensions (logical size before pixelRatio) — matches prior admin proof */
+/** Export dimensions (logical size before pixelRatio)  -  matches prior admin proof */
 export const PROOF_EXPORT_PX: Record<ProofRatio, { w: number; h: number }> = {
   portrait: { w: 1080, h: 1350 },
   square: { w: 1080, h: 1080 },

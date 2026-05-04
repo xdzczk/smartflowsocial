@@ -4,7 +4,7 @@ import { cn } from "~/lib/utils";
 
 /**
  * Product page title row variants. `marketing` is reserved for future public/marketing
- * shells (e.g. Plans); it currently matches `library` — do not force migration yet.
+ * shells (e.g. Plans); it currently matches `library`  -  do not force migration yet.
  */
 export type PageHeaderVariant =
   | "library"

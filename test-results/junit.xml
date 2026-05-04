@@ -1,21 +1,51 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="8" failures="0" errors="0" time="0.003008042">
-    <testsuite name="tests/unit/posts/queue-runway.test.ts" timestamp="2026-05-02T17:22:52.328Z" hostname="Ivans-MacBook-Pro.local" tests="8" failures="0" errors="0" skipped="0" time="0.003008042">
-        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; estimatePostsPerDayForQueue uses 24h / interval for INTERVAL" time="0.000736916">
+<testsuites name="vitest tests" tests="22" failures="0" errors="0" time="0.013674584">
+    <testsuite name="tests/unit/coverage-w1-proof.test.ts" timestamp="2026-05-04T03:51:08.643Z" hostname="Ivans-MacBook-Pro.local" tests="14" failures="0" errors="0" skipped="0" time="0.010813375">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofSummary &gt; builds metric-first summaries and trims empty lines" time="0.000856792">
         </testcase>
-        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; estimatePostsPerDayForQueue returns 0 when queue disabled" time="0.000113375">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofSummary &gt; falls back to title/subtitle when hero is absent" time="0.000159709">
         </testcase>
-        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; estimatePostsPerDayForQueue uses slot count for FIXED_SLOTS" time="0.000091083">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofCaption &gt; creates giveaway public-summary caption" time="0.002605708">
         </testcase>
-        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; estimatePostsPerDayForQueue averages weekly slots over 7 days" time="0.00019775">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofCaption &gt; creates contest public-summary caption" time="0.000178541">
         </testcase>
-        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; formatQueueRunwayDaysLabel uses ceil of posts / rate" time="0.000398959">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofCaption &gt; creates admin caption with newline brand line" time="0.000119917">
         </testcase>
-        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; formatShortCadenceLabel prefers cadenceLabel when set" time="0.000211">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofCaption &gt; uses generic fallback caption path" time="0.000080958">
         </testcase>
-        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; buildEarliestNextScheduledUtcMsByQueueFromFlow ignores attached follow-ups" time="0.00044325">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; contest/giveaway adapters &gt; builds all contest payload card types" time="0.00042525">
         </testcase>
-        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; buildEarliestNextScheduledUtcMsByQueueFromFlow reads dependencyMode from originalData when missing on item" time="0.000079375">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; contest/giveaway adapters &gt; builds all giveaway payload card types" time="0.000292875">
+        </testcase>
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; themes &gt; covers class builders for all ratio/tone branches" time="0.004168416">
+        </testcase>
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; uses element background when non-transparent" time="0.000380583">
+        </testcase>
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; falls back to --card CSS variable when transparent" time="0.000134">
+        </testcase>
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; falls back to white when no element bg and no --card value" time="0.0000815">
+        </testcase>
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; formats proof export filenames" time="0.000089542">
+        </testcase>
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; exports png using html-to-image and clicks download anchor" time="0.000379208">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/posts/queue-runway.test.ts" timestamp="2026-05-04T03:51:08.645Z" hostname="Ivans-MacBook-Pro.local" tests="8" failures="0" errors="0" skipped="0" time="0.002861209">
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; estimatePostsPerDayForQueue uses 24h / interval for INTERVAL" time="0.000762125">
+        </testcase>
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; estimatePostsPerDayForQueue returns 0 when queue disabled" time="0.000119084">
+        </testcase>
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; estimatePostsPerDayForQueue uses slot count for FIXED_SLOTS" time="0.000101084">
+        </testcase>
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; estimatePostsPerDayForQueue averages weekly slots over 7 days" time="0.000173166">
+        </testcase>
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; formatQueueRunwayDaysLabel uses ceil of posts / rate" time="0.000186041">
+        </testcase>
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; formatShortCadenceLabel prefers cadenceLabel when set" time="0.000141">
+        </testcase>
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; buildEarliestNextScheduledUtcMsByQueueFromFlow ignores attached follow-ups" time="0.000469333">
+        </testcase>
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; buildEarliestNextScheduledUtcMsByQueueFromFlow reads dependencyMode from originalData when missing on item" time="0.000087125">
         </testcase>
     </testsuite>
 </testsuites>

@@ -657,7 +657,7 @@ export default function NostrLoginPanel() {
 
   // When we land on "requesting_signature" (after extension or remote signer is ready),
   // trigger the actual signature request. The UI shows "Waiting for signature..." but we
-  // must call performLogin() to ask the extension/signer to sign — we were not doing this
+  // must call performLogin() to ask the extension/signer to sign  -  we were not doing this
   // before, so the user was stuck with no prompt from the extension.
   const hasTriggeredLoginRef = useRef(false);
   useEffect(() => {

@@ -10,7 +10,7 @@
  * Server-only flags continue to live in `~/lib/feature-flags.server`.
  *
  * Tests can override individual flags via {@link _setClientFeatureFlagsForTests}
- * — production code paths read the named export directly.
+ *  -  production code paths read the named export directly.
  */
 
 function parseBooleanEnv(
@@ -32,7 +32,7 @@ function parseBooleanEnv(
  * bundle has no `process` global, and Remix's static replacement only
  * applies to dot-accessed `process.env.NODE_ENV`-style identifiers. A
  * runtime `process.env[...]` lookup throws `ReferenceError: process is
- * not defined` and crashes the entire client bundle's hydration —
+ * not defined` and crashes the entire client bundle's hydration  -
  * exactly the bug that blocked the `/` login page from ever flipping out
  * of the SSR "Preparing sign-in…" placeholder.
  */
@@ -58,7 +58,7 @@ export const clientFeatureFlags: { signingMultiSlot: boolean } = {
    * When true, the signing-attempts store keeps multiple in-flight
    * attempts (capped at MAX_ATTEMPTS) keyed by attemptId, with LRU
    * non-foreground eviction. When false, every `start()` cancels any
-   * prior attempt — the legacy pre-PR-2 single-slot behavior.
+   * prior attempt  -  the legacy pre-PR-2 single-slot behavior.
    *
    * Default ON: PR 6 of the unified-signing-recovery plan flips multi-slot
    * to the production default. Set `SIGNING_MULTI_SLOT=false` in env to
@@ -68,7 +68,7 @@ export const clientFeatureFlags: { signingMultiSlot: boolean } = {
 };
 
 /**
- * Test-only override. Production code MUST NOT call this — flags should
+ * Test-only override. Production code MUST NOT call this  -  flags should
  * be set via env vars at build/deploy time so dead branches can be
  * eliminated by the bundler.
  */

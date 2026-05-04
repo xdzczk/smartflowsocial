@@ -392,7 +392,7 @@ export function useLongFormSubmission({
 
         // Funnel through the shared helpers (Record adapter) so the
         // encoding and "non-empty" guard match every other publish
-        // surface — and so resumed attempts ship the *same*
+        // surface  -  and so resumed attempts ship the *same*
         // submissionId the store handed us.
         const sidecar: Record<string, string> = {};
         appendRelayOverride(sidecar, relayOverride);
@@ -405,7 +405,7 @@ export function useLongFormSubmission({
       } catch (error) {
         if (isAttemptStale(submissionId)) {
           // Stale attempts must not surface their late errors as a UI
-          // banner — the user already moved on.
+          // banner  -  the user already moved on.
           return;
         }
         const { handleAsyncError } = await import("~/lib/error-handler.client");

@@ -57,7 +57,7 @@ for (const filePath of walkDir(APP_DIR)) {
       }
     }
 
-    // @ts-expect-error without comment (must have " - " or " -- " and text after)
+    // @ts-expect-error without comment (must have "-" / en dash after directive and text after)
     if (line.includes("@ts-expect-error")) {
       const hasComment =
         /@ts-expect-error\s*[-–]\s+\S/.test(line) ||

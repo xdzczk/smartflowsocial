@@ -37,7 +37,7 @@ for (const cssFile of cssFiles) {
   const stats = fs.statSync(fullPath);
   const content = fs.readFileSync(fullPath, "utf8");
 
-  // Check for essential utility classes — confirms Tailwind content scanning worked
+  // Check for essential utility classes  -  confirms Tailwind content scanning worked
   const checks = {
     container: content.includes(".container"),
     grid: content.includes(".grid"),

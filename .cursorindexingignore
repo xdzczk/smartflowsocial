@@ -2,7 +2,7 @@
 # in the codebase index (semantic search / @-mentions / Tab completions
 # context). Use this for large generated, vendored, or binary trees.
 #
-# This is the lighter-weight cousin of `.cursorignore` — same syntax as
+# This is the lighter-weight cousin of `.cursorignore`  -  same syntax as
 # `.gitignore`. Edit freely.
 
 # Dependencies

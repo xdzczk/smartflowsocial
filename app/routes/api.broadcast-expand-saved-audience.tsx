@@ -4,7 +4,7 @@ import { requireUserId } from "~/features/auth";
 import { expandSavedAudienceEligiblePubkeys } from "~/features/broadcast/broadcast-recipient-picker.server";
 
 /**
- * GET ?savedAudienceId= — eligible pubkeys for a saved audience (follower filter for CUSTOM).
+ * GET ?savedAudienceId=  -  eligible pubkeys for a saved audience (follower filter for CUSTOM).
  */
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);

@@ -7,11 +7,11 @@
  * - Operational pages use the fluid shell (full width + shared horizontal padding).
  * - Use `PAGE_MAX_WIDTH_CLASS` only for intentionally narrow surfaces (e.g. some
  *   forms, marketing) or pass `constrained` to `PageContent`.
- * - Marketing / landing pages keep their own containers — do not reuse these
+ * - Marketing / landing pages keep their own containers  -  do not reuse these
  *   tokens there.
  */
 
-/** Tailwind `@theme` token — see `app/tailwind.css` (`--max-width-page`, 1400px). */
+/** Tailwind `@theme` token  -  see `app/tailwind.css` (`--max-width-page`, 1400px). */
 export const PAGE_MAX_WIDTH_CLASS = "max-w-page";
 
 /** Horizontal padding aligned across library, settings chrome, dashboard band, and footer. */

@@ -9,17 +9,17 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        // Neutral chip — surface-hover + border, no fill saturation.
+        // Neutral chip  -  surface-hover + border, no fill saturation.
         default: "border-border bg-surface-hover text-text",
         // Secondary now reads as neutral elevated (lavender retired in tokens).
         secondary: "border-transparent bg-surface-active text-text",
-        // Status intents — tinted wash + saturated dark/light text token for AA.
+        // Status intents  -  tinted wash + saturated dark/light text token for AA.
         success: "border-success/30 bg-success/15 text-success-text",
         warning: "border-warning/40 bg-warning/15 text-warning-text",
         destructive: "border-danger/30 bg-danger/15 text-danger-text",
-        // Brand emphasis — used sparingly (recommended for "new", "beta", etc.)
+        // Brand emphasis  -  used sparingly (recommended for "new", "beta", etc.)
         brand: "border-brand/30 bg-brand/12 text-brand-text",
-        // Outline — hairline only, transparent fill.
+        // Outline  -  hairline only, transparent fill.
         outline: "border-border text-text",
       },
     },

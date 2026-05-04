@@ -1,7 +1,7 @@
 /**
  * Shared Nostr social graph helpers (kind 3 follow lists, followers via cache).
  * Uses Primal caching-service RPC names from `App.exposed_functions` (e.g. `contact_list`,
- * `user_followers`, `mutual_follows`) — not legacy names like `event_by_addr` / `get_followers`.
+ * `user_followers`, `mutual_follows`)  -  not legacy names like `event_by_addr` / `get_followers`.
  */
 
 import { fetchFromCache } from "~/features/cache";

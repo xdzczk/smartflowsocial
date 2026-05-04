@@ -32,8 +32,8 @@ This system has **two distinct retry boundaries**:
 
 These layers address different failure modes. A publish can fail because:
 
-- The outbox couldn't enqueue/cancel (Redis down, transient infra error) — **outbox retry**.
-- The queue job ran but publishing failed (relay/network issues, validation issues) — **queue
+- The outbox couldn't enqueue/cancel (Redis down, transient infra error) - **outbox retry**.
+- The queue job ran but publishing failed (relay/network issues, validation issues) - **queue
   retry**.
 
 ---
