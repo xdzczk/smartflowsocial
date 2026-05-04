@@ -119,11 +119,15 @@ export function parseComposerContext(
   };
 }
 
-export function buildComposeEditUrl(context: ComposerContext): string {
+export function buildComposeEditUrl(
+  context: ComposerContext,
+  options?: { composeType?: ComposeContentType }
+): string {
   if (context.mode === "create") return "/dashboard/compose?type=post";
 
   const params = new URLSearchParams();
-  params.set("type", "post");
+  const composeType = options?.composeType ?? "post";
+  params.set("type", composeType === "article" ? "article" : "post");
   params.set("mode", context.mode);
   if (context.mode === "edit_draft") {
     params.set("id", context.draftId);

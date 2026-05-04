@@ -129,6 +129,9 @@ export default function NewLongFormPostPage() {
   // immediate publish intent and still needs to be hydrated with the real
   // postId once the server redirect arrives.
   useEffect(() => {
+    if (searchParams.get("mode") === "edit_scheduled") {
+      return;
+    }
     const publishedPostId = searchParams.get("published");
     const scheduledPostId = searchParams.get("scheduled");
     const postId = publishedPostId ?? scheduledPostId;
@@ -216,7 +219,13 @@ export default function NewLongFormPostPage() {
         if (next === "article") return;
         navigate(`/dashboard/compose?type=${encodeURIComponent(next)}`);
       }}
-      title={initialTemplateData ? "Edit article draft" : "Create article"}
+      title={
+        searchParams.get("mode") === "edit_scheduled"
+          ? "Edit scheduled article"
+          : initialTemplateData
+            ? "Edit article draft"
+            : "Create article"
+      }
       composerHeaderActions={
         <div className="flex items-center gap-0.5 sm:gap-1">
           <Button

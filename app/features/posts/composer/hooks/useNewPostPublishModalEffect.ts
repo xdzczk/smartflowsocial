@@ -54,6 +54,9 @@ export function useNewPostPublishModalEffect(input: {
   } = input;
 
   useEffect(() => {
+    if (searchParams.get("mode") === "edit_scheduled") {
+      return;
+    }
     const publishedPostId = searchParams.get("published");
     const scheduledPostId = searchParams.get("scheduled");
     const postId = publishedPostId ?? scheduledPostId;

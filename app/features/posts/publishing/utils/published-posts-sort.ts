@@ -61,31 +61,35 @@ export function isEngagementMetric(key: string): boolean {
   ].includes(key);
 }
 
+export function comparePublishedPosts(
+  a: PostData,
+  b: PostData,
+  sortConfig: { key: string; direction: "asc" | "desc" },
+  stats: Record<string, unknown> | undefined
+): number {
+  if (sortConfig.key === "publishedAt") {
+    return compareByDate(a, b, sortConfig.direction);
+  }
+
+  if (isEngagementMetric(sortConfig.key)) {
+    return compareByEngagementMetric(
+      a,
+      b,
+      sortConfig.key,
+      sortConfig.direction,
+      stats
+    );
+  }
+
+  return comparePostDataByProperty(a, b, sortConfig.key, sortConfig.direction);
+}
+
 export function sortPublishedPosts(
   posts: PostData[],
   sortConfig: { key: string; direction: "asc" | "desc" },
   stats: Record<string, unknown> | undefined
 ): PostData[] {
-  return [...posts].sort((a, b) => {
-    if (sortConfig.key === "publishedAt") {
-      return compareByDate(a, b, sortConfig.direction);
-    }
-
-    if (isEngagementMetric(sortConfig.key)) {
-      return compareByEngagementMetric(
-        a,
-        b,
-        sortConfig.key,
-        sortConfig.direction,
-        stats
-      );
-    }
-
-    return comparePostDataByProperty(
-      a,
-      b,
-      sortConfig.key,
-      sortConfig.direction
-    );
-  });
+  return [...posts].sort((a, b) =>
+    comparePublishedPosts(a, b, sortConfig, stats)
+  );
 }

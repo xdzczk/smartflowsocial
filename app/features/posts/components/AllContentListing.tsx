@@ -23,6 +23,11 @@ import { invalidateDependentCaches } from "~/features/posts/hooks/useRefreshPost
 import { pruneScheduledQueryData } from "~/features/posts/scheduling/hooks/useScheduledPostsCache";
 import { scheduledPostsKeys } from "~/features/posts/scheduling/hooks/useScheduledPostsQuery";
 import { buildActionUrl } from "~/features/posts/utils/remix-action-url";
+import {
+  buildThreadListRows,
+  threadListRowMatchesSearch,
+  type ThreadListRow,
+} from "~/features/posts/utils/thread-list-grouping";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import { skipInfiniteQueries } from "~/lib/query/is-infinite-query-data";
 import { fromISOString } from "~/lib/temporal";
@@ -345,25 +350,49 @@ export default function AllContentListing({
     return 0;
   });
 
-  const filteredContent = sortedContent.filter((item) =>
-    combinedContentMatchesSearch(item, type, searchTerm)
+  const displayRows: ThreadListRow[] =
+    type === "draft"
+      ? sortedContent.map((root) => ({
+          root,
+          threadSegments: [] as CombinedContent[],
+        }))
+      : [...buildThreadListRows(sortedContent, type)].sort((a, b) => {
+          const aValue = getSortValueForItem(a.root, sortConfig.key);
+          const bValue = getSortValueForItem(b.root, sortConfig.key);
+          if (aValue < bValue) {
+            return sortConfig.direction === "asc" ? -1 : 1;
+          }
+          if (aValue > bValue) {
+            return sortConfig.direction === "asc" ? 1 : -1;
+          }
+          return 0;
+        });
+
+  const filteredRows = displayRows.filter((row) =>
+    threadListRowMatchesSearch(row, type, (item, t) =>
+      combinedContentMatchesSearch(item, t, searchTerm)
+    )
   );
 
-  const selectedDraftContent = filteredContent.filter((item) =>
-    selectedItems.has(item.id)
-  );
+  /** Flat list for drafts table; scheduled/published use thread grouping */
+  const filteredContent = filteredRows.map((row) => row.root);
+
+  const selectedDraftContent = filteredRows
+    .flatMap((row) => [row.root, ...row.threadSegments])
+    .filter((item) => selectedItems.has(item.id));
 
   const dateSortKey = getContentListDateSortKey(type);
 
   // TanStack Virtual returns unstable refs by design; virtualization is intentional (plan: mobile card lists)
   const rowVirtualizer = useVirtualizer({
-    count: filteredContent.length,
+    count: filteredRows.length,
     getScrollElement: () =>
       getContentScrollElement(useDedicatedScroll, mobileScrollContainerRef),
     estimateSize: () => CONTENT_LIST_CARD_HEIGHT_PX + CONTENT_LIST_CARD_GAP_PX,
     overscan: 3,
     getItemKey: (index) => {
-      const item = filteredContent[index];
+      const row = filteredRows[index];
+      const item = row?.root;
       return item ? `${item.type}-${item.id}` : String(index);
     },
   });
@@ -427,7 +456,7 @@ export default function AllContentListing({
                 <DraftsHybridTableHeader
                   showBulkActions={showBulkActions}
                   sortConfig={sortConfig}
-                  filteredContentLength={filteredContent.length}
+                  filteredContentLength={filteredRows.length}
                   selectedItemsSize={selectedItems.size}
                   onToggleSelectAll={onToggleSelectAll}
                   onRequestSort={requestSort}
@@ -437,53 +466,54 @@ export default function AllContentListing({
                   type={type}
                   showBulkActions={showBulkActions}
                   sortConfig={sortConfig}
-                  filteredContentLength={filteredContent.length}
+                  filteredContentLength={filteredRows.length}
                   selectedItemsSize={selectedItems.size}
                   onToggleSelectAll={onToggleSelectAll}
                   onRequestSort={requestSort}
                 />
               )}
               <tbody>
-                {filteredContent.map((item) =>
-                  type === "draft" ? (
-                    <DraftsHybridTableRow
-                      key={`${item.type}-${item.id}`}
-                      item={item}
-                      userTimezone={userTimezone}
-                      userTimeFormat={userTimeFormat}
-                      showBulkActions={showBulkActions}
-                      selectedItems={selectedItems}
-                      onToggleSelection={onToggleSelection}
-                      onResumeDraft={
-                        onResumeDraft ? () => onResumeDraft(item) : undefined
-                      }
-                      draftsActionFetcher={draftsListActionFetcher}
-                      deleteFetcher={deleteFetcher as unknown as PostFetcher}
-                    />
-                  ) : (
-                    <ContentTableRow
-                      key={`${item.type}-${item.id}`}
-                      item={item}
-                      type={type}
-                      userTimezone={userTimezone}
-                      userTimeFormat={userTimeFormat}
-                      showBulkActions={showBulkActions}
-                      selectedItems={selectedItems}
-                      onToggleSelection={onToggleSelection}
-                      onPostSelect={onPostSelect}
-                      onEditPost={onEditPost}
-                      onReschedulePost={onReschedulePost}
-                      deleteFetcher={deleteFetcher as unknown as PostFetcher}
-                      individualRepostFetcher={individualRepostFetcher}
-                      longformRepostFetcher={longformRepostFetcher}
-                      longformQuoteFetcher={longformQuoteFetcher}
-                      onScheduleRepost={onScheduleRepost}
-                      onScheduleQuote={onScheduleQuote}
-                      onBeforeDelete={onBeforeDelete}
-                      onDelete={scheduledDeleteHandler}
-                    />
-                  )
-                )}
+                {type === "draft"
+                  ? filteredContent.map((item) => (
+                      <DraftsHybridTableRow
+                        key={`${item.type}-${item.id}`}
+                        item={item}
+                        userTimezone={userTimezone}
+                        userTimeFormat={userTimeFormat}
+                        showBulkActions={showBulkActions}
+                        selectedItems={selectedItems}
+                        onToggleSelection={onToggleSelection}
+                        onResumeDraft={
+                          onResumeDraft ? () => onResumeDraft(item) : undefined
+                        }
+                        draftsActionFetcher={draftsListActionFetcher}
+                        deleteFetcher={deleteFetcher as unknown as PostFetcher}
+                      />
+                    ))
+                  : filteredRows.map((row) => (
+                      <ContentTableRow
+                        key={`${row.root.type}-${row.root.id}`}
+                        item={row.root}
+                        threadSegments={row.threadSegments}
+                        type={type}
+                        userTimezone={userTimezone}
+                        userTimeFormat={userTimeFormat}
+                        showBulkActions={showBulkActions}
+                        selectedItems={selectedItems}
+                        onToggleSelection={onToggleSelection}
+                        onPostSelect={onPostSelect}
+                        onEditPost={onEditPost}
+                        onReschedulePost={onReschedulePost}
+                        deleteFetcher={deleteFetcher as unknown as PostFetcher}
+                        individualRepostFetcher={individualRepostFetcher}
+                        longformRepostFetcher={longformRepostFetcher}
+                        longformQuoteFetcher={longformQuoteFetcher}
+                        onScheduleRepost={onScheduleRepost}
+                        onScheduleQuote={onScheduleQuote}
+                        onBeforeDelete={onBeforeDelete}
+                        onDelete={scheduledDeleteHandler}
+                      />
+                    ))}
               </tbody>
             </table>
           </div>
@@ -528,7 +558,7 @@ export default function AllContentListing({
               }}
               className="mt-2 min-h-0 flex-1 overflow-auto"
             >
-              {filteredContent.length > 0 ? (
+              {filteredRows.length > 0 ? (
                 <>
                   <div
                     style={{
@@ -538,7 +568,8 @@ export default function AllContentListing({
                     }}
                   >
                     {virtualItems.map((virtualRow) => {
-                      const item = filteredContent[virtualRow.index];
+                      const row = filteredRows[virtualRow.index];
+                      const item = row?.root;
                       if (!item) return null;
                       return (
                         <div
@@ -559,6 +590,9 @@ export default function AllContentListing({
                         >
                           <ContentListCard
                             item={item}
+                            threadSegments={
+                              type === "draft" ? undefined : row.threadSegments
+                            }
                             type={type}
                             userTimezone={userTimezone}
                             userTimeFormat={userTimeFormat}
@@ -610,7 +644,7 @@ export default function AllContentListing({
                 </>
               ) : null}
             </div>
-          ) : filteredContent.length > 0 ? (
+          ) : filteredRows.length > 0 ? (
             <div
               className="mt-2"
               style={{
@@ -620,7 +654,8 @@ export default function AllContentListing({
               }}
             >
               {virtualItems.map((virtualRow) => {
-                const item = filteredContent[virtualRow.index];
+                const row = filteredRows[virtualRow.index];
+                const item = row?.root;
                 if (!item) return null;
                 return (
                   <div
@@ -639,6 +674,9 @@ export default function AllContentListing({
                   >
                     <ContentListCard
                       item={item}
+                      threadSegments={
+                        type === "draft" ? undefined : row.threadSegments
+                      }
                       type={type}
                       userTimezone={userTimezone}
                       userTimeFormat={userTimeFormat}
@@ -676,7 +714,7 @@ export default function AllContentListing({
         </div>
       ) : null}
 
-      {filteredContent.length === 0 ? (
+      {filteredRows.length === 0 ? (
         <div className="mt-8">
           {type === "draft" ? (
             content.length === 0 ? (

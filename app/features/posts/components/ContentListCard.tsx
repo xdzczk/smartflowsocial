@@ -42,6 +42,7 @@ import {
 import { CONTENT_LIST_CARD_HEIGHT_PX } from "./constants";
 import { MediaPreviewCollage } from "./MediaPreviewCollage";
 import { ContentStatusChip, QueueStatusChip } from "./publishing-suite";
+import { ThreadSegmentsMenu } from "./ThreadSegmentsMenu";
 
 function getFetcherFormData(
   fetcher: PostFetcher | undefined
@@ -51,6 +52,8 @@ function getFetcherFormData(
 
 export interface ContentListCardProps {
   item: CombinedContent;
+  /** Later thread segments (same threadGroupId); root is `item`. */
+  threadSegments?: CombinedContent[];
   type: "scheduled" | "draft" | "published";
   userTimezone?: string;
   userTimeFormat?: "12h" | "24h";
@@ -86,6 +89,7 @@ export interface ContentListCardProps {
 // eslint-disable-next-line sonarjs/cognitive-complexity -- action menu branches by type (posted/scheduled/draft) and content (post/longform)
 export function ContentListCard({
   item,
+  threadSegments = [],
   type,
   userTimezone,
   userTimeFormat = "12h",
@@ -237,6 +241,17 @@ export function ContentListCard({
           {getContentPreview(item)?.slice(0, 40) ?? ""}
           {(getContentPreview(item)?.length ?? 0) > 40 ? "…" : ""}
         </p>
+        {(type === "scheduled" || type === "published") &&
+        threadSegments.length > 0 ? (
+          <ThreadSegmentsMenu
+            segments={threadSegments}
+            listType={type === "scheduled" ? "scheduled" : "published"}
+            userTimezone={userTimezone}
+            userTimeFormat={userTimeFormat}
+            onSelectSegment={(seg) => onPostSelect?.(seg)}
+            triggerClassName="mt-0.5"
+          />
+        ) : null}
         <div className="mt-1 flex flex-shrink-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
           <span className="text-text-secondary">{dateLabel}</span>
           <QueueStatusChip

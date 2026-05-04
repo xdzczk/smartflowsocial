@@ -29,6 +29,7 @@ import {
 } from "../combined";
 import { deserializePostDTO, deserializeLongFormPostDTO } from "../dtos.client";
 import type { CombinedContent } from "../types";
+import { dedupeFlowItemsByThreadGroup } from "../utils/flow-thread-dedupe";
 
 function flowItemsToCombinedContent(
   items: FlowLoaderData["flowItems"]
@@ -250,7 +251,9 @@ export function useFlowData(): UseFlowDataResult {
         }
         const newItems = flowItemsToCombinedContent(data.flowItems);
         startTransition(() => {
-          setFlowItems((prev) => [...newItems, ...prev]);
+          setFlowItems((prev) =>
+            dedupeFlowItemsByThreadGroup([...newItems, ...prev])
+          );
           setLastPrependedPastCount(newItems.length);
           setHasMorePast(data.hasMorePast);
           if (data.pastCursor != null) setPastCursor(data.pastCursor);
@@ -303,7 +306,7 @@ export function useFlowData(): UseFlowDataResult {
               seen.add(key);
               return true;
             });
-            return [...prev, ...deduped];
+            return dedupeFlowItemsByThreadGroup([...prev, ...deduped]);
           });
           setHasMoreFuture(data.hasMoreFuture);
           setFutureCursor(data.futureCursor);

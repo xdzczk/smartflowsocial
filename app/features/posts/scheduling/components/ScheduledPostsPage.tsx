@@ -193,6 +193,7 @@ export default function ScheduledPostsPage() {
     postToEdit,
     postToReschedule,
     filteredPosts,
+    selectablePostIds,
     bulkDeleteFetcher,
     deleteFetcher: _deleteFetcher,
     requestSort,
@@ -580,6 +581,7 @@ export default function ScheduledPostsPage() {
 
             <ScheduledPostsTable
               posts={filteredPosts}
+              selectableRootIds={selectablePostIds}
               sortConfig={sortConfig}
               onRequestSort={requestSort}
               selectedPosts={selectedPosts}

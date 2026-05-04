@@ -2,6 +2,7 @@ import { useParams, useSearchParams, useNavigate } from "@remix-run/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import Toast from "~/components/ui/Toast";
+import { getSelectableRootIdsForMixedListing } from "~/features/posts/components/all-content-listing-selectable";
 import { ContentBulkActions } from "~/features/posts/components/ContentBulkActions";
 import { DateRangeQuickPresets } from "~/features/posts/components/DateRangeQuickPresets";
 import { getLongFormPublishedEventId } from "~/features/posts/components/post-detail-modal/post-detail-helpers";
@@ -17,7 +18,6 @@ import {
 import { ScheduleRepostQuoteModal } from "~/features/posts/scheduling";
 import type {
   PostData,
-  CombinedContent,
   LongFormPostData,
   PostFetcher,
 } from "~/features/posts/server";
@@ -47,6 +47,11 @@ import {
   getPostTypeFromPost,
 } from "~/features/posts/utils/publish-result.utils";
 import { isPureRepostSourcePost } from "~/features/posts/utils/repost-chain-policy";
+import {
+  buildPostThreadRows,
+  filterPostsBySearchWithThreads,
+  selectableRootIdsFromPostRows,
+} from "~/features/posts/utils/thread-list-grouping";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useInfiniteScrollSentinel } from "~/lib/hooks/useInfiniteScrollSentinel";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
@@ -247,7 +252,6 @@ export default function PublishedPostsPage() {
     longformQuoteFetcher,
     requestSort,
     togglePostSelection,
-    toggleSelectAll,
     setSelectedPosts,
     handleBulkDelete: originalHandleBulkDelete,
     handleBulkRepost,
@@ -279,10 +283,46 @@ export default function PublishedPostsPage() {
         : currentTab === "reposts"
           ? sortedPosts.filter((p) => isRepostPost(p))
           : sortedPosts;
-    return byTab.filter((post) =>
-      post.caption?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    return filterPostsBySearchWithThreads(byTab, searchTerm);
   }, [sortedPosts, searchTerm, currentTab]);
+
+  const publishedSelectableIds = useMemo(
+    () =>
+      selectableRootIdsFromPostRows(
+        buildPostThreadRows(filteredPosts, "published")
+      ),
+    [filteredPosts]
+  );
+
+  const publishedMixedSelectableIds = useMemo(
+    () =>
+      getSelectableRootIdsForMixedListing(allContent, "published", searchTerm),
+    [allContent, searchTerm]
+  );
+
+  const togglePublishedPostsSelectAll = useCallback(() => {
+    if (
+      publishedSelectableIds.length > 0 &&
+      publishedSelectableIds.every((id) => selectedPosts.has(id)) &&
+      selectedPosts.size === publishedSelectableIds.length
+    ) {
+      setSelectedPosts(new Set());
+    } else {
+      setSelectedPosts(new Set(publishedSelectableIds));
+    }
+  }, [publishedSelectableIds, selectedPosts, setSelectedPosts]);
+
+  const togglePublishedMixedSelectAll = useCallback(() => {
+    if (
+      publishedMixedSelectableIds.length > 0 &&
+      publishedMixedSelectableIds.every((id) => selectedPosts.has(id)) &&
+      selectedPosts.size === publishedMixedSelectableIds.length
+    ) {
+      setSelectedPosts(new Set());
+    } else {
+      setSelectedPosts(new Set(publishedMixedSelectableIds));
+    }
+  }, [publishedMixedSelectableIds, selectedPosts, setSelectedPosts]);
 
   const selectionBlocksRepostQuoteChain = useMemo(() => {
     const selected = allContent.filter((item) => selectedPosts.has(item.id));
@@ -470,9 +510,7 @@ export default function PublishedPostsPage() {
             }}
             selectedItems={selectedPosts}
             onToggleSelection={togglePostSelection}
-            onToggleSelectAll={() =>
-              toggleSelectAll(filteredPosts as PostData[] | CombinedContent[])
-            }
+            onToggleSelectAll={togglePublishedMixedSelectAll}
             showBulkActions={true}
             onClearSelection={() => setSelectedPosts(new Set())}
             onBulkDelete={handleBulkDelete}
@@ -543,9 +581,8 @@ export default function PublishedPostsPage() {
               selectedPosts={selectedPosts}
               stats={stats}
               sortConfig={sortConfig}
-              toggleSelectAll={() =>
-                toggleSelectAll(filteredPosts as PostData[] | CombinedContent[])
-              }
+              selectableRootIds={publishedSelectableIds}
+              toggleSelectAll={togglePublishedPostsSelectAll}
               togglePostSelection={togglePostSelection}
               requestSort={requestSort}
               setSelectedPost={setSelectedPost}

@@ -33,6 +33,8 @@ import {
   PUBLISHING_LIST_SURFACE_CLASS,
   PUBLISHING_TABLE_ROW_CLASS,
 } from "~/features/posts/components/publishing-suite/constants";
+import { ThreadSegmentsMenu } from "~/features/posts/components/ThreadSegmentsMenu";
+import { comparePublishedPosts } from "~/features/posts/publishing/utils/published-posts-sort";
 import type { PostStats } from "~/features/posts/stats.server";
 import type {
   CombinedContent,
@@ -44,6 +46,7 @@ import {
   getPostRowThumbnailBadge,
 } from "~/features/posts/utils/content-helpers";
 import { isPureRepostSourcePost } from "~/features/posts/utils/repost-chain-policy";
+import { buildPostThreadRows } from "~/features/posts/utils/thread-list-grouping";
 import { getImageUrls } from "~/lib/helpers";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import {
@@ -84,7 +87,7 @@ function getPostStats(
 interface SortableHeaderProps {
   sortKey: string;
   label: string;
-  sortConfig: { key: string; direction: string };
+  sortConfig: { key: string; direction: "asc" | "desc" };
   requestSort: (key: string) => void;
 }
 
@@ -111,7 +114,8 @@ interface PublishedPostsTableProps {
   filteredPosts: PostData[];
   selectedPosts: Set<string>;
   stats: Record<string, PostStats>;
-  sortConfig: { key: string; direction: string };
+  sortConfig: { key: string; direction: "asc" | "desc" };
+  selectableRootIds: string[];
   toggleSelectAll: () => void;
   togglePostSelection: (postId: string) => void;
   requestSort: (key: string) => void;
@@ -136,6 +140,7 @@ export default function PublishedPostsTable({
   selectedPosts,
   stats,
   sortConfig,
+  selectableRootIds,
   toggleSelectAll,
   togglePostSelection,
   requestSort,
@@ -159,12 +164,21 @@ export default function PublishedPostsTable({
   const useDedicatedScroll =
     isMobile && (sentinelRef != null || onScrollContainerReady != null);
 
-  const combinedContent = filteredPosts.map((post) =>
-    postToCombinedContent(post)
+  const threadRows = useMemo(() => {
+    const built = buildPostThreadRows(filteredPosts, "published");
+    const statsRecord = stats as Record<string, unknown> | undefined;
+    return [...built].sort((a, b) =>
+      comparePublishedPosts(a.root, b.root, sortConfig, statsRecord)
+    );
+  }, [filteredPosts, sortConfig, stats]);
+
+  const combinedContent = useMemo(
+    () => threadRows.map((r) => postToCombinedContent(r.root)),
+    [threadRows]
   );
   // eslint-disable-next-line react-hooks/incompatible-library -- useVirtualizer is not memoization-safe by design
   const rowVirtualizer = useVirtualizer({
-    count: combinedContent.length,
+    count: threadRows.length,
     getScrollElement: () =>
       useDedicatedScroll && mobileScrollContainerRef.current
         ? mobileScrollContainerRef.current
@@ -173,7 +187,7 @@ export default function PublishedPostsTable({
           : null,
     estimateSize: () => 98 + CONTENT_LIST_CARD_GAP_PX,
     overscan: 3,
-    getItemKey: (index) => combinedContent[index]?.id ?? String(index),
+    getItemKey: (index) => threadRows[index]?.root.id ?? String(index),
   });
   const virtualItems = rowVirtualizer.getVirtualItems();
   const [openMenuRowKey, setOpenMenuRowKey] = useState<Key | null>(null);
@@ -201,8 +215,10 @@ export default function PublishedPostsTable({
                   <Checkbox
                     id="published-select-all"
                     checked={
-                      filteredPosts.length > 0
-                        ? selectedPosts.size === filteredPosts.length
+                      selectableRootIds.length > 0
+                        ? selectableRootIds.every((id) =>
+                            selectedPosts.has(id)
+                          ) && selectedPosts.size === selectableRootIds.length
                         : false
                     }
                     onCheckedChange={() => toggleSelectAll()}
@@ -278,7 +294,8 @@ export default function PublishedPostsTable({
             </thead>
 
             <tbody>
-              {filteredPosts.map((post) => {
+              {threadRows.map((row) => {
+                const post = row.root;
                 const postStats = getPostStats(post, stats);
                 const blockRepostQuoteChain = isPureRepostSourcePost(post);
                 const rowThumbBadge = getPostRowThumbnailBadge({
@@ -370,6 +387,20 @@ export default function PublishedPostsTable({
                           ? post.caption.substring(0, 21) + "..."
                           : (post.caption ?? "")}
                       </p>
+                      {row.threadSegments.length > 0 ? (
+                        <ThreadSegmentsMenu
+                          segments={row.threadSegments.map((p) =>
+                            postToCombinedContent(p)
+                          )}
+                          listType="published"
+                          userTimezone={userTimezone}
+                          userTimeFormat={userTimeFormat}
+                          onSelectSegment={(c) =>
+                            setSelectedPost(c.originalData as PostData)
+                          }
+                          triggerClassName="mt-1"
+                        />
+                      ) : null}
                     </td>
                     <td className={cn("p-3", PUBLISHING_DATETIME_CELL_CLASS)}>
                       {post.publishedAt
@@ -629,8 +660,9 @@ export default function PublishedPostsTable({
                     }}
                   >
                     {virtualItems.map((virtualRow) => {
+                      const row = threadRows[virtualRow.index];
                       const item = combinedContent[virtualRow.index];
-                      if (!item) return null;
+                      if (!item || !row) return null;
                       return (
                         <div
                           key={virtualRow.key}
@@ -650,6 +682,9 @@ export default function PublishedPostsTable({
                         >
                           <ContentListCard
                             item={item}
+                            threadSegments={row.threadSegments.map((p) =>
+                              postToCombinedContent(p)
+                            )}
                             type="published"
                             userTimezone={userTimezone}
                             userTimeFormat={userTimeFormat}
@@ -695,8 +730,9 @@ export default function PublishedPostsTable({
               }}
             >
               {virtualItems.map((virtualRow) => {
+                const row = threadRows[virtualRow.index];
                 const item = combinedContent[virtualRow.index];
-                if (!item) return null;
+                if (!item || !row) return null;
                 return (
                   <div
                     key={virtualRow.key}
@@ -714,6 +750,9 @@ export default function PublishedPostsTable({
                   >
                     <ContentListCard
                       item={item}
+                      threadSegments={row.threadSegments.map((p) =>
+                        postToCombinedContent(p)
+                      )}
                       type="published"
                       userTimezone={userTimezone}
                       userTimeFormat={userTimeFormat}

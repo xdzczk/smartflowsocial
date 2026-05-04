@@ -4,6 +4,8 @@
  */
 
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
+import type { ComposerContext } from "~/features/posts/composer";
+import { getLongFormPost } from "~/features/posts/server";
 import { loadComposerRelayLists } from "~/features/relays/relay-resolution.server";
 import {
   getTemplatePrefill,
@@ -19,10 +21,12 @@ import {
 
 /**
  * Load new longform post page data. When templateId is in the URL, load that template for prefill.
+ * When composerContext is edit_scheduled, load that scheduled longform row for the full composer.
  */
 export async function loadNewLongFormData(
   userId: string,
-  templateId: string | null = null
+  templateId: string | null = null,
+  composerContext: ComposerContext = { mode: "create" }
 ) {
   await requireAnySubscription(userId);
 
@@ -64,6 +68,35 @@ export async function loadNewLongFormData(
       name: template.name,
     })),
   };
+
+  if (composerContext.mode === "edit_scheduled") {
+    const post = await getLongFormPost({
+      id: composerContext.scheduledActionId,
+      userId,
+    });
+    if (!post) {
+      throw new Response("Scheduled article not found", { status: 404 });
+    }
+    if (post.currentState !== "SCHEDULED") {
+      throw new Response(
+        "Only scheduled articles can be opened with this link.",
+        { status: 400 }
+      );
+    }
+    const qt = post.queueType;
+    return {
+      ...base,
+      initialTemplateData: {
+        id: post.id,
+        title: post.title ?? "",
+        summary: post.summary ?? "",
+        content: post.content ?? "",
+        image: post.image ?? "",
+        tags: Array.isArray(post.tags) ? post.tags : [],
+        queueType: qt ? { name: qt.name } : undefined,
+      },
+    };
+  }
 
   if (templateId && templateId.length > 0) {
     const prefill = await getTemplatePrefill({ id: templateId, userId });
