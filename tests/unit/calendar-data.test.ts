@@ -4,6 +4,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+import { collapseCalendarThreadSegments } from "~/features/posts/calendar/Calendar/data/collapse-calendar-thread-segments";
 import { parseDropToDateTime } from "~/features/posts/calendar/Calendar/data/parse-drop-to-date-time";
 import { postsToDateGrid } from "~/features/posts/calendar/Calendar/data/posts-to-date-grid";
 import { postsToTimeGrid } from "~/features/posts/calendar/Calendar/data/posts-to-time-grid";
@@ -119,6 +120,65 @@ describe("Calendar data layer", () => {
       const d = parseDropToDateTime("2025-02-17T09:00", "UTC");
       expect(d.getUTCHours()).toBe(9);
       expect(d.getUTCMinutes()).toBe(0);
+    });
+  });
+
+  describe("collapseCalendarThreadSegments", () => {
+    const gid = "thread_same_group";
+
+    it("keeps one post per threadGroupId (earliest schedule)", () => {
+      const earlyTs = Math.floor(
+        new Date("2025-02-17T09:00:00Z").getTime() / 1000
+      );
+      const lateTs = Math.floor(
+        new Date("2025-02-17T10:00:00Z").getTime() / 1000
+      );
+      /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- fixtures */
+      const a = {
+        id: "seg-a",
+        caption: "a",
+        threadGroupId: gid,
+        scheduledFor: String(earlyTs),
+      } as CalendarPost;
+      /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- fixtures */
+      const b = {
+        id: "seg-b",
+        caption: "b",
+        threadGroupId: gid,
+        scheduledFor: String(lateTs),
+      } as CalendarPost;
+
+      const out = collapseCalendarThreadSegments([a, b], [], {
+        isLongform: false,
+        isAll: false,
+      });
+      expect(out.scheduledPosts.map((p) => p.id)).toEqual(["seg-a"]);
+      expect(out.pastPosts).toEqual([]);
+    });
+
+    it("does not merge posts without threadGroupId", () => {
+      /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- fixtures */
+      const p1 = {
+        id: "x",
+        caption: "x",
+        scheduledFor: String(
+          Math.floor(new Date("2025-02-17T12:00:00Z").getTime() / 1000)
+        ),
+      } as CalendarPost;
+      /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- fixtures */
+      const p2 = {
+        id: "y",
+        caption: "y",
+        scheduledFor: String(
+          Math.floor(new Date("2025-02-17T13:00:00Z").getTime() / 1000)
+        ),
+      } as CalendarPost;
+
+      const out = collapseCalendarThreadSegments([p1, p2], [], {
+        isLongform: false,
+        isAll: false,
+      });
+      expect(out.scheduledPosts).toHaveLength(2);
     });
   });
 });

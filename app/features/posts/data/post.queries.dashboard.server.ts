@@ -7,6 +7,7 @@
 
 import type { Prisma } from "@prisma/client";
 
+import { pickRepresentativeScheduledRows } from "~/features/posts/services/collapse-scheduled-thread-rows.server";
 import {
   parseDateRangeInTimezone,
   parseDateRangeUtc,
@@ -251,13 +252,20 @@ export async function getScheduledPostsInDateRange({
         whereClause.queueType = { name: queueType };
       }
     }
-    return await prisma.post.findMany({
+    const rows = await prisma.post.findMany({
       where: whereClause,
       select: {
+        id: true,
+        threadGroupId: true,
         scheduledAtUtc: true,
         queueType: { select: { name: true } },
       },
     });
+    const picked = pickRepresentativeScheduledRows(rows);
+    return picked.map((p) => ({
+      scheduledAtUtc: p.scheduledAtUtc,
+      queueType: p.queueType,
+    }));
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
     logError(err, {
@@ -559,8 +567,7 @@ export async function getScheduledPostsCountByQueue({
   asOf?: Date;
 }): Promise<ScheduledCountByQueueRow[]> {
   try {
-    const rows = await prisma.post.groupBy({
-      by: ["queueTypeId"],
+    const raw = await prisma.post.findMany({
       where: {
         userId,
         currentState: "SCHEDULED",
@@ -568,11 +575,22 @@ export async function getScheduledPostsCountByQueue({
         /** Queues card / runway: count only standalone scheduled posts, not attached follow-ups */
         dependencyMode: { not: "attached" },
       },
-      _count: { id: true },
+      select: {
+        id: true,
+        threadGroupId: true,
+        scheduledAtUtc: true,
+        queueTypeId: true,
+      },
     });
-    return rows.map((r) => ({
-      queueTypeId: r.queueTypeId,
-      count: r._count.id,
+    const picked = pickRepresentativeScheduledRows(raw);
+    const countByQueueId = new Map<string | null, number>();
+    for (const row of picked) {
+      const k = row.queueTypeId;
+      countByQueueId.set(k, (countByQueueId.get(k) ?? 0) + 1);
+    }
+    return Array.from(countByQueueId.entries()).map(([queueTypeId, count]) => ({
+      queueTypeId,
+      count,
     }));
   } catch (error) {
     logError(error instanceof Error ? error : new Error(String(error)), {
