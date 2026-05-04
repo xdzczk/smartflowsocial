@@ -181,6 +181,9 @@ function toTemporalWeekday(dayOfWeek: number): number {
   return dayOfWeek === 0 ? 7 : dayOfWeek;
 }
 
+/** Must match server weekly horizon in schedulers.ts (enough for next week's occurrence). */
+const WEEKLY_SLOT_SEARCH_HORIZON_DAYS = 42;
+
 function findNextWeeklySlotDate(
   parsedSlots: ParsedWeeklySlot[],
   afterDate: Date,
@@ -189,7 +192,11 @@ function findNextWeeklySlotDate(
   if (parsedSlots.length === 0) return null;
   const baseZoned = fromDate(afterDate, userTimezone);
   const candidates: Date[] = [];
-  for (let daysAhead = 0; daysAhead < 8; daysAhead++) {
+  for (
+    let daysAhead = 0;
+    daysAhead < WEEKLY_SLOT_SEARCH_HORIZON_DAYS;
+    daysAhead++
+  ) {
     const dateZoned = addDays(baseZoned, daysAhead);
     const year = dateZoned.year;
     const month = dateZoned.month;

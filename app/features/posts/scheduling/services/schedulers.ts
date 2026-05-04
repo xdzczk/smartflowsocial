@@ -543,6 +543,9 @@ function toTemporalWeekday(dayOfWeek: number): number {
   return dayOfWeek === 0 ? 7 : dayOfWeek;
 }
 
+/** Enough calendar days to include ≥2 occurrences of every weekday (Sun–Sat). */
+const WEEKLY_SLOT_SEARCH_HORIZON_DAYS = 42;
+
 function findNextWeeklySlot(
   parsedSlots: ParsedWeeklySlot[],
   lastPostTime: Date | null,
@@ -562,7 +565,11 @@ function findNextWeeklySlot(
 
   const candidates: Date[] = [];
 
-  for (let daysAhead = 0; daysAhead < 8; daysAhead++) {
+  for (
+    let daysAhead = 0;
+    daysAhead < WEEKLY_SLOT_SEARCH_HORIZON_DAYS;
+    daysAhead++
+  ) {
     const dateZoned = addDays(baseZoned, daysAhead);
     const year = dateZoned.year;
     const month = dateZoned.month;
