@@ -1,33 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="13" failures="0" errors="0" time="0.031532375">
-    <testsuite name="tests/integration/handlers/queue-type-handler.test.ts" timestamp="2026-05-04T05:06:04.981Z" hostname="Ivans-MacBook-Pro.local" tests="11" failures="0" errors="0" skipped="0" time="0.014947083">
-        <testcase classname="tests/integration/handlers/queue-type-handler.test.ts" name="Queue Type Handler Integration Tests &gt; handleQueueTypeChange &gt; should update post queue type" time="0.001298792">
+<testsuites name="vitest tests" tests="2" failures="0" errors="0" time="0.002183709">
+    <testsuite name="tests/unit/posts/collapse-scheduled-thread-rows.test.ts" timestamp="2026-05-04T05:25:07.454Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.002183709">
+        <testcase classname="tests/unit/posts/collapse-scheduled-thread-rows.test.ts" name="pickRepresentativeScheduledRows &gt; keeps a single row per threadGroupId (earliest scheduledAtUtc)" time="0.001302708">
         </testcase>
-        <testcase classname="tests/integration/handlers/queue-type-handler.test.ts" name="Queue Type Handler Integration Tests &gt; handleQueueTypeChange &gt; should clear scheduledFor for unassigned queue type" time="0.000230458">
-        </testcase>
-        <testcase classname="tests/integration/handlers/queue-type-handler.test.ts" name="Queue Type Handler Integration Tests &gt; handleQueueTypeChange &gt; should fetch scheduled time for assigned queue type" time="0.00101025">
-        </testcase>
-        <testcase classname="tests/integration/handlers/queue-type-handler.test.ts" name="Queue Type Handler Integration Tests &gt; handleQueueTypeChange &gt; should handle API errors gracefully" time="0.000221375">
-        </testcase>
-        <testcase classname="tests/integration/handlers/queue-type-handler.test.ts" name="Queue Type Handler Integration Tests &gt; handleQueueTypeChange &gt; should update displayed hashtags if most used queue type differs from changed value" time="0.00023375">
-        </testcase>
-        <testcase classname="tests/integration/handlers/queue-type-handler.test.ts" name="Queue Type Handler Integration Tests &gt; handleBulkQueueUpdate &gt; should return early for empty posts array" time="0.000216334">
-        </testcase>
-        <testcase classname="tests/integration/handlers/queue-type-handler.test.ts" name="Queue Type Handler Integration Tests &gt; handleBulkQueueUpdate &gt; should update all posts to new queue type" time="0.004648625">
-        </testcase>
-        <testcase classname="tests/integration/handlers/queue-type-handler.test.ts" name="Queue Type Handler Integration Tests &gt; handleBulkQueueUpdate &gt; should use first item time if manually changed" time="0.000983542">
-        </testcase>
-        <testcase classname="tests/integration/handlers/queue-type-handler.test.ts" name="Queue Type Handler Integration Tests &gt; handleBulkQueueUpdate &gt; should calculate interval-based schedule times" time="0.00121975">
-        </testcase>
-        <testcase classname="tests/integration/handlers/queue-type-handler.test.ts" name="Queue Type Handler Integration Tests &gt; handleBulkQueueUpdate &gt; should clear scheduledFor for unassigned queue type" time="0.000196791">
-        </testcase>
-        <testcase classname="tests/integration/handlers/queue-type-handler.test.ts" name="Queue Type Handler Integration Tests &gt; handleBulkQueueUpdate &gt; should calculate FIXED_SLOTS using user timezone for non-UTC users" time="0.003635">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/integration/handlers/queue-type-weekly-slots.test.ts" timestamp="2026-05-04T05:06:04.982Z" hostname="Ivans-MacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0.016585292">
-        <testcase classname="tests/integration/handlers/queue-type-weekly-slots.test.ts" name="Queue Type Handler - WEEKLY_SLOTS Logic &gt; should calculate WEEKLY_SLOTS schedule times correctly" time="0.015382375">
-        </testcase>
-        <testcase classname="tests/integration/handlers/queue-type-weekly-slots.test.ts" name="Queue Type Handler - WEEKLY_SLOTS Logic &gt; should use fallback when WEEKLY_SLOTS config has invalid entries" time="0.000425542">
+        <testcase classname="tests/unit/posts/collapse-scheduled-thread-rows.test.ts" name="pickRepresentativeScheduledRows &gt; keeps all rows when threadGroupId is null" time="0.000169583">
         </testcase>
     </testsuite>
 </testsuites>

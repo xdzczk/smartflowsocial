@@ -57,6 +57,7 @@ import { validateUserData } from "~/lib/validation/user-data";
 import { buildCalendarContentTypeFilterItems } from "./build-calendar-content-type-filter-items";
 import { getPostIsLongform, isSameCalendarSlot } from "./calendar-helpers";
 import { CalendarErrorBoundary } from "./CalendarErrorBoundary";
+import { collapseCalendarThreadSegments } from "./data/collapse-calendar-thread-segments";
 import { DayViewSidebar, useIsLg } from "./DayViewSidebar";
 import { MonthlyView } from "./MonthlyView";
 import type { CalendarPost } from "./PostBlock.types";
@@ -369,8 +370,18 @@ export function Calendar({
   const refreshPostViews = useRefreshPostViews();
   const navigate = useNavigate();
 
+  const { scheduledPosts: displayScheduledPosts, pastPosts: displayPastPosts } =
+    useMemo(
+      () =>
+        collapseCalendarThreadSegments(scheduledPosts, pastPosts, {
+          isLongform,
+          isAll,
+        }),
+      [scheduledPosts, pastPosts, isLongform, isAll]
+    );
+
   const calendarPostsForStats = useMemo(() => {
-    const merged = [...scheduledPosts, ...pastPosts];
+    const merged = [...displayScheduledPosts, ...displayPastPosts];
     const shortPosts: PostData[] = [];
     const longFormPosts: LongFormPostData[] = [];
     for (const p of merged) {
@@ -381,7 +392,7 @@ export function Calendar({
       }
     }
     return { shortPosts, longFormPosts };
-  }, [scheduledPosts, pastPosts, isLongform, isAll]);
+  }, [displayScheduledPosts, displayPastPosts, isLongform, isAll]);
 
   const { stats: calendarStatsMerged } = usePostStatsQuery(
     calendarPostsForStats.shortPosts,
@@ -764,8 +775,8 @@ export function Calendar({
             >
               {view === "day" ? (
                 <DayView
-                  scheduledPosts={scheduledPosts}
-                  pastPosts={pastPosts}
+                  scheduledPosts={displayScheduledPosts}
+                  pastPosts={displayPastPosts}
                   currentDate={currentDate}
                   onPostDrop={handlePostDrop}
                   onPostEdit={handlePostClick}
@@ -779,8 +790,8 @@ export function Calendar({
                 />
               ) : view === "week" ? (
                 <WeekView
-                  scheduledPosts={scheduledPosts}
-                  pastPosts={pastPosts}
+                  scheduledPosts={displayScheduledPosts}
+                  pastPosts={displayPastPosts}
                   currentDate={currentDate}
                   onPostDrop={handlePostDrop}
                   onPostEdit={handlePostClick}
@@ -793,8 +804,8 @@ export function Calendar({
                 />
               ) : (
                 <MonthlyView
-                  scheduledPosts={scheduledPosts}
-                  pastPosts={pastPosts}
+                  scheduledPosts={displayScheduledPosts}
+                  pastPosts={displayPastPosts}
                   currentDate={currentDate}
                   onPostDrop={handlePostDrop}
                   onPostEdit={handlePostClick}
