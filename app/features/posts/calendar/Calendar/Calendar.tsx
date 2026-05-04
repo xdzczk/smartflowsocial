@@ -951,11 +951,6 @@ export function Calendar({
             setCalendarLiveMessage("Article deleted");
             refreshPostViews();
           }}
-          onEdit={(post) => {
-            setDetailModalPost(null);
-            setSelectedPost(null);
-            handleContentEditFromCalendar(post as unknown as CalendarPost);
-          }}
           onReschedule={(post) => {
             setDetailModalPost(null);
             setSelectedPost(null);

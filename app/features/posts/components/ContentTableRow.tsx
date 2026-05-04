@@ -9,6 +9,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
@@ -36,6 +39,7 @@ import type {
   PostData,
   PostFetcher,
 } from "../types";
+import { isAttachedFollowUpContent } from "../utils/attached-follow-up-rows";
 import {
   formatDate,
   getContentPreview,
@@ -55,6 +59,14 @@ function getFetcherFormData(
 ): FormData | null | undefined {
   return (fetcher as { formData?: FormData | null }).formData;
 }
+
+const FORM_FIELD_POST_ID = "postId";
+const REPOST_IN_PROGRESS_LABEL = "Reposting...";
+const REPOST_ACTION_LABEL = "Repost";
+const QUOTE_IN_PROGRESS_LABEL = "Quoting...";
+const QUOTE_ACTION_LABEL = "Quote Post";
+const DELETE_IN_PROGRESS_LABEL = "Deleting...";
+const DELETE_ACTION_LABEL = "Delete";
 
 interface ContentTableRowProps {
   item: CombinedContent;
@@ -84,6 +96,8 @@ interface ContentTableRowProps {
   onBeforeDelete?: (postId: string) => void;
   /** When provided, replaces the default deleteFetcher.submit() so the parent controls the full delete lifecycle (including cascade handling). */
   onDelete?: (postId: string, postType: "post" | "longform") => void;
+  /** Queue follow-ups for this parent row; actions are nested in the parent menu. */
+  attachedFollowUpItems?: CombinedContent[];
 }
 
 export function ContentTableRow({
@@ -108,6 +122,7 @@ export function ContentTableRow({
   onScheduleQuote,
   onBeforeDelete,
   onDelete,
+  attachedFollowUpItems = [],
 }: ContentTableRowProps) {
   const { dateLocale } = useFormattedDate();
   const typeBadge = getContentTypeBadge(item);
@@ -315,6 +330,7 @@ export function ContentTableRow({
           onScheduleQuote={onScheduleQuote}
           onBeforeDelete={onBeforeDelete}
           onDelete={onDelete}
+          attachedFollowUpItems={attachedFollowUpItems}
         />
       </td>
     </tr>
@@ -336,6 +352,7 @@ export function ContentRowActions({
   onScheduleQuote,
   onBeforeDelete,
   onDelete,
+  attachedFollowUpItems = [],
 }: {
   item: CombinedContent;
   type: "scheduled" | "draft" | "published";
@@ -354,6 +371,7 @@ export function ContentRowActions({
   onScheduleQuote?: (post: PostData) => void;
   onBeforeDelete?: (postId: string) => void;
   onDelete?: (postId: string, postType: "post" | "longform") => void;
+  attachedFollowUpItems?: CombinedContent[];
 }) {
   const rootData = useRouteLoaderData("root") as
     | {
@@ -368,6 +386,19 @@ export function ContentRowActions({
     [rootData?.user]
   );
   const blockRepostQuoteChain = isPureRepostSourceContent(item);
+  if (
+    (type === "scheduled" || type === "published") &&
+    isAttachedFollowUpContent(item)
+  ) {
+    return (
+      <span
+        className="text-text-secondary flex h-8 items-center justify-center text-xs"
+        aria-hidden
+      >
+        —
+      </span>
+    );
+  }
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -421,7 +452,11 @@ export function ContentRowActions({
                   return (
                     <>
                       <fetcher.Form method="post">
-                        <input type="hidden" name="postId" value={item.id} />
+                        <input
+                          type="hidden"
+                          name={FORM_FIELD_POST_ID}
+                          value={item.id}
+                        />
                         <input type="hidden" name="_action" value="repost" />
                         <DropdownMenuItem asChild>
                           <button
@@ -429,23 +464,29 @@ export function ContentRowActions({
                             disabled={
                               fetcher.state !== "idle" ||
                               (formData
-                                ? (formData.get("postId") as string | null) ===
-                                  item.id
+                                ? (formData.get(FORM_FIELD_POST_ID) as
+                                    | string
+                                    | null) === item.id
                                 : false)
                             }
                           >
                             {fetcher.state !== "idle" &&
                             (formData
-                              ? (formData.get("postId") as string | null) ===
-                                item.id
+                              ? (formData.get(FORM_FIELD_POST_ID) as
+                                  | string
+                                  | null) === item.id
                               : false)
-                              ? "Reposting..."
-                              : "Repost"}
+                              ? REPOST_IN_PROGRESS_LABEL
+                              : REPOST_ACTION_LABEL}
                           </button>
                         </DropdownMenuItem>
                       </fetcher.Form>
                       <fetcher.Form method="post">
-                        <input type="hidden" name="postId" value={item.id} />
+                        <input
+                          type="hidden"
+                          name={FORM_FIELD_POST_ID}
+                          value={item.id}
+                        />
                         <input type="hidden" name="_action" value="quote" />
                         <DropdownMenuItem asChild>
                           <button
@@ -453,18 +494,20 @@ export function ContentRowActions({
                             disabled={
                               fetcher.state !== "idle" ||
                               (formData
-                                ? (formData.get("postId") as string | null) ===
-                                  item.id
+                                ? (formData.get(FORM_FIELD_POST_ID) as
+                                    | string
+                                    | null) === item.id
                                 : false)
                             }
                           >
                             {fetcher.state !== "idle" &&
                             (formData
-                              ? (formData.get("postId") as string | null) ===
-                                item.id
+                              ? (formData.get(FORM_FIELD_POST_ID) as
+                                  | string
+                                  | null) === item.id
                               : false)
-                              ? "Quoting..."
-                              : "Quote Post"}
+                              ? QUOTE_IN_PROGRESS_LABEL
+                              : QUOTE_ACTION_LABEL}
                           </button>
                         </DropdownMenuItem>
                       </fetcher.Form>
@@ -497,7 +540,11 @@ export function ContentRowActions({
                   const formData = getFetcherFormData(fetcher);
                   return (
                     <fetcher.Form method="post">
-                      <input type="hidden" name="postId" value={item.id} />
+                      <input
+                        type="hidden"
+                        name={FORM_FIELD_POST_ID}
+                        value={item.id}
+                      />
                       <input
                         type="hidden"
                         name="_action"
@@ -509,18 +556,20 @@ export function ContentRowActions({
                           disabled={
                             fetcher.state !== "idle" ||
                             (formData
-                              ? (formData.get("postId") as string | null) ===
-                                item.id
+                              ? (formData.get(FORM_FIELD_POST_ID) as
+                                  | string
+                                  | null) === item.id
                               : false)
                           }
                         >
                           {fetcher.state !== "idle" &&
                           (formData
-                            ? (formData.get("postId") as string | null) ===
-                              item.id
+                            ? (formData.get(FORM_FIELD_POST_ID) as
+                                | string
+                                | null) === item.id
                             : false)
-                            ? "Reposting..."
-                            : "Repost"}
+                            ? REPOST_IN_PROGRESS_LABEL
+                            : REPOST_ACTION_LABEL}
                         </button>
                       </DropdownMenuItem>
                     </fetcher.Form>
@@ -533,7 +582,11 @@ export function ContentRowActions({
                   const formData = getFetcherFormData(fetcher);
                   return (
                     <fetcher.Form method="post">
-                      <input type="hidden" name="postId" value={item.id} />
+                      <input
+                        type="hidden"
+                        name={FORM_FIELD_POST_ID}
+                        value={item.id}
+                      />
                       <input
                         type="hidden"
                         name="_action"
@@ -545,24 +598,184 @@ export function ContentRowActions({
                           disabled={
                             fetcher.state !== "idle" ||
                             (formData
-                              ? (formData.get("postId") as string | null) ===
-                                item.id
+                              ? (formData.get(FORM_FIELD_POST_ID) as
+                                  | string
+                                  | null) === item.id
                               : false)
                           }
                         >
                           {fetcher.state !== "idle" &&
                           (formData
-                            ? (formData.get("postId") as string | null) ===
-                              item.id
+                            ? (formData.get(FORM_FIELD_POST_ID) as
+                                | string
+                                | null) === item.id
                             : false)
-                            ? "Quoting..."
-                            : "Quote Post"}
+                            ? QUOTE_IN_PROGRESS_LABEL
+                            : QUOTE_ACTION_LABEL}
                         </button>
                       </DropdownMenuItem>
                     </fetcher.Form>
                   );
                 })()
               : null}
+            {attachedFollowUpItems.map((child) => {
+              if (child.type !== "post") return null;
+              const blockChild = isPureRepostSourceContent(child);
+              const ch = child.originalData as PostData;
+              const preview = (ch.caption ?? "").trim().slice(0, 40);
+              return (
+                <DropdownMenuSub key={child.id}>
+                  <DropdownMenuSubTrigger className="max-w-[min(100%,18rem)]">
+                    <span className="truncate">
+                      Follow-up
+                      {preview ? (
+                        <span className="text-text-secondary font-normal">
+                          {" "}
+                          · {preview}
+                          {(ch.caption?.trim().length ?? 0) > 40 ? "…" : ""}
+                        </span>
+                      ) : null}
+                    </span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent
+                    alignOffset={-4}
+                    className="min-w-[12rem]"
+                  >
+                    {ch.signedEvent &&
+                    typeof ch.signedEvent === "object" &&
+                    "id" in ch.signedEvent &&
+                    typeof ch.signedEvent.id === "string" ? (
+                      <DropdownMenuItem asChild>
+                        <Link
+                          to={nostrUrls.eventUrl(ch.signedEvent.id)}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Open on Nostr
+                        </Link>
+                      </DropdownMenuItem>
+                    ) : null}
+                    {individualRepostFetcher && !blockChild
+                      ? (() => {
+                          const fetcher = individualRepostFetcher;
+                          const formData = getFetcherFormData(fetcher);
+                          return (
+                            <>
+                              <fetcher.Form method="post">
+                                <input
+                                  type="hidden"
+                                  name={FORM_FIELD_POST_ID}
+                                  value={child.id}
+                                />
+                                <input
+                                  type="hidden"
+                                  name="_action"
+                                  value="repost"
+                                />
+                                <DropdownMenuItem asChild>
+                                  <button
+                                    type="submit"
+                                    disabled={
+                                      fetcher.state !== "idle" ||
+                                      (formData
+                                        ? (formData.get(FORM_FIELD_POST_ID) as
+                                            | string
+                                            | null) === child.id
+                                        : false)
+                                    }
+                                  >
+                                    {fetcher.state !== "idle" &&
+                                    (formData
+                                      ? (formData.get(FORM_FIELD_POST_ID) as
+                                          | string
+                                          | null) === child.id
+                                      : false)
+                                      ? REPOST_IN_PROGRESS_LABEL
+                                      : REPOST_ACTION_LABEL}
+                                  </button>
+                                </DropdownMenuItem>
+                              </fetcher.Form>
+                              <fetcher.Form method="post">
+                                <input
+                                  type="hidden"
+                                  name={FORM_FIELD_POST_ID}
+                                  value={child.id}
+                                />
+                                <input
+                                  type="hidden"
+                                  name="_action"
+                                  value="quote"
+                                />
+                                <DropdownMenuItem asChild>
+                                  <button
+                                    type="submit"
+                                    disabled={
+                                      fetcher.state !== "idle" ||
+                                      (formData
+                                        ? (formData.get(FORM_FIELD_POST_ID) as
+                                            | string
+                                            | null) === child.id
+                                        : false)
+                                    }
+                                  >
+                                    {fetcher.state !== "idle" &&
+                                    (formData
+                                      ? (formData.get(FORM_FIELD_POST_ID) as
+                                          | string
+                                          | null) === child.id
+                                      : false)
+                                      ? QUOTE_IN_PROGRESS_LABEL
+                                      : QUOTE_ACTION_LABEL}
+                                  </button>
+                                </DropdownMenuItem>
+                              </fetcher.Form>
+                              {onScheduleRepost ? (
+                                <DropdownMenuItem
+                                  onSelect={() => onScheduleRepost(ch)}
+                                >
+                                  Schedule repost
+                                </DropdownMenuItem>
+                              ) : null}
+                              {onScheduleQuote ? (
+                                <DropdownMenuItem
+                                  onSelect={() => onScheduleQuote(ch)}
+                                >
+                                  Schedule quote
+                                </DropdownMenuItem>
+                              ) : null}
+                            </>
+                          );
+                        })()
+                      : null}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      disabled={deleteFetcher.state !== "idle"}
+                      className="text-danger focus:text-danger"
+                      onSelect={() => {
+                        onBeforeDelete?.(child.id);
+                        if (onDelete) {
+                          onDelete(child.id, "post");
+                        } else {
+                          const formData = new FormData();
+                          formData.set(FORM_FIELD_POST_ID, child.id);
+                          formData.set("_action", "delete");
+                          deleteFetcher.submit(formData, { method: "post" });
+                        }
+                      }}
+                    >
+                      {deleteFetcher.state !== "idle" &&
+                      (deleteFetcher.formData
+                        ? (deleteFetcher.formData.get(FORM_FIELD_POST_ID) as
+                            | string
+                            | null) === child.id
+                        : false)
+                        ? DELETE_IN_PROGRESS_LABEL
+                        : DELETE_ACTION_LABEL}
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              );
+            })}
           </>
         ) : null}
         {type === "scheduled" ? (
@@ -593,13 +806,112 @@ export function ContentRowActions({
                 Schedule quote
               </DropdownMenuItem>
             ) : null}
+            {attachedFollowUpItems.map((child) => {
+              if (child.type !== "post") return null;
+              const blockChild = isPureRepostSourceContent(child);
+              const preview = (child.caption ?? "").trim().slice(0, 40);
+              return (
+                <DropdownMenuSub key={child.id}>
+                  <DropdownMenuSubTrigger className="max-w-[min(100%,18rem)]">
+                    <span className="truncate">
+                      Follow-up
+                      {preview ? (
+                        <span className="text-text-secondary font-normal">
+                          {" "}
+                          · {preview}
+                          {(child.caption?.trim().length ?? 0) > 40 ? "…" : ""}
+                        </span>
+                      ) : null}
+                    </span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent
+                    alignOffset={-4}
+                    className="min-w-[10rem]"
+                  >
+                    <DropdownMenuItem
+                      onSelect={() => onEditPost?.(child.originalData)}
+                    >
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={() => onReschedulePost?.(child.originalData)}
+                    >
+                      Reschedule
+                    </DropdownMenuItem>
+                    {onScheduleRepost && !blockChild ? (
+                      <DropdownMenuItem
+                        onSelect={() =>
+                          onScheduleRepost(child.originalData as PostData)
+                        }
+                      >
+                        Schedule repost
+                      </DropdownMenuItem>
+                    ) : null}
+                    {onScheduleQuote && !blockChild ? (
+                      <DropdownMenuItem
+                        onSelect={() =>
+                          onScheduleQuote(child.originalData as PostData)
+                        }
+                      >
+                        Schedule quote
+                      </DropdownMenuItem>
+                    ) : null}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      disabled={deleteFetcher.state !== "idle"}
+                      onSelect={() => {
+                        onBeforeDelete?.(child.id);
+                        const formData = new FormData();
+                        formData.set(FORM_FIELD_POST_ID, child.id);
+                        formData.set("_action", "moveToDraft");
+                        formData.set("type", "post");
+                        deleteFetcher.submit(formData, { method: "post" });
+                      }}
+                    >
+                      {deleteFetcher.state !== "idle" &&
+                      deleteFetcher.formData?.get("_action") ===
+                        "moveToDraft" &&
+                      (deleteFetcher.formData.get(FORM_FIELD_POST_ID) as
+                        | string
+                        | null) === child.id
+                        ? "Moving..."
+                        : "Move to drafts"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={deleteFetcher.state !== "idle"}
+                      className="text-danger focus:text-danger"
+                      onSelect={() => {
+                        onBeforeDelete?.(child.id);
+                        if (onDelete) {
+                          onDelete(child.id, "post");
+                        } else {
+                          const formData = new FormData();
+                          formData.set(FORM_FIELD_POST_ID, child.id);
+                          formData.set("_action", "delete");
+                          deleteFetcher.submit(formData, { method: "post" });
+                        }
+                      }}
+                    >
+                      {deleteFetcher.state !== "idle" &&
+                      (deleteFetcher.formData
+                        ? (deleteFetcher.formData.get(FORM_FIELD_POST_ID) as
+                            | string
+                            | null) === child.id
+                        : false)
+                        ? DELETE_IN_PROGRESS_LABEL
+                        : DELETE_ACTION_LABEL}
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              );
+            })}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               disabled={deleteFetcher.state !== "idle"}
               onSelect={() => {
                 onBeforeDelete?.(item.id);
                 const formData = new FormData();
-                formData.set("postId", item.id);
+                formData.set(FORM_FIELD_POST_ID, item.id);
                 formData.set("_action", "moveToDraft");
                 formData.set(
                   "type",
@@ -610,8 +922,9 @@ export function ContentRowActions({
             >
               {deleteFetcher.state !== "idle" &&
               deleteFetcher.formData?.get("_action") === "moveToDraft" &&
-              (deleteFetcher.formData.get("postId") as string | null) ===
-                item.id
+              (deleteFetcher.formData.get(FORM_FIELD_POST_ID) as
+                | string
+                | null) === item.id
                 ? "Moving..."
                 : "Move to drafts"}
             </DropdownMenuItem>
@@ -639,7 +952,7 @@ export function ContentRowActions({
                   onSelect={() => {
                     const fd = new FormData();
                     fd.set("_action", "duplicateDraftPost");
-                    fd.set("postId", item.id);
+                    fd.set(FORM_FIELD_POST_ID, item.id);
                     draftsActionFetcher.submit(fd, {
                       method: "post",
                       action: "/dashboard/drafts",
@@ -657,7 +970,7 @@ export function ContentRowActions({
                     if (name === null) return;
                     const fd = new FormData();
                     fd.set("_action", "convertDraftToTemplate");
-                    fd.set("postId", item.id);
+                    fd.set(FORM_FIELD_POST_ID, item.id);
                     fd.set("templateName", name);
                     draftsActionFetcher.submit(fd, {
                       method: "post",
@@ -685,7 +998,7 @@ export function ContentRowActions({
               onDelete(item.id, postType);
             } else {
               const formData = new FormData();
-              formData.set("postId", item.id);
+              formData.set(FORM_FIELD_POST_ID, item.id);
               formData.set(
                 "_action",
                 postType === "post" ? "delete" : "deleteLongForm"
@@ -696,13 +1009,14 @@ export function ContentRowActions({
         >
           {deleteFetcher.state !== "idle" &&
           (deleteFetcher.formData
-            ? (deleteFetcher.formData.get("postId") as string | null) ===
-              item.id
+            ? (deleteFetcher.formData.get(FORM_FIELD_POST_ID) as
+                | string
+                | null) === item.id
             : false)
-            ? "Deleting..."
+            ? DELETE_IN_PROGRESS_LABEL
             : type === "draft"
               ? "Delete draft"
-              : "Delete"}
+              : DELETE_ACTION_LABEL}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -808,33 +808,54 @@ export async function getLastPostTimeForQueue({
   // For FIXED_SLOTS and WEEKLY_SLOTS, consider ALL scheduled posts (both posted and unposted).
   // For INTERVAL, only consider unposted posts.
   // Use nominalScheduledAtUtc when present (random window) so queue "next slot" doesn't drift.
+  //
+  // Long-form scheduled articles use `LongFormPost`, not `Post`. Include both so slot-based
+  // queues do not assign the same slot to multiple queued items (e.g. two articles back-to-back).
   if (queueType.scheduleType === "INTERVAL") {
-    const raw = await prisma.$queryRawUnsafe<Array<{ effective_at: Date }>>(
-      `SELECT COALESCE("nominalScheduledAtUtc", "scheduledAtUtc") AS effective_at
-       FROM "Post"
-       WHERE "userId" = $1 AND "queueTypeId" = $2
-         AND "currentState" = 'SCHEDULED'
-         AND "queueHoldStatus" = 'NONE'
-         AND "dependencyMode" = 'standalone'
-         AND "scheduledAtUtc" IS NOT NULL
-       ORDER BY effective_at DESC
-       LIMIT 1`,
+    const raw = await prisma.$queryRawUnsafe<
+      Array<{ effective_at: Date | null }>
+    >(
+      `SELECT MAX(effective_at) AS effective_at FROM (
+         SELECT COALESCE("nominalScheduledAtUtc", "scheduledAtUtc") AS effective_at
+         FROM "Post"
+         WHERE "userId" = $1 AND "queueTypeId" = $2
+           AND "currentState" = 'SCHEDULED'
+           AND "queueHoldStatus" = 'NONE'
+           AND "dependencyMode" = 'standalone'
+           AND "scheduledAtUtc" IS NOT NULL
+         UNION ALL
+         SELECT COALESCE("nominalScheduledAtUtc", "scheduledAtUtc") AS effective_at
+         FROM "LongFormPost"
+         WHERE "userId" = $1 AND "queueTypeId" = $2
+           AND "currentState" = 'SCHEDULED'
+           AND "queueHoldStatus" = 'NONE'
+           AND "scheduledAtUtc" IS NOT NULL
+       ) AS combined`,
       userId,
       queueType.id
     );
     return raw[0]?.effective_at ?? null;
   }
 
-  const raw = await prisma.$queryRawUnsafe<Array<{ effective_at: Date }>>(
-    `SELECT COALESCE("nominalScheduledAtUtc", "scheduledAtUtc") AS effective_at
-     FROM "Post"
-     WHERE "userId" = $1 AND "queueTypeId" = $2
-       AND "currentState" IN ('SCHEDULED', 'PUBLISHED')
-       AND ("currentState" <> 'SCHEDULED' OR "queueHoldStatus" = 'NONE')
-       AND "dependencyMode" = 'standalone'
-       AND "scheduledAtUtc" IS NOT NULL
-     ORDER BY effective_at DESC
-     LIMIT 1`,
+  const raw = await prisma.$queryRawUnsafe<
+    Array<{ effective_at: Date | null }>
+  >(
+    `SELECT MAX(effective_at) AS effective_at FROM (
+       SELECT COALESCE("nominalScheduledAtUtc", "scheduledAtUtc") AS effective_at
+       FROM "Post"
+       WHERE "userId" = $1 AND "queueTypeId" = $2
+         AND "currentState" IN ('SCHEDULED', 'PUBLISHED')
+         AND ("currentState" <> 'SCHEDULED' OR "queueHoldStatus" = 'NONE')
+         AND "dependencyMode" = 'standalone'
+         AND "scheduledAtUtc" IS NOT NULL
+       UNION ALL
+       SELECT COALESCE("nominalScheduledAtUtc", "scheduledAtUtc") AS effective_at
+       FROM "LongFormPost"
+       WHERE "userId" = $1 AND "queueTypeId" = $2
+         AND "currentState" IN ('SCHEDULED', 'PUBLISHED')
+         AND ("currentState" <> 'SCHEDULED' OR "queueHoldStatus" = 'NONE')
+         AND "scheduledAtUtc" IS NOT NULL
+     ) AS combined`,
     userId,
     queueType.id
   );

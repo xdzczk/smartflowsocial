@@ -303,7 +303,11 @@ function LongFormDetailRail({
             <div className="mt-2 space-y-2">
               <RailSettingsValueRow
                 label="Primary action"
-                value={type === "scheduled" ? "Edit post" : "Review details"}
+                value={
+                  type === "scheduled"
+                    ? "Open in full editor"
+                    : "Review details"
+                }
                 trailing={null}
               />
               {type === "scheduled" ? (
@@ -315,7 +319,7 @@ function LongFormDetailRail({
               ) : null}
               <p className="text-text-secondary text-xs">
                 {type === "scheduled"
-                  ? "Use Edit and Reschedule to verify this article before publishing."
+                  ? "Use Open in full editor and Reschedule to verify this article before publishing."
                   : "Performance metrics are only available once published."}
               </p>
             </div>
@@ -482,7 +486,6 @@ function LongFormDetailRail({
 interface LongFormDetailsModalProps {
   post: LongFormPostType | LongFormPostData;
   onClose: () => void;
-  onEdit?: (post: LongFormPostType | LongFormPostData) => void;
   onReschedule?: (post: LongFormPostType | LongFormPostData) => void;
   type: "draft" | "scheduled" | "published";
   showSignedEvent?: boolean;
@@ -504,7 +507,6 @@ interface LongFormDetailsModalProps {
 export default function LongFormDetailsModal({
   post,
   onClose,
-  onEdit,
   onReschedule,
   type,
   showSignedEvent = false,
@@ -746,7 +748,6 @@ export default function LongFormDetailsModal({
 
         {type === "scheduled" ? (
           <ScheduledPostActionBar
-            onEdit={onEdit ? () => onEdit(post) : undefined}
             onReschedule={onReschedule ? () => onReschedule(post) : undefined}
             openFullEditorHref={buildComposeEditUrl(
               { mode: "edit_scheduled", scheduledActionId: String(post.id) },

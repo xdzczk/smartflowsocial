@@ -24,6 +24,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
@@ -52,6 +55,10 @@ import { ThreadSegmentsMenu } from "~/features/posts/components/ThreadSegmentsMe
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
 import { invalidateDependentCaches } from "~/features/posts/hooks/useRefreshPostViews";
 import type { CombinedContent, PostData } from "~/features/posts/types";
+import {
+  attachedPostsByParentId,
+  isAttachedFollowUpPost,
+} from "~/features/posts/utils/attached-follow-up-rows";
 import { getPostRowThumbnailBadge } from "~/features/posts/utils/content-helpers";
 import { buildActionUrl } from "~/features/posts/utils/remix-action-url";
 import { isPureRepostSourcePost } from "~/features/posts/utils/repost-chain-policy";
@@ -143,6 +150,8 @@ interface ScheduledPostTableRowActionsProps {
   ) => void;
   queryClient: QueryClient;
   lastMoveSubmissionRef: MutableRefObject<{ postId: string } | null>;
+  /** Queue follow-ups attached to this parent; actions live here instead of on their own row. */
+  attachedFollowUps?: PostData[];
 }
 
 function ScheduledPostTableRowActions({
@@ -158,6 +167,7 @@ function ScheduledPostTableRowActions({
   handleDeleteWithCascade,
   queryClient,
   lastMoveSubmissionRef,
+  attachedFollowUps = [],
 }: ScheduledPostTableRowActionsProps) {
   return (
     <DropdownMenu>
@@ -188,6 +198,88 @@ function ScheduledPostTableRowActions({
             Schedule quote
           </DropdownMenuItem>
         ) : null}
+        {attachedFollowUps.map((child) => {
+          const blockChild = isPureRepostSourcePost(child);
+          const preview = (child.caption ?? "").trim().slice(0, 40);
+          return (
+            <DropdownMenuSub key={child.id}>
+              <DropdownMenuSubTrigger className="max-w-[min(100%,18rem)]">
+                <span className="truncate">
+                  Follow-up
+                  {preview ? (
+                    <span className="text-text-secondary font-normal">
+                      {" "}
+                      · {preview}
+                      {(child.caption?.trim().length ?? 0) > 40 ? "…" : ""}
+                    </span>
+                  ) : null}
+                </span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent
+                alignOffset={-4}
+                className="min-w-[10rem]"
+              >
+                <DropdownMenuItem onSelect={() => onEditPost(child)}>
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => onReschedulePost(child)}>
+                  Reschedule
+                </DropdownMenuItem>
+                {onScheduleRepost && !blockChild ? (
+                  <DropdownMenuItem onSelect={() => onScheduleRepost(child)}>
+                    Schedule repost
+                  </DropdownMenuItem>
+                ) : null}
+                {onScheduleQuote && !blockChild ? (
+                  <DropdownMenuItem onSelect={() => onScheduleQuote(child)}>
+                    Schedule quote
+                  </DropdownMenuItem>
+                ) : null}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  disabled={
+                    moveToDraftFetcher.state !== "idle" ||
+                    deletingPostId != null ||
+                    bulkDeleteState !== "idle"
+                  }
+                  onSelect={() => {
+                    queryClient.setQueriesData(
+                      { queryKey: scheduledPostsKeys.all },
+                      (old) => pruneScheduledQueryData(old, new Set([child.id]))
+                    );
+                    lastMoveSubmissionRef.current = {
+                      postId: child.id,
+                    };
+                    const fd = new FormData();
+                    fd.set("postId", child.id);
+                    fd.set("_action", "moveToDraft");
+                    fd.set("type", "post");
+                    moveToDraftFetcher.submit(fd, { method: "post" });
+                  }}
+                >
+                  {moveToDraftFetcher.state !== "idle" &&
+                  moveToDraftFetcher.formData?.get("_action") ===
+                    "moveToDraft" &&
+                  /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- formData can be undefined during submit */
+                  moveToDraftFetcher.formData?.get("postId") === child.id
+                    ? "Moving..."
+                    : "Move to drafts"}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={
+                    moveToDraftFetcher.state !== "idle" ||
+                    deletingPostId != null ||
+                    bulkDeleteState !== "idle"
+                  }
+                  className="text-danger focus:text-danger"
+                  onSelect={() => handleDeleteWithCascade(child.id, "post")}
+                >
+                  {deletingPostId === child.id ? "Deleting..." : "Delete"}
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          );
+        })}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           disabled={
@@ -320,6 +412,11 @@ export function ScheduledPostsTable({
       comparePostDataByScheduledSort(a.root, b.root, sortConfig)
     );
   }, [posts, sortConfig]);
+
+  const attachedByParentId = useMemo(
+    () => attachedPostsByParentId(posts),
+    [posts]
+  );
 
   const combinedContent = useMemo(
     () => threadRows.map((r) => postToCombinedContent(r.root)),
@@ -662,20 +759,32 @@ export function ScheduledPostsTable({
                       )}
                     </td>
                     <td className="p-3 text-center">
-                      <ScheduledPostTableRowActions
-                        post={post}
-                        blockRepostQuoteChain={blockRepostQuoteChain}
-                        onEditPost={onEditPost}
-                        onReschedulePost={onReschedulePost}
-                        onScheduleRepost={onScheduleRepost}
-                        onScheduleQuote={onScheduleQuote}
-                        moveToDraftFetcher={moveToDraftFetcher}
-                        bulkDeleteState={bulkDeleteState}
-                        deletingPostId={deletingPostId}
-                        handleDeleteWithCascade={handleDeleteWithCascade}
-                        queryClient={queryClient}
-                        lastMoveSubmissionRef={lastMoveSubmissionRef}
-                      />
+                      {isAttachedFollowUpPost(post) ? (
+                        <span
+                          className="text-text-secondary text-xs"
+                          aria-hidden
+                        >
+                          —
+                        </span>
+                      ) : (
+                        <ScheduledPostTableRowActions
+                          post={post}
+                          blockRepostQuoteChain={blockRepostQuoteChain}
+                          onEditPost={onEditPost}
+                          onReschedulePost={onReschedulePost}
+                          onScheduleRepost={onScheduleRepost}
+                          onScheduleQuote={onScheduleQuote}
+                          moveToDraftFetcher={moveToDraftFetcher}
+                          bulkDeleteState={bulkDeleteState}
+                          deletingPostId={deletingPostId}
+                          handleDeleteWithCascade={handleDeleteWithCascade}
+                          queryClient={queryClient}
+                          lastMoveSubmissionRef={lastMoveSubmissionRef}
+                          attachedFollowUps={
+                            attachedByParentId.get(post.id) ?? []
+                          }
+                        />
+                      )}
                     </td>
                   </tr>
                 );
@@ -799,6 +908,11 @@ export function ScheduledPostsTable({
                             onScheduleRepost={onScheduleRepost}
                             onScheduleQuote={onScheduleQuote}
                             onDelete={handleDeleteWithCascade}
+                            attachedFollowUpItems={
+                              attachedByParentId
+                                .get(item.id)
+                                ?.map((p) => postToCombinedContent(p)) ?? []
+                            }
                             onMenuOpenChange={(open) =>
                               setOpenMenuRowKey(open ? virtualRow.key : null)
                             }
@@ -874,6 +988,11 @@ export function ScheduledPostsTable({
                       onScheduleRepost={onScheduleRepost}
                       onScheduleQuote={onScheduleQuote}
                       onDelete={handleDeleteWithCascade}
+                      attachedFollowUpItems={
+                        attachedByParentId
+                          .get(item.id)
+                          ?.map((p) => postToCombinedContent(p)) ?? []
+                      }
                       onMenuOpenChange={(open) =>
                         setOpenMenuRowKey(open ? virtualRow.key : null)
                       }

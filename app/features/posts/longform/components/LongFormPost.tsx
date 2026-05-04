@@ -88,6 +88,7 @@ export default function LongFormPost({
   templateLastUpdatedLabel = null,
   onTemplateDeleteClick,
   onPublishIntent,
+  composerContext = { mode: "create" },
 }: LongFormPostProps) {
   const { mediaUploadBlocked } = useBlossomUploadGate();
   const fetcher = useFetcher();
@@ -1093,6 +1094,7 @@ export default function LongFormPost({
           secondaryIsSaveDraft={secondaryIsSaveDraft}
           handleSaveDraft={handleSaveDraft}
           flushSync={flushSync}
+          composerContext={composerContext}
         />
       </div>
     </>

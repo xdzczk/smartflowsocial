@@ -110,7 +110,6 @@ export function LongFormPostArticleHead({
             uploadFetcherState={uploadFetcherState}
             onImageUpload={(e) => onImageUpload(e)}
             onRemove={onRemoveCover}
-            onOpenAssetBrowser={() => {}}
             softLabel
             coverFileUploadDisabled={mediaUploadBlocked}
           />

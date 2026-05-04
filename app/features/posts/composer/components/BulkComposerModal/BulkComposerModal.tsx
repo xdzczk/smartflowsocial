@@ -130,6 +130,7 @@ export function BulkComposerModal({
             rowMediaUploadDisabled={restState.blossomMediaUploadBlocked}
             startPrepareFlow={handlers.startPrepareFlow}
             duplicatePost={handlers.duplicatePost}
+            handleReorderBulkPost={handlers.handleReorderBulkPost}
             handleRepostSchedulesChange={handlers.handleRepostSchedulesChange}
             handleQuoteSchedulesChange={handlers.handleQuoteSchedulesChange}
             handleRepostAll={handlers.handleRepostAll}

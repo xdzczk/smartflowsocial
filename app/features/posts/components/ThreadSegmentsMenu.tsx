@@ -52,7 +52,11 @@ export function ThreadSegmentsMenu({
           {segments.length} more part{segments.length === 1 ? "" : "s"}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="min-w-[14rem]">
+      <DropdownMenuContent
+        align="start"
+        className="min-w-[14rem]"
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
         {segments.map((seg, idx) => {
           const partLabel = `Part ${idx + 2}`;
           const when =
@@ -78,7 +82,12 @@ export function ThreadSegmentsMenu({
           return (
             <DropdownMenuItem
               key={`${seg.type}-${seg.id}`}
-              onSelect={() => onSelectSegment(seg)}
+              onSelect={() => {
+                // When the menu closes, Radix can retarget a click to the list row/card
+                // under the cursor; that handler opens the root segment and would run in the
+                // same turn. Defer so the chosen segment wins.
+                window.setTimeout(() => onSelectSegment(seg), 0);
+              }}
               className="flex flex-col items-start gap-0.5 py-2"
             >
               <span className="text-text font-medium">

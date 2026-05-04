@@ -695,10 +695,6 @@ export default function ScheduledPostsPage() {
             optimisticallyRemoveScheduledItems([postId]);
             refreshPostViews();
           }}
-          onEdit={(p) => {
-            setSelectedLongFormPost(null);
-            handleEditPost(p as PostData | LongFormPostData);
-          }}
           onReschedule={(p) => {
             setSelectedLongFormPost(null);
             handleReschedulePost(p as PostData | LongFormPostData);

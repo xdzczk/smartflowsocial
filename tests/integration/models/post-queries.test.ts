@@ -158,6 +158,7 @@ describe("Post Queries", () => {
       const passedQueueTypeId = rawArgs?.[2] as string | undefined;
 
       expect(sql).toContain(`"queueTypeId" = $2`);
+      expect(sql).toContain("LongFormPost");
       expect(passedUserId).toBe(TEST_USER_ID);
       expect(passedQueueTypeId).toBe("queue-123");
     });
@@ -235,6 +236,7 @@ describe("Post Queries", () => {
       expect(rawCall).toContain("SCHEDULED");
       expect(rawCall).not.toContain("PUBLISHED");
       expect(rawCall).toContain(`"dependencyMode" = 'standalone'`);
+      expect(rawCall).toContain("LongFormPost");
     });
 
     it("should include both SCHEDULED and PUBLISHED for FIXED_SLOTS schedule type", async () => {
@@ -261,6 +263,7 @@ describe("Post Queries", () => {
       expect(rawCall).toContain("SCHEDULED");
       expect(rawCall).toContain("PUBLISHED");
       expect(rawCall).toContain(`"dependencyMode" = 'standalone'`);
+      expect(rawCall).toContain("LongFormPost");
     });
 
     it("should return null if no post found", async () => {

@@ -1,7 +1,14 @@
 import { Link, useFetcher, useNavigate } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useCallback, useEffect, useRef, useState, type Key } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type Key,
+} from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -22,6 +29,7 @@ import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
 import { invalidateDependentCaches } from "~/features/posts/hooks/useRefreshPostViews";
 import { pruneScheduledQueryData } from "~/features/posts/scheduling/hooks/useScheduledPostsCache";
 import { scheduledPostsKeys } from "~/features/posts/scheduling/hooks/useScheduledPostsQuery";
+import { attachedCombinedByParentId } from "~/features/posts/utils/attached-follow-up-rows";
 import { buildActionUrl } from "~/features/posts/utils/remix-action-url";
 import {
   buildThreadListRows,
@@ -374,6 +382,13 @@ export default function AllContentListing({
     )
   );
 
+  const attachedByParentId = useMemo(() => {
+    if (type !== "scheduled" && type !== "published") {
+      return new Map<string, CombinedContent[]>();
+    }
+    return attachedCombinedByParentId(content);
+  }, [content, type]);
+
   /** Flat list for drafts table; scheduled/published use thread grouping */
   const filteredContent = filteredRows.map((row) => row.root);
 
@@ -512,6 +527,9 @@ export default function AllContentListing({
                         onScheduleQuote={onScheduleQuote}
                         onBeforeDelete={onBeforeDelete}
                         onDelete={scheduledDeleteHandler}
+                        attachedFollowUpItems={
+                          attachedByParentId.get(row.root.id) ?? []
+                        }
                       />
                     ))}
               </tbody>
@@ -622,6 +640,9 @@ export default function AllContentListing({
                             onScheduleQuote={onScheduleQuote}
                             onBeforeDelete={onBeforeDelete}
                             onDelete={scheduledDeleteHandler}
+                            attachedFollowUpItems={
+                              attachedByParentId.get(item.id) ?? []
+                            }
                             onMenuOpenChange={(open) =>
                               setOpenMenuRowKey(open ? virtualRow.key : null)
                             }
@@ -702,6 +723,9 @@ export default function AllContentListing({
                       onScheduleQuote={onScheduleQuote}
                       onBeforeDelete={onBeforeDelete}
                       onDelete={scheduledDeleteHandler}
+                      attachedFollowUpItems={
+                        attachedByParentId.get(item.id) ?? []
+                      }
                       onMenuOpenChange={(open) =>
                         setOpenMenuRowKey(open ? virtualRow.key : null)
                       }

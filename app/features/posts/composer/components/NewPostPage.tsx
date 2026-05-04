@@ -35,11 +35,13 @@ import {
   determineModalAction,
 } from "../../utils/publish-result.utils";
 import { useNewPostState } from "../hooks/useNewPostState";
+import { parseComposerContextFromLoader } from "../parse-composer-context-loader";
 import type { ComposerContext } from "../services/compose-route-contract";
 import type { InitialPollRestore } from "../types/initial-poll-restore";
 import { trackComposerEvent } from "../utils/composer-analytics.client";
 
 import type { ComposerPublishMode } from "./composer";
+import { ComposerEditingModeCallout } from "./ComposerEditingModeCallout";
 import { CreateComposerShell } from "./CreateComposerShell";
 
 const LOCAL_DRAFT_KEYS = [
@@ -270,32 +272,6 @@ export interface NewPostLoaderParsed {
   } | null;
 }
 
-function parseComposerContextUnknown(raw: unknown): ComposerContext {
-  if (!raw || typeof raw !== "object") return { mode: "create" };
-  const obj = raw as Record<string, unknown>;
-  const mode = obj["mode"];
-  if (mode === "edit_draft" && typeof obj["draftId"] === "string") {
-    return { mode, draftId: obj["draftId"] };
-  }
-  if (
-    mode === "edit_scheduled" &&
-    typeof obj["scheduledActionId"] === "string"
-  ) {
-    return { mode, scheduledActionId: obj["scheduledActionId"] };
-  }
-  if (
-    mode === "edit_follow_up" &&
-    typeof obj["followUpActionId"] === "string"
-  ) {
-    const parentActionId =
-      typeof obj["parentActionId"] === "string"
-        ? obj["parentActionId"]
-        : undefined;
-    return { mode, followUpActionId: obj["followUpActionId"], parentActionId };
-  }
-  return { mode: "create" };
-}
-
 /* eslint-disable-next-line sonarjs/cognitive-complexity -- parser normalizes many optional loader fields defensively */
 export function parseNewPostLoaderData(
   loaderDataRaw: unknown
@@ -397,7 +373,7 @@ export function parseNewPostLoaderData(
     "nip88PollsEnabled" in loaderData &&
     loaderData["nip88PollsEnabled"] === true
   );
-  const composerContext = parseComposerContextUnknown(
+  const composerContext = parseComposerContextFromLoader(
     loaderData["composerContext"]
   );
   const hydrationStatus =
@@ -674,29 +650,7 @@ export default function NewPostPage() {
     >
       <div>
         {isEditMode && editingMeta ? (
-          <div className="bg-surface-hover/60 border-border mb-4 rounded-md border px-3 py-2 text-sm">
-            <p className="font-medium">{editingMeta.modeLabel}</p>
-            <p className="text-text-secondary mt-1 text-xs">
-              Changes update the existing item. A new post will not be created.
-            </p>
-            <p className="text-text-secondary mt-1">
-              Account: {editingMeta.accountLabel}
-              {editingMeta.scheduledForLabel
-                ? ` · Scheduled for: ${editingMeta.scheduledForLabel}`
-                : ""}
-              {editingMeta.queueLabel
-                ? ` · Queue: ${editingMeta.queueLabel}`
-                : ""}
-              {editingMeta.statusLabel
-                ? ` · Status: ${editingMeta.statusLabel}`
-                : ""}
-            </p>
-            {editingMeta.parentActionId ? (
-              <p className="text-text-secondary mt-1">
-                Parent action: {editingMeta.parentActionId}
-              </p>
-            ) : null}
-          </div>
+          <ComposerEditingModeCallout editingMeta={editingMeta} />
         ) : null}
         {showHydrationHardError ? (
           <div className="bg-danger/10 border-danger/40 text-danger-text mb-4 rounded-md border px-3 py-2 text-sm">

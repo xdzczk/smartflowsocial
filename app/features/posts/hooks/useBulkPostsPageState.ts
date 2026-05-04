@@ -4,7 +4,7 @@
  */
 
 import { useFetcher, useNavigate, useSearchParams } from "@remix-run/react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { type ToastMessage } from "~/components/types";
 import type {
@@ -27,6 +27,12 @@ import {
   handleScheduleIntervalClick as handleScheduleIntervalClickHandler,
 } from "~/features/posts/server";
 import type { RepostConditions } from "~/features/posts/types";
+import {
+  clearAllBulkPendingFiles,
+  loadPendingFilesForClient,
+  syncBulkPendingFilesFromPosts,
+} from "~/features/posts/utils/bulk-pending-files-idb";
+import { swapAdjacentBulkPostRowContent } from "~/features/posts/utils/bulk-post-reorder";
 import { getFileUrlArrayForDraft } from "~/features/posts/utils/bulk-posts.client";
 import { createBulkPostClientId } from "~/features/posts/utils/client-id";
 import { BLOSSOM_MEDIA_REQUIRES_SIGNER_MESSAGE } from "~/features/upload/blossom-upload-gate";
@@ -170,9 +176,12 @@ export function useBulkPostsPageState({
   const {
     restored: bulkLocalRestored,
     saveSnapshot: saveBulkLocalSnapshot,
+    flushSnapshot: flushBulkLocalSnapshot,
     clearSnapshot: clearBulkLocalSnapshot,
   } = useLocalDraft<{
     rows: Array<{
+      /** Stable row id so pending File[] can be rehydrated from IndexedDB */
+      clientId?: string;
       caption: string;
       queueType: string;
       scheduledFor: string;
@@ -182,10 +191,16 @@ export function useBulkPostsPageState({
     savedAt: number;
   }>(BULK_DRAFT_KEY, !!groupId, 2000);
 
+  const postsRef = useRef<BulkPost[]>(posts);
+  useEffect(() => {
+    postsRef.current = posts;
+  }, [posts]);
+
   const bulkLocalRestoredAppliedRef = useRef(false);
   useEffect(() => {
     interface Restored {
       rows: Array<{
+        clientId?: string;
         caption: string;
         queueType: string;
         scheduledFor: string;
@@ -202,22 +217,36 @@ export function useBulkPostsPageState({
     )
       return;
     bulkLocalRestoredAppliedRef.current = true;
-    const initialPosts: BulkPost[] = restored.rows.map((r) => ({
-      clientId: createBulkPostClientId(),
-      files: [],
-      caption: r.caption,
-      queueType: r.queueType,
-      scheduledFor: r.scheduledFor,
-      isRecyclable: r.isRecyclable,
-      fileUrl: r.fileUrl,
-    }));
-    setPosts(initialPosts);
+
+    void (async () => {
+      const initialPosts: BulkPost[] = await Promise.all(
+        restored.rows.map(async (r) => {
+          const clientId =
+            typeof r.clientId === "string" && r.clientId.length > 0
+              ? r.clientId
+              : createBulkPostClientId();
+          const loaded = await loadPendingFilesForClient(clientId);
+          const files = loaded ?? [];
+          return {
+            clientId,
+            files,
+            caption: r.caption,
+            queueType: r.queueType,
+            scheduledFor: r.scheduledFor,
+            isRecyclable: r.isRecyclable,
+            fileUrl: r.fileUrl,
+          };
+        })
+      );
+      setPosts(initialPosts);
+    })();
   }, [bulkLocalRestored, groupId]);
 
   useEffect(() => {
     if (groupId) return;
     saveBulkLocalSnapshot({
       rows: posts.map((p) => ({
+        clientId: p.clientId,
         caption: p.caption,
         queueType: p.queueType,
         scheduledFor: p.scheduledFor,
@@ -227,9 +256,52 @@ export function useBulkPostsPageState({
     });
   }, [groupId, posts, saveBulkLocalSnapshot]);
 
+  const idbSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (groupId) return;
+    if (idbSyncTimerRef.current) clearTimeout(idbSyncTimerRef.current);
+    idbSyncTimerRef.current = setTimeout(() => {
+      idbSyncTimerRef.current = null;
+      void syncBulkPendingFilesFromPosts(posts);
+    }, 2000);
+    return () => {
+      if (idbSyncTimerRef.current) clearTimeout(idbSyncTimerRef.current);
+    };
+  }, [groupId, posts]);
+
+  const flushBulkDraftPersist = useCallback(() => {
+    if (groupId) return;
+    flushBulkLocalSnapshot({
+      rows: postsRef.current.map((p) => ({
+        clientId: p.clientId,
+        caption: p.caption,
+        queueType: p.queueType,
+        scheduledFor: p.scheduledFor,
+        fileUrl: p.fileUrl,
+        isRecyclable: p.isRecyclable,
+      })),
+    });
+    void syncBulkPendingFilesFromPosts(postsRef.current);
+  }, [groupId, flushBulkLocalSnapshot]);
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") flushBulkDraftPersist();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [flushBulkDraftPersist]);
+
+  useEffect(() => {
+    return () => {
+      flushBulkDraftPersist();
+    };
+  }, [flushBulkDraftPersist]);
+
   useEffect(() => {
     if (fetcher.state === "submitting") {
       clearBulkLocalSnapshot();
+      void clearAllBulkPendingFiles();
     }
   }, [fetcher.state, clearBulkLocalSnapshot]);
 
@@ -694,6 +766,19 @@ export function useBulkPostsPageState({
     });
   };
 
+  const handleReorderBulkPost = (index: number, direction: "up" | "down") => {
+    setPosts((prev) => {
+      const swapped = swapAdjacentBulkPostRowContent(prev, index, direction);
+      if (swapped) {
+        queueMicrotask(() => {
+          setPreparedEvents([]);
+        });
+        return swapped;
+      }
+      return prev;
+    });
+  };
+
   const handleSaveDraftFromTable = (groupIdParam: string | null) => {
     if (posts.length === 0) return;
     const formData = new FormData();
@@ -741,6 +826,7 @@ export function useBulkPostsPageState({
     handleBulkFilesDropped,
     handleIncludeHashtagsInNoteBodyChange,
     duplicatePost,
+    handleReorderBulkPost,
   };
 
   return { state, handlers };

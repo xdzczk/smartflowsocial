@@ -12,7 +12,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { ErrorMessage } from "~/features/posts/components/ErrorMessage";
 import PublishResultModal from "~/features/posts/components/PublishResultModal";
-import { CreateComposerShell } from "~/features/posts/composer";
+import {
+  ComposerEditingModeCallout,
+  CreateComposerShell,
+} from "~/features/posts/composer";
 import type { ComposerPublishMode } from "~/features/posts/composer/components/composer";
 import { DraftPickerModal } from "~/features/posts/drafts";
 import { useNewLongFormState } from "~/features/posts/hooks/useNewLongFormState";
@@ -52,6 +55,10 @@ export default function NewLongFormPostPage() {
     accountPublishRelaySource,
     initialTemplateData,
     templatesRaw,
+    composerContext,
+    editingMeta,
+    hydrationStatus,
+    hydrationError,
   } = parsedLoader;
 
   const safeUserTags = typeof userTags === "string" ? userTags : "";
@@ -211,6 +218,17 @@ export default function NewLongFormPostPage() {
     }
   }, [publishResultToken]);
 
+  const isEditMode = composerContext.mode !== "create";
+  const showHydrationHardError = isEditMode && hydrationStatus === "error";
+  const shellTitle =
+    composerContext.mode === "edit_scheduled"
+      ? "Edit scheduled article"
+      : composerContext.mode === "edit_follow_up"
+        ? "Edit follow-up article"
+        : initialTemplateData
+          ? "Edit article draft"
+          : "Create article";
+
   return (
     <CreateComposerShell
       contentType="article"
@@ -219,13 +237,7 @@ export default function NewLongFormPostPage() {
         if (next === "article") return;
         navigate(`/dashboard/compose?type=${encodeURIComponent(next)}`);
       }}
-      title={
-        searchParams.get("mode") === "edit_scheduled"
-          ? "Edit scheduled article"
-          : initialTemplateData
-            ? "Edit article draft"
-            : "Create article"
-      }
+      title={shellTitle}
       composerHeaderActions={
         <div className="flex items-center gap-0.5 sm:gap-1">
           <Button
@@ -269,41 +281,66 @@ export default function NewLongFormPostPage() {
         }
       />
 
-      <Form method="post" encType="multipart/form-data">
-        <input type="hidden" name="contentType" value="article" />
-        <LongFormPost
-          key={`newlongform-composer-${publishResultToken ?? "default"}`}
-          publishMode={publishMode}
-          onPublishModeChange={setPublishMode}
-          initialData={initialTemplateData}
-          initialScheduledFor={scheduledAt ?? undefined}
-          queueTypes={queueTypes}
-          scheduleIntervals={scheduleIntervals}
-          userTags={safeUserTags}
-          hashTagPresets={hashTagPresets}
-          uploadProvider={
-            typeof uploadProvider === "string" || uploadProvider === null
-              ? uploadProvider
-              : null
-          }
-          userTimezone={
-            typeof userTimezone === "string" ? userTimezone : undefined
-          }
-          onQueueTypeChange={(name) => void updateDisplayedHashtags(name)}
-          onPreview={handlePreview}
-          useHashtagPresets={useHashtagPresets}
-          onUseHashtagPresetsChange={handleUseHashtagPresetsChange}
-          selectedHashtagPresetId={selectedHashtagPresetId}
-          selectedHashtags={selectedHashtags}
-          onHashtagPresetChange={handleHashtagPresetSelect}
-          skipLocalDraftRestore={Boolean(publishResultToken)}
-          onDraftStateLabelChange={setSaveStateLabel}
-          defaultRelays={defaultRelays}
-          relayOverride={selectedRelayUrls ?? undefined}
-          onRelayClick={openRelaySelector}
-          onPublishIntent={handlePublishIntent}
+      {isEditMode && editingMeta ? (
+        <ComposerEditingModeCallout
+          editingMeta={editingMeta}
+          detailLine="Changes update this article. A new article will not be created."
         />
-      </Form>
+      ) : null}
+      {showHydrationHardError ? (
+        <div className="bg-danger/10 border-danger/40 text-danger-text mb-4 rounded-md border px-3 py-2 text-sm">
+          {hydrationError ??
+            "This item is no longer editable. Return to scheduled posts or the dashboard."}
+          <div className="mt-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/dashboard/scheduled?tab=longform")}
+            >
+              Go back
+            </Button>
+          </div>
+        </div>
+      ) : null}
+      {showHydrationHardError ? null : (
+        <Form method="post" encType="multipart/form-data">
+          <input type="hidden" name="contentType" value="article" />
+          <LongFormPost
+            key={`newlongform-composer-${publishResultToken ?? "default"}`}
+            publishMode={publishMode}
+            onPublishModeChange={setPublishMode}
+            composerContext={composerContext}
+            initialData={initialTemplateData}
+            initialScheduledFor={scheduledAt ?? undefined}
+            queueTypes={queueTypes}
+            scheduleIntervals={scheduleIntervals}
+            userTags={safeUserTags}
+            hashTagPresets={hashTagPresets}
+            uploadProvider={
+              typeof uploadProvider === "string" || uploadProvider === null
+                ? uploadProvider
+                : null
+            }
+            userTimezone={
+              typeof userTimezone === "string" ? userTimezone : undefined
+            }
+            onQueueTypeChange={(name) => void updateDisplayedHashtags(name)}
+            onPreview={handlePreview}
+            useHashtagPresets={useHashtagPresets}
+            onUseHashtagPresetsChange={handleUseHashtagPresetsChange}
+            selectedHashtagPresetId={selectedHashtagPresetId}
+            selectedHashtags={selectedHashtags}
+            onHashtagPresetChange={handleHashtagPresetSelect}
+            skipLocalDraftRestore={Boolean(publishResultToken)}
+            onDraftStateLabelChange={setSaveStateLabel}
+            defaultRelays={defaultRelays}
+            relayOverride={selectedRelayUrls ?? undefined}
+            onRelayClick={openRelaySelector}
+            onPublishIntent={handlePublishIntent}
+          />
+        </Form>
+      )}
 
       {relaySelectorOpen ? (
         <RelaySelectorModal

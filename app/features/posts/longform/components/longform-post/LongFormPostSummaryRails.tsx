@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 
 import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePanel";
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
+import type { ComposerContext } from "~/features/posts/composer";
 import {
   formatPublishSummaryOptionsLine,
   getPrimaryCtaLabelForMode,
@@ -87,6 +88,7 @@ export interface LongFormPostSummaryRailsProps {
   secondaryIsSaveDraft: boolean;
   handleSaveDraft: () => void;
   flushSync: () => void;
+  composerContext: ComposerContext;
 }
 
 export function LongFormPostSummaryRails(props: LongFormPostSummaryRailsProps) {
@@ -149,6 +151,7 @@ export function LongFormPostSummaryRails(props: LongFormPostSummaryRailsProps) {
     secondaryIsSaveDraft,
     handleSaveDraft,
     flushSync,
+    composerContext,
   } = props;
 
   if (isTemplateMode) {
@@ -287,12 +290,17 @@ export function LongFormPostSummaryRails(props: LongFormPostSummaryRailsProps) {
       warnings={displayAmberIssues}
       pristineHint={pristineHint}
       idleStatusLabel={idleStatusLabel}
-      primaryActionLabel={getPrimaryCtaLabelForMode(publishMode, "article")}
+      primaryActionLabel={
+        composerContext.mode === "create"
+          ? getPrimaryCtaLabelForMode(publishMode, "article")
+          : "Save changes"
+      }
       primaryActionLoading={primaryActionLoading}
-      primaryActionLoadingLabel={getPrimaryCtaPendingLabelForMode(
-        publishMode,
-        "article"
-      )}
+      primaryActionLoadingLabel={
+        composerContext.mode === "create"
+          ? getPrimaryCtaPendingLabelForMode(publishMode, "article")
+          : "Saving changes..."
+      }
       onPrimaryAction={() => {
         flushSync();
         const mode = publishMode === "now" ? "publish" : "schedule";
@@ -305,7 +313,15 @@ export function LongFormPostSummaryRails(props: LongFormPostSummaryRailsProps) {
         isSigning ||
         issueList.length > 0
       }
-      secondaryActionLabel={secondaryIsSaveDraft ? "Save draft" : "Preview"}
+      secondaryActionLabel={
+        composerContext.mode === "create"
+          ? secondaryIsSaveDraft
+            ? "Save draft"
+            : "Preview"
+          : secondaryIsSaveDraft
+            ? "Save as draft copy"
+            : "Preview"
+      }
       onSecondaryAction={
         secondaryIsSaveDraft
           ? () => {

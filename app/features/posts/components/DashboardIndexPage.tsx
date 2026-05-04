@@ -956,15 +956,6 @@ export default function DashboardIndexPage() {
             resetFlowMergeState();
             revalidator.revalidate();
           }}
-          onEdit={(p) => {
-            setSelectedLongFormPost(null);
-            navigate(
-              buildComposeEditUrl(
-                { mode: "edit_scheduled", scheduledActionId: String(p.id) },
-                { composeType: "article" }
-              )
-            );
-          }}
           onReschedule={(p) => {
             setSelectedLongFormPost(null);
             _handleReschedulePost(p as LongFormPostData);

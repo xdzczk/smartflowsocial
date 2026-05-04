@@ -104,6 +104,7 @@ export interface BulkComposerModalContentProps {
   rowMediaUploadDisabled?: boolean;
   startPrepareFlow: () => Promise<void>;
   duplicatePost: (index: number) => void;
+  handleReorderBulkPost: (index: number, direction: "up" | "down") => void;
   handleRepostSchedulesChange: (
     index: number,
     list: Array<{ value: number; unit: "hours" | "minutes" }>
@@ -173,6 +174,7 @@ export function BulkComposerModalContent({
   rowMediaUploadDisabled = false,
   startPrepareFlow,
   duplicatePost,
+  handleReorderBulkPost,
   handleRepostSchedulesChange,
   handleQuoteSchedulesChange,
   handleRepostAll,
@@ -293,6 +295,7 @@ export function BulkComposerModalContent({
                   userTimeFormat={userTimeFormat}
                   showAlsoSchedule={showActions}
                   rowMediaUploadDisabled={rowMediaUploadDisabled}
+                  totalPosts={posts.length}
                   onCaptionChange={handleCaptionChange}
                   onDateChange={handleDateChange}
                   onQueueTypeChange={(i, v) => {
@@ -301,6 +304,7 @@ export function BulkComposerModalContent({
                   onIsRecyclableChange={handleIsRecyclableChange}
                   onRemove={handleRemovePost}
                   onDuplicate={duplicatePost}
+                  onReorderRow={handleReorderBulkPost}
                   onIncludeHashtagsInNoteBodyChange={
                     handleIncludeHashtagsInNoteBodyChange
                   }
