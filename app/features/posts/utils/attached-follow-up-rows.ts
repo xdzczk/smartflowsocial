@@ -71,6 +71,33 @@ export function attachedFollowUpMenuTitle(
   }
 }
 
+/** Compact label for Flow/calendar chips (no ordinal). */
+export function attachedFollowUpKindChipLabel(
+  postKind: string | undefined | null
+): string {
+  switch (postKind) {
+    case "REPOST":
+      return "Follow-up repost";
+    case "QUOTE":
+      return "Follow-up quote";
+    case "REPLY":
+      return "Follow-up reply";
+    case "THREAD":
+      return "Follow-up thread";
+    case "POST":
+      return "Follow-up post";
+    default:
+      return "Follow-up";
+  }
+}
+
+export function attachedFollowUpChipLabelFromCombinedContent(
+  item: CombinedContent
+): string | null {
+  if (!isAttachedFollowUpContent(item)) return null;
+  return attachedFollowUpKindChipLabel(postKindForAttachedMenuItem(item));
+}
+
 export function postKindForAttachedMenuItem(
   item: CombinedContent
 ): string | undefined {
@@ -79,33 +106,54 @@ export function postKindForAttachedMenuItem(
   return (item.originalData as PostData).postKind;
 }
 
+function parsePostInstant(value: unknown): Date | undefined {
+  if (value == null) return undefined;
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
+  if (typeof value === "string") {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? undefined : d;
+  }
+  return undefined;
+}
+
 /**
- * Schedule/publish instant for nested follow-up rows. Prefer {@link CombinedContent.originalData}
- * so listing hydration cannot surface the parent row's timestamps on the child.
+ * Scheduled instant for menu labels — matches queue/list “effective” slot:
+ * {@link PostData.nominalScheduledAtUtc} when set (user-facing slot), else {@link PostData.scheduledAtUtc}.
+ * Reads only {@link CombinedContent.originalData} so parent-row hydration on `item` cannot leak in.
+ */
+function scheduledInstantFromOriginalData(
+  item: CombinedContent
+): Date | undefined {
+  const od = item.originalData;
+  if (item.type === "post") {
+    const p = od as PostData;
+    return parsePostInstant(p.nominalScheduledAtUtc ?? p.scheduledAtUtc);
+  }
+  const lf = od as LongFormPostData;
+  return parsePostInstant(lf.nominalScheduledAtUtc ?? lf.scheduledAtUtc);
+}
+
+function publishedInstantFromOriginalData(
+  item: CombinedContent
+): Date | undefined {
+  const od = item.originalData;
+  if (item.type === "post") {
+    return parsePostInstant((od as PostData).publishedAt);
+  }
+  return parsePostInstant((od as LongFormPostData).publishedAt);
+}
+
+/**
+ * Schedule/publish instant for nested follow-up rows — always derived from `originalData`
+ * (nominal → scheduled / published), never from top-level CombinedContent fields.
  */
 export function effectiveScheduledOrPublishedAtForAttachedMenuItem(
   item: CombinedContent,
   listType: "scheduled" | "published"
 ): Date | undefined {
-  const od = item.originalData;
-  if (listType === "scheduled") {
-    if (item.type === "post") {
-      const p = od as PostData;
-      const u = p.scheduledAtUtc ?? item.scheduledAtUtc;
-      return u instanceof Date && !Number.isNaN(u.getTime()) ? u : undefined;
-    }
-    const lf = od as LongFormPostData;
-    const u = lf.scheduledAtUtc ?? item.scheduledAtUtc;
-    return u instanceof Date && !Number.isNaN(u.getTime()) ? u : undefined;
-  }
-  if (item.type === "post") {
-    const p = od as PostData;
-    const d = p.publishedAt ?? item.publishedAt;
-    return d instanceof Date && !Number.isNaN(d.getTime()) ? d : undefined;
-  }
-  const lf = od as LongFormPostData;
-  const d = lf.publishedAt ?? item.publishedAt;
-  return d instanceof Date && !Number.isNaN(d.getTime()) ? d : undefined;
+  return listType === "scheduled"
+    ? scheduledInstantFromOriginalData(item)
+    : publishedInstantFromOriginalData(item);
 }
 
 function sortByScheduledTime(a: PostData, b: PostData): number {

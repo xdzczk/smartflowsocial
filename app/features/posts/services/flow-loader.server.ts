@@ -220,8 +220,14 @@ export type FlowItemDTO =
   | { type: "post"; data: PostDTO }
   | { type: "longform"; data: LongFormPostDTO };
 
-/** Content type filter for flow: all, posts only, reposts only, polls, or longform (articles) only. */
-export type FlowContentTab = "all" | "posts" | "longform" | "reposts" | "polls";
+/** Content type filter for flow: all, posts only, reposts only, queue follow-ups, polls, or longform (articles) only. */
+export type FlowContentTab =
+  | "all"
+  | "posts"
+  | "longform"
+  | "reposts"
+  | "followups"
+  | "polls";
 
 export interface LoadFlowDataParams {
   userId: string;
@@ -256,6 +262,44 @@ export interface LoadFlowDataResult {
   flowPollsCount?: number;
 }
 
+type PostsListContentTab = NonNullable<
+  Parameters<typeof getScheduledPosts>[0]["contentTab"]
+>;
+
+function postsContentTabForFlow(
+  contentTab: FlowContentTab
+): PostsListContentTab | undefined {
+  switch (contentTab) {
+    case "posts":
+      return "posts";
+    case "reposts":
+      return "reposts";
+    case "polls":
+      return "polls";
+    case "followups":
+      return "followups";
+    default:
+      return undefined;
+  }
+}
+
+function getFlowLoaderFetchPlan(contentTab: FlowContentTab): {
+  fetchPosts: boolean;
+  fetchLongform: boolean;
+  postsContentTab: PostsListContentTab | undefined;
+} {
+  return {
+    fetchPosts:
+      contentTab === "all" ||
+      contentTab === "posts" ||
+      contentTab === "reposts" ||
+      contentTab === "polls" ||
+      contentTab === "followups",
+    fetchLongform: contentTab === "all" || contentTab === "longform",
+    postsContentTab: postsContentTabForFlow(contentTab),
+  };
+}
+
 /**
  * Load Flow data: time-ordered window of past (posted) + future (scheduled) items.
  * Initial load: no before/after. Load more past: pass before. Load more future: pass after.
@@ -287,20 +331,8 @@ export async function loadFlowData({
   const enabledQueueTypes = queueTypes.filter((qt) => shouldShowQueueInUi(qt));
   const queueTypesForClient = toAppQueueTypes(enabledQueueTypes);
 
-  const fetchPosts =
-    contentTab === "all" ||
-    contentTab === "posts" ||
-    contentTab === "reposts" ||
-    contentTab === "polls";
-  const postsContentTab =
-    contentTab === "posts"
-      ? "posts"
-      : contentTab === "reposts"
-        ? "reposts"
-        : contentTab === "polls"
-          ? "polls"
-          : undefined;
-  const fetchLongform = contentTab === "all" || contentTab === "longform";
+  const { fetchPosts, fetchLongform, postsContentTab } =
+    getFlowLoaderFetchPlan(contentTab);
 
   // Load more past only
   if (before !== undefined && before !== "") {

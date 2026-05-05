@@ -29,8 +29,8 @@ export function getPastPosts({
   beforeDate?: Date;
   /** Max number of posts to return (for Flow load more past). */
   limit?: number;
-  /** When "reposts", only REPOST. When "posts", exclude REPOST. When "polls", postType POLL. When "all" or undefined, no filter. */
-  contentTab?: "all" | "posts" | "reposts" | "polls";
+  /** When "reposts", only REPOST. When "posts", exclude REPOST. When "followups", queue attached follow-ups. When "polls", postType POLL. When "all" or undefined, no filter. */
+  contentTab?: "all" | "posts" | "reposts" | "followups" | "polls";
   excludePausedQueueContent?: boolean;
 }): Promise<PostWithQueueType[]> {
   const whereClause: Prisma.PostWhereInput = {
@@ -51,6 +51,8 @@ export function getPastPosts({
     whereClause.dependencyMode = { not: "attached" };
   } else if (contentTab === "posts") {
     whereClause.postKind = { not: "REPOST" };
+  } else if (contentTab === "followups") {
+    whereClause.dependencyMode = "attached";
   } else if (contentTab === "polls") {
     whereClause.postType = "POLL";
   }

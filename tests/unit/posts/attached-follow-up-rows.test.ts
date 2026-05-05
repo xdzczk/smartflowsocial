@@ -5,6 +5,7 @@ import type { PostData } from "~/features/posts/types";
 import {
   attachedCombinedByParentId,
   attachedCombinedForThreadRow,
+  attachedFollowUpChipLabelFromCombinedContent,
   attachedFollowUpMenuTitle,
   effectiveScheduledOrPublishedAtForAttachedMenuItem,
 } from "~/features/posts/utils/attached-follow-up-rows";
@@ -63,6 +64,38 @@ describe("attached-follow-up-rows", () => {
     expect(attachedFollowUpMenuTitle(undefined, 3)).toBe("Follow-up 3");
   });
 
+  it("attachedFollowUpChipLabelFromCombinedContent returns kind chip for attached posts", () => {
+    const fu = postToCombinedContent({
+      id: "fu",
+      userId: "u",
+      caption: "c",
+      content: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      status: "SCHEDULED",
+      currentState: "SCHEDULED",
+      dependencyMode: "attached",
+      parentScheduledActionId: "p",
+      postKind: "REPOST",
+      fileUrl: [],
+      postType: "TEXT",
+      tags: [],
+      manual_override: false,
+      repost: false,
+      isQuotedPost: false,
+      isRecyclable: false,
+      hashTagPresetId: null,
+      nostrEventId: null,
+      scheduledAtUtc: new Date(),
+      publishedAt: null,
+      signedEvent: null,
+      nostrEvent: null,
+    } as unknown as PostData);
+    expect(attachedFollowUpChipLabelFromCombinedContent(fu)).toBe(
+      "Follow-up repost"
+    );
+  });
+
   it("effectiveScheduledOrPublishedAtForAttachedMenuItem prefers originalData times", () => {
     const parentWrong = new Date("2025-06-01T10:00:00Z");
     const childCorrect = new Date("2025-06-01T18:00:00Z");
@@ -99,5 +132,76 @@ describe("attached-follow-up-rows", () => {
     expect(
       effectiveScheduledOrPublishedAtForAttachedMenuItem(item, "scheduled")
     ).toEqual(childCorrect);
+  });
+
+  it("effectiveScheduledOrPublishedAtForAttachedMenuItem prefers nominal over scheduled on originalData", () => {
+    const nominal = new Date("2025-06-02T12:00:00Z");
+    const scheduled = new Date("2025-06-02T15:00:00Z");
+    const raw: PostData = {
+      id: "child",
+      userId: "u",
+      caption: "x",
+      content: null,
+      scheduledAtUtc: scheduled,
+      nominalScheduledAtUtc: nominal,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      status: "SCHEDULED",
+      currentState: "SCHEDULED",
+      dependencyMode: "attached",
+      parentScheduledActionId: "root",
+      postKind: "REPOST",
+      fileUrl: [],
+      postType: "TEXT",
+      tags: [],
+      manual_override: false,
+      repost: false,
+      isQuotedPost: false,
+      isRecyclable: false,
+      hashTagPresetId: null,
+      nostrEventId: null,
+      publishedAt: null,
+      signedEvent: null,
+      nostrEvent: null,
+    } as unknown as PostData;
+    const item = postToCombinedContent(raw);
+    expect(
+      effectiveScheduledOrPublishedAtForAttachedMenuItem(item, "scheduled")
+    ).toEqual(nominal);
+  });
+
+  it("effectiveScheduledOrPublishedAtForAttachedMenuItem parses ISO schedule strings on originalData", () => {
+    const raw: PostData = {
+      id: "child",
+      userId: "u",
+      caption: "x",
+      content: null,
+      scheduledAtUtc: "2025-07-01T08:30:00.000Z" as unknown as Date,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      status: "SCHEDULED",
+      currentState: "SCHEDULED",
+      dependencyMode: "attached",
+      parentScheduledActionId: "root",
+      fileUrl: [],
+      postType: "TEXT",
+      tags: [],
+      manual_override: false,
+      repost: false,
+      isQuotedPost: false,
+      isRecyclable: false,
+      hashTagPresetId: null,
+      nostrEventId: null,
+      publishedAt: null,
+      signedEvent: null,
+      nostrEvent: null,
+    } as unknown as PostData;
+    const item = postToCombinedContent(raw);
+    expect(
+      effectiveScheduledOrPublishedAtForAttachedMenuItem(
+        item,
+        "scheduled"
+      )?.toISOString()
+    ).toBe("2025-07-01T08:30:00.000Z");
   });
 });

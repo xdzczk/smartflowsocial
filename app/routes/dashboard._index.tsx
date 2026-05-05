@@ -76,6 +76,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         | "posts"
         | "longform"
         | "reposts"
+        | "followups"
         | "polls"
         | null) ?? "all";
     const before = url.searchParams.get("before") ?? undefined;
