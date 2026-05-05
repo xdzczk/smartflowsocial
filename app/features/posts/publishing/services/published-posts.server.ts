@@ -12,7 +12,9 @@ import {
 } from "~/features/posts/dtos";
 import { shouldShowQueueInUi } from "~/features/posts/queue-status";
 import {
+  getPublishedFollowUpsCount,
   getPublishedLongFormPosts,
+  getPublishedNonRepostPostsCount,
   getPublishedPosts,
   getPublishedRepostsCount,
 } from "~/features/posts/server";
@@ -61,6 +63,8 @@ export async function getPublishedDashboardData({
     allLongformResultRaw,
     queueTypesRaw,
     repostsCount,
+    followUpsCount,
+    nonRepostPostsCount,
   ] = await Promise.all([
     getPublishedPosts({
       userId,
@@ -79,6 +83,18 @@ export async function getPublishedDashboardData({
     }),
     getQueueTypesCached(userId),
     getPublishedRepostsCount({
+      userId,
+      queueType,
+      publishedFromUtc,
+      publishedToUtc,
+    }),
+    getPublishedFollowUpsCount({
+      userId,
+      queueType,
+      publishedFromUtc,
+      publishedToUtc,
+    }),
+    getPublishedNonRepostPostsCount({
       userId,
       queueType,
       publishedFromUtc,
@@ -247,8 +263,9 @@ export async function getPublishedDashboardData({
       typeof qt === "object" && qt !== null ? shouldShowQueueInUi(qt) : false
     ),
     selectedQueueType: queueType,
-    totalPostsCount: totalPosts - repostsCount,
+    totalPostsCount: nonRepostPostsCount,
     totalRepostsCount: repostsCount,
+    totalFollowUpsCount: followUpsCount,
     totalLongformCount: totalLongform,
     totalContentCount: totalPosts + totalLongform,
   };

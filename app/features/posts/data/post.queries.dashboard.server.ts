@@ -43,8 +43,8 @@ export async function getScheduledPosts({
   afterScheduledAtUtc?: Date;
   /** Use scheduledAtUtc >= cursor date. Flow pairs this with a composite cursor. */
   afterScheduledAtUtcInclusive?: boolean;
-  /** When "reposts", only REPOST. When "posts", exclude REPOST. When "polls", postType POLL. When "all" or undefined, no filter. */
-  contentTab?: "all" | "posts" | "reposts" | "polls";
+  /** Listing tab filter. "followups" returns attached follow-up rows as their own result set. */
+  contentTab?: "all" | "posts" | "reposts" | "followups" | "polls";
   /** Filter by scheduled date range (inclusive). Used for Scheduled page date filter. */
   scheduledFromUtc?: Date;
   scheduledToUtc?: Date;
@@ -61,8 +61,13 @@ export async function getScheduledPosts({
 
     if (contentTab === "reposts") {
       whereClause.postKind = "REPOST";
+      /** Queue follow-ups (`dependencyMode: attached`) nest under the parent row; only standalone reposts are listed here. */
+      whereClause.dependencyMode = { not: "attached" };
     } else if (contentTab === "posts") {
       whereClause.postKind = { not: "REPOST" };
+      whereClause.dependencyMode = { not: "attached" };
+    } else if (contentTab === "followups") {
+      whereClause.dependencyMode = "attached";
     } else if (contentTab === "polls") {
       whereClause.postType = "POLL";
     }
@@ -160,7 +165,7 @@ export async function getScheduledPosts({
 }
 
 /**
- * Count of scheduled posts that are reposts (postKind REPOST).
+ * Count of scheduled **standalone** reposts (`postKind REPOST`, not queue follow-ups attached to a parent).
  * Used for tab counts so they are complete before all pages are loaded.
  */
 export async function getScheduledRepostsCount({
@@ -180,6 +185,109 @@ export async function getScheduledRepostsCount({
     currentState: "SCHEDULED",
     userId,
     postKind: "REPOST",
+    dependencyMode: { not: "attached" },
+  };
+  if (scheduledFromUtc !== undefined || scheduledToUtc !== undefined) {
+    whereClause.scheduledAtUtc = {
+      ...(scheduledFromUtc !== undefined && { gte: scheduledFromUtc }),
+      ...(scheduledToUtc !== undefined && { lte: scheduledToUtc }),
+    };
+  }
+  if (queueType && queueType !== "all") {
+    if (queueType === "unassigned") {
+      whereClause.queueTypeId = null;
+    } else {
+      whereClause.queueType = { name: queueType };
+    }
+  }
+  if (excludePausedQueueContent) {
+    const pausedQueueExclusion: Prisma.PostWhereInput = {
+      OR: [{ queueTypeId: null }, { queueType: { status: { not: "PAUSED" } } }],
+    };
+    whereClause.AND = [
+      ...(Array.isArray(whereClause.AND)
+        ? whereClause.AND
+        : whereClause.AND
+          ? [whereClause.AND]
+          : []),
+      pausedQueueExclusion,
+    ];
+  }
+  return prisma.post.count({ where: whereClause });
+}
+
+/**
+ * Count of scheduled queue follow-ups attached to a parent action.
+ */
+export async function getScheduledFollowUpsCount({
+  userId,
+  queueType,
+  scheduledFromUtc,
+  scheduledToUtc,
+  excludePausedQueueContent = false,
+}: {
+  userId: string;
+  queueType?: string;
+  scheduledFromUtc?: Date;
+  scheduledToUtc?: Date;
+  excludePausedQueueContent?: boolean;
+}): Promise<number> {
+  const whereClause: Prisma.PostWhereInput = {
+    currentState: "SCHEDULED",
+    userId,
+    dependencyMode: "attached",
+  };
+  if (scheduledFromUtc !== undefined || scheduledToUtc !== undefined) {
+    whereClause.scheduledAtUtc = {
+      ...(scheduledFromUtc !== undefined && { gte: scheduledFromUtc }),
+      ...(scheduledToUtc !== undefined && { lte: scheduledToUtc }),
+    };
+  }
+  if (queueType && queueType !== "all") {
+    if (queueType === "unassigned") {
+      whereClause.queueTypeId = null;
+    } else {
+      whereClause.queueType = { name: queueType };
+    }
+  }
+  if (excludePausedQueueContent) {
+    const pausedQueueExclusion: Prisma.PostWhereInput = {
+      OR: [{ queueTypeId: null }, { queueType: { status: { not: "PAUSED" } } }],
+    };
+    whereClause.AND = [
+      ...(Array.isArray(whereClause.AND)
+        ? whereClause.AND
+        : whereClause.AND
+          ? [whereClause.AND]
+          : []),
+      pausedQueueExclusion,
+    ];
+  }
+  return prisma.post.count({ where: whereClause });
+}
+
+/**
+ * Count of scheduled posts that are **not** reposts (`postKind` ≠ REPOST).
+ * Used with {@link getScheduledRepostsCount} so Post / Repost tab badges stay consistent when attached REPOST follow-ups exist.
+ */
+export async function getScheduledNonRepostPostsCount({
+  userId,
+  queueType,
+  scheduledFromUtc,
+  scheduledToUtc,
+  excludePausedQueueContent = false,
+}: {
+  userId: string;
+  queueType?: string;
+  scheduledFromUtc?: Date;
+  scheduledToUtc?: Date;
+  excludePausedQueueContent?: boolean;
+}): Promise<number> {
+  const whereClause: Prisma.PostWhereInput = {
+    currentState: "SCHEDULED",
+    userId,
+    postKind: { not: "REPOST" },
+    dependencyMode: { not: "attached" },
   };
   if (scheduledFromUtc !== undefined || scheduledToUtc !== undefined) {
     whereClause.scheduledAtUtc = {
@@ -453,7 +561,42 @@ export async function getPublishedPosts({
 }
 
 /**
- * Count of published posts that are reposts (postKind REPOST).
+ * Count of published queue follow-ups attached to a parent action.
+ */
+export async function getPublishedFollowUpsCount({
+  userId,
+  queueType,
+  publishedFromUtc,
+  publishedToUtc,
+}: {
+  userId: string;
+  queueType?: string;
+  publishedFromUtc?: Date;
+  publishedToUtc?: Date;
+}): Promise<number> {
+  const whereClause: Prisma.PostWhereInput = {
+    currentState: "PUBLISHED",
+    userId,
+    dependencyMode: "attached",
+  };
+  if (publishedFromUtc !== undefined || publishedToUtc !== undefined) {
+    whereClause.publishedAt = {
+      ...(publishedFromUtc !== undefined && { gte: publishedFromUtc }),
+      ...(publishedToUtc !== undefined && { lte: publishedToUtc }),
+    };
+  }
+  if (queueType && queueType !== "all") {
+    if (queueType === "unassigned") {
+      whereClause.queueTypeId = null;
+    } else {
+      whereClause.queueType = { name: queueType };
+    }
+  }
+  return prisma.post.count({ where: whereClause });
+}
+
+/**
+ * Count of published **standalone** reposts (`postKind REPOST`, not queue follow-ups attached to a parent).
  * Used for tab counts so they are complete before all pages are loaded.
  */
 export async function getPublishedRepostsCount({
@@ -471,6 +614,44 @@ export async function getPublishedRepostsCount({
     currentState: "PUBLISHED",
     userId,
     postKind: "REPOST",
+    dependencyMode: { not: "attached" },
+  };
+  if (publishedFromUtc !== undefined || publishedToUtc !== undefined) {
+    whereClause.publishedAt = {
+      ...(publishedFromUtc !== undefined && { gte: publishedFromUtc }),
+      ...(publishedToUtc !== undefined && { lte: publishedToUtc }),
+    };
+  }
+  if (queueType && queueType !== "all") {
+    if (queueType === "unassigned") {
+      whereClause.queueTypeId = null;
+    } else {
+      whereClause.queueType = { name: queueType };
+    }
+  }
+  return prisma.post.count({ where: whereClause });
+}
+
+/**
+ * Count of published posts that are **not** reposts (`postKind` ≠ REPOST).
+ * Used with {@link getPublishedRepostsCount} so Post / Repost tab badges stay consistent when attached REPOST follow-ups exist.
+ */
+export async function getPublishedNonRepostPostsCount({
+  userId,
+  queueType,
+  publishedFromUtc,
+  publishedToUtc,
+}: {
+  userId: string;
+  queueType?: string;
+  publishedFromUtc?: Date;
+  publishedToUtc?: Date;
+}): Promise<number> {
+  const whereClause: Prisma.PostWhereInput = {
+    currentState: "PUBLISHED",
+    userId,
+    postKind: { not: "REPOST" },
+    dependencyMode: { not: "attached" },
   };
   if (publishedFromUtc !== undefined || publishedToUtc !== undefined) {
     whereClause.publishedAt = {

@@ -13,7 +13,9 @@ import {
 } from "~/features/posts/dtos";
 import { shouldShowQueueInUi } from "~/features/posts/queue-status";
 import {
+  getScheduledFollowUpsCount,
   getScheduledLongFormPosts,
+  getScheduledNonRepostPostsCount,
   getScheduledPosts,
   getScheduledRepostsCount,
   pickRescheduleSourceSignedEvents,
@@ -59,6 +61,8 @@ export async function loadScheduledData(
     queueTypes,
     hashTagPresets,
     repostsCount,
+    followUpsCount,
+    nonRepostPostsCount,
     scheduledContestLaunches,
   ] = await Promise.all([
     getScheduledPosts({
@@ -82,6 +86,20 @@ export async function loadScheduledData(
     getQueueTypes(userId),
     getUserHashTagPresets(userId),
     getScheduledRepostsCount({
+      userId,
+      queueType,
+      scheduledFromUtc,
+      scheduledToUtc,
+      excludePausedQueueContent: true,
+    }),
+    getScheduledFollowUpsCount({
+      userId,
+      queueType,
+      scheduledFromUtc,
+      scheduledToUtc,
+      excludePausedQueueContent: true,
+    }),
+    getScheduledNonRepostPostsCount({
       userId,
       queueType,
       scheduledFromUtc,
@@ -180,8 +198,9 @@ export async function loadScheduledData(
     hashTagPresets,
     pagination: postsPagination,
     longformPagination: longformPostsPagination,
-    totalPostsCount: totalPosts - repostsCount,
+    totalPostsCount: nonRepostPostsCount,
     totalRepostsCount: repostsCount,
+    totalFollowUpsCount: followUpsCount,
     totalLongformCount: totalLongform,
     totalContentCount: totalPosts + totalLongform,
     scheduledContestLaunches,

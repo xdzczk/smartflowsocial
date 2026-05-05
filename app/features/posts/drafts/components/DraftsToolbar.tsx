@@ -31,6 +31,7 @@ export interface DraftsToolbarProps {
   totalPollsCount: number;
   totalThreadsCount: number;
   totalRepostsCount: number;
+  totalFollowUpsCount: number;
   totalLongformCount: number;
   bulkCount: number;
   showQueueFilter: boolean;
@@ -48,6 +49,7 @@ export function DraftsToolbar({
   totalPollsCount,
   totalThreadsCount,
   totalRepostsCount,
+  totalFollowUpsCount,
   totalLongformCount,
   bulkCount,
   showQueueFilter,
@@ -70,6 +72,7 @@ export function DraftsToolbar({
     totalPollsCount,
     totalThreadsCount,
     totalRepostsCount,
+    totalFollowUpsCount,
     totalLongformCount,
     bulkCount,
   });

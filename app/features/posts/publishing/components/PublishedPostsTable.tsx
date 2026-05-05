@@ -191,6 +191,8 @@ interface PublishedPostsTableProps {
   isFetchingNextPage?: boolean;
   onScrollContainerReady?: (el: HTMLDivElement | null) => void;
   onBeforeDelete?: (postId: string) => void;
+  /** Follow-ups tab: render attached children as ordinary rows with row actions. */
+  showFollowUpsAsRows?: boolean;
 }
 
 export default function PublishedPostsTable({
@@ -216,6 +218,7 @@ export default function PublishedPostsTable({
   isFetchingNextPage = false,
   onScrollContainerReady,
   onBeforeDelete,
+  showFollowUpsAsRows = false,
 }: PublishedPostsTableProps) {
   const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
   const mobileScrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -223,12 +226,15 @@ export default function PublishedPostsTable({
     isMobile && (sentinelRef != null || onScrollContainerReady != null);
 
   const threadRows = useMemo(() => {
+    if (showFollowUpsAsRows) {
+      return filteredPosts.map((post) => ({ root: post, threadSegments: [] }));
+    }
     const built = buildPostThreadRows(filteredPosts, "published");
     const statsRecord = stats as Record<string, unknown> | undefined;
     return [...built].sort((a, b) =>
       comparePublishedPosts(a.root, b.root, sortConfig, statsRecord)
     );
-  }, [filteredPosts, sortConfig, stats]);
+  }, [filteredPosts, showFollowUpsAsRows, sortConfig, stats]);
 
   const combinedContent = useMemo(
     () => threadRows.map((r) => postToCombinedContent(r.root)),
@@ -236,8 +242,11 @@ export default function PublishedPostsTable({
   );
 
   const attachedByParentId = useMemo(
-    () => attachedPostsByParentId(filteredPosts),
-    [filteredPosts]
+    () =>
+      showFollowUpsAsRows
+        ? new Map<string, PostData[]>()
+        : attachedPostsByParentId(filteredPosts),
+    [filteredPosts, showFollowUpsAsRows]
   );
   // eslint-disable-next-line react-hooks/incompatible-library -- useVirtualizer is not memoization-safe by design
   const rowVirtualizer = useVirtualizer({
@@ -489,7 +498,7 @@ export default function PublishedPostsTable({
                       </span>
                     </td>
                     <td className="p-3 text-center">
-                      {isAttachedFollowUpPost(post) ? (
+                      {isAttachedFollowUpPost(post) && !showFollowUpsAsRows ? (
                         <span
                           className="text-text-secondary text-xs"
                           aria-hidden

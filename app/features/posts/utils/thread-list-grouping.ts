@@ -50,12 +50,28 @@ export function buildThreadListRows(
   }
 
   const mode = listType;
+  const postIds = new Set(
+    sortedFlat.filter((item) => item.type === "post").map((item) => item.id)
+  );
+  const isNestedAttachedFollowUp = (item: CombinedContent) =>
+    isAttachedFollowUpContent(item) &&
+    item.parentScheduledActionId != null &&
+    postIds.has(item.parentScheduledActionId);
+
+  /** Parent not in this listing (e.g. published while follow-up still scheduled): never merge into thread rows. */
+  const isOrphanAttachedFollowUp = (item: CombinedContent) =>
+    isAttachedFollowUpContent(item) &&
+    item.parentScheduledActionId != null &&
+    item.parentScheduledActionId !== "" &&
+    !postIds.has(item.parentScheduledActionId);
 
   const groups = new Map<string, CombinedContent[]>();
   for (const item of sortedFlat) {
     if (item.type !== "post") continue;
-    /** Queue follow-ups nest under the parent row menu; do not group as thread segments. */
-    if (isAttachedFollowUpContent(item)) continue;
+    /** Queue follow-ups nest under a visible parent row; otherwise they need their own row. */
+    if (isNestedAttachedFollowUp(item)) continue;
+    /** Orphan follow-ups must not become thread segments of a sibling row. */
+    if (isOrphanAttachedFollowUp(item)) continue;
     const gid = item.threadGroupId;
     if (!gid) continue;
     const arr = groups.get(gid) ?? [];
@@ -75,7 +91,11 @@ export function buildThreadListRows(
       continue;
     }
     // After the longform branch, `item` is the post branch of `CombinedContent`.
-    if (isAttachedFollowUpContent(item)) {
+    if (isNestedAttachedFollowUp(item)) {
+      continue;
+    }
+    if (isOrphanAttachedFollowUp(item)) {
+      rows.push({ root: item, threadSegments: [] });
       continue;
     }
     if (!item.threadGroupId) {

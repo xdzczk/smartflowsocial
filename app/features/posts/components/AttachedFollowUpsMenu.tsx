@@ -10,6 +10,11 @@ import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { cn } from "~/lib/utils";
 
 import type { CombinedContent } from "../types";
+import {
+  attachedFollowUpMenuTitle,
+  effectiveScheduledOrPublishedAtForAttachedMenuItem,
+  postKindForAttachedMenuItem,
+} from "../utils/attached-follow-up-rows";
 import { formatDate } from "../utils/content-helpers";
 
 interface AttachedFollowUpsMenuProps {
@@ -60,23 +65,22 @@ export function AttachedFollowUpsMenu({
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         {items.map((item, idx) => {
-          const when =
-            listType === "scheduled"
-              ? formatDate(
-                  item.scheduledAtUtc ?? undefined,
-                  false,
-                  userTimezone,
-                  userTimeFormat,
-                  dateLocale
-                )
-              : formatDate(
-                  item.publishedAt ?? undefined,
-                  false,
-                  userTimezone,
-                  userTimeFormat,
-                  dateLocale
-                );
+          const at = effectiveScheduledOrPublishedAtForAttachedMenuItem(
+            item,
+            listType
+          );
+          const when = formatDate(
+            at,
+            false,
+            userTimezone,
+            userTimeFormat,
+            dateLocale
+          );
           const preview = item.caption?.trim().slice(0, 48) ?? "Follow-up";
+          const title = attachedFollowUpMenuTitle(
+            postKindForAttachedMenuItem(item),
+            idx + 1
+          );
           return (
             <DropdownMenuItem
               key={`follow-up-${item.type}-${item.id}`}
@@ -86,7 +90,7 @@ export function AttachedFollowUpsMenu({
               className="flex flex-col items-start gap-0.5 py-2"
             >
               <span className="text-text font-medium">
-                Follow-up {idx + 1}
+                {title}
                 <span className="text-text-secondary font-normal">
                   {" "}
                   · {when}

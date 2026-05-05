@@ -42,6 +42,7 @@ import type {
   LongFormPostData,
   QueueType,
 } from "../types";
+import { isStandaloneRepostContent } from "../utils/attached-follow-up-rows";
 import { dedupeFlowItemsByThreadGroup } from "../utils/flow-thread-dedupe";
 
 import { filterPostsByQueueType } from "./post-filtering.server";
@@ -631,10 +632,8 @@ export async function loadFlowData({
       i.type === "post" &&
       (i as CombinedContent & { postKind?: string }).postKind !== "REPOST"
   ).length;
-  const flowRepostsCount = fullWindow.filter(
-    (i) =>
-      i.type === "post" &&
-      (i as CombinedContent & { postKind?: string }).postKind === "REPOST"
+  const flowRepostsCount = fullWindow.filter((i) =>
+    isStandaloneRepostContent(i)
   ).length;
   const flowLongformCount = fullWindow.filter(
     (i) => i.type === "longform"

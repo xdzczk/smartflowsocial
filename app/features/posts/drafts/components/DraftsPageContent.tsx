@@ -26,6 +26,7 @@ export interface DraftsPageContentProps {
   pollsCount: number;
   threadsCount: number;
   repostsCount: number;
+  followUpsCount: number;
   longformCount: number;
   bulkCount: number;
   queueTypes: QueueType[];
@@ -67,6 +68,7 @@ export function DraftsPageContent({
   pollsCount,
   threadsCount,
   repostsCount,
+  followUpsCount,
   longformCount,
   bulkCount,
   queueTypes,
@@ -108,6 +110,7 @@ export function DraftsPageContent({
     currentTab === "polls" ||
     currentTab === "threads" ||
     currentTab === "reposts" ||
+    currentTab === "followups" ||
     currentTab === "longform";
 
   const toolbarCounts = {
@@ -116,6 +119,7 @@ export function DraftsPageContent({
     totalPollsCount: pollsCount,
     totalThreadsCount: threadsCount,
     totalRepostsCount: repostsCount,
+    totalFollowUpsCount: followUpsCount,
     totalLongformCount: longformCount,
     bulkCount,
   };
@@ -123,6 +127,7 @@ export function DraftsPageContent({
   const shortFormSortTabs =
     currentTab === "posts" ||
     currentTab === "reposts" ||
+    currentTab === "followups" ||
     currentTab === "polls" ||
     currentTab === "threads";
 

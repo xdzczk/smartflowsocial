@@ -266,6 +266,7 @@ export const publishedPostsLoaderDataSchema = z.object({
   longformPagination: paginationSchema.optional(),
   totalPostsCount: z.number().int().min(0).optional(),
   totalRepostsCount: z.number().int().min(0).optional(),
+  totalFollowUpsCount: z.number().int().min(0).optional(),
   totalLongformCount: z.number().int().min(0).optional(),
   totalContentCount: z.number().int().min(0).optional(),
 });
@@ -578,6 +579,7 @@ export const scheduledPostsLoaderDataSchema = z.object({
   longformPagination: paginationSchema.optional(),
   totalPostsCount: z.number().int().min(0).optional(),
   totalRepostsCount: z.number().int().min(0).optional(),
+  totalFollowUpsCount: z.number().int().min(0).optional(),
   totalLongformCount: z.number().int().min(0).optional(),
   totalContentCount: z.number().int().min(0).optional(),
   scheduledContestLaunches: z.array(scheduledContestLaunchRowSchema).optional(),

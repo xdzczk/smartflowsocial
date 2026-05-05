@@ -22,6 +22,10 @@ import type {
   UserData,
 } from "~/features/posts/types";
 import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
+import {
+  isAttachedFollowUpPost,
+  isStandaloneRepostPost,
+} from "~/features/posts/utils/attached-follow-up-rows";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
 import { useDeferredRouteLoaderData } from "~/lib/remix/deferred-route-loader-context";
 import { safeValidateLoaderResponse } from "~/lib/validation/loader-responses";
@@ -130,6 +134,7 @@ export function useCalendarData() {
       selectedQueueType: "all",
       totalPostsCount: 0,
       totalRepostsCount: 0,
+      totalFollowUpsCount: 0,
       totalLongformCount: 0,
       totalContentCount: 0,
       isLoading,
@@ -247,11 +252,16 @@ export function useCalendarData() {
       : undefined;
 
   const totalRepostsCount =
-    scheduledPosts.filter((p) => isRepostPost(p)).length +
-    pastPosts.filter((p) => isRepostPost(p)).length;
+    scheduledPosts.filter((p) => isStandaloneRepostPost(p)).length +
+    pastPosts.filter((p) => isStandaloneRepostPost(p)).length;
   const totalPostsCount =
-    scheduledPosts.filter((p) => !isRepostPost(p)).length +
-    pastPosts.filter((p) => !isRepostPost(p)).length;
+    scheduledPosts.filter((p) => !isRepostPost(p) && !isAttachedFollowUpPost(p))
+      .length +
+    pastPosts.filter((p) => !isRepostPost(p) && !isAttachedFollowUpPost(p))
+      .length;
+  const totalFollowUpsCount =
+    scheduledPosts.filter((p) => isAttachedFollowUpPost(p)).length +
+    pastPosts.filter((p) => isAttachedFollowUpPost(p)).length;
   const totalLongformCount =
     scheduledLongFormPostsPaginationRaw &&
     typeof scheduledLongFormPostsPaginationRaw === "object" &&
@@ -276,6 +286,7 @@ export function useCalendarData() {
     selectedQueueType,
     totalPostsCount,
     totalRepostsCount,
+    totalFollowUpsCount,
     totalLongformCount,
     totalContentCount,
     isLoading,

@@ -20,6 +20,8 @@ vi.mock("~/features/posts/server", () => ({
   getPublishedLongFormPosts: vi.fn(),
   getPublishedPosts: vi.fn(),
   getPublishedRepostsCount: vi.fn(() => Promise.resolve(0)),
+  getPublishedFollowUpsCount: vi.fn(() => Promise.resolve(0)),
+  getPublishedNonRepostPostsCount: vi.fn(() => Promise.resolve(0)),
 }));
 
 vi.mock("~/features/posts/services/combined.server", () => ({

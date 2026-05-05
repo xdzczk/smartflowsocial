@@ -48,6 +48,7 @@ export function getPastPosts({
 
   if (contentTab === "reposts") {
     whereClause.postKind = "REPOST";
+    whereClause.dependencyMode = { not: "attached" };
   } else if (contentTab === "posts") {
     whereClause.postKind = { not: "REPOST" };
   } else if (contentTab === "polls") {

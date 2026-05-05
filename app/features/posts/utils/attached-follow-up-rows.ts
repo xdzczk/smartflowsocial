@@ -5,9 +5,12 @@
 
 import type {
   CombinedContent,
+  LongFormPostData,
   PostData,
   ScheduledDependencyMode,
 } from "../types";
+
+import { isRepostContent, isRepostPost } from "./content-helpers";
 
 /** Resolves `dependencyMode` from the row or from `originalData` when loaders omit the top-level field. */
 export function effectiveDependencyModeForContent(
@@ -28,6 +31,11 @@ export function isAttachedFollowUpPost(post: PostData): boolean {
   return post.dependencyMode !== "standalone";
 }
 
+/** Repost rows that appear on their own in listings/tabs (excludes queue follow-ups nested under a parent). */
+export function isStandaloneRepostPost(post: PostData): boolean {
+  return isRepostPost(post) && !isAttachedFollowUpPost(post);
+}
+
 export function isAttachedFollowUpContent(item: CombinedContent): boolean {
   if (item.type !== "post") return false;
   const mode = effectiveDependencyModeForContent(item);
@@ -37,6 +45,67 @@ export function isAttachedFollowUpContent(item: CombinedContent): boolean {
     item.parentScheduledActionId != null && item.parentScheduledActionId !== "";
   if (!hasParent) return false;
   return true;
+}
+
+/** Combined-content repost that counts toward Repost tabs / Flow repost totals (not an attached follow-up). */
+export function isStandaloneRepostContent(item: CombinedContent): boolean {
+  return isRepostContent(item) && !isAttachedFollowUpContent(item);
+}
+
+/** Primary line for attached follow-up dropdown rows (e.g. `Follow-up repost 2`). */
+export function attachedFollowUpMenuTitle(
+  postKind: string | undefined | null,
+  ordinal: number
+): string {
+  switch (postKind) {
+    case "REPOST":
+      return `Follow-up repost ${ordinal}`;
+    case "QUOTE":
+      return `Follow-up quote ${ordinal}`;
+    case "REPLY":
+      return `Follow-up reply ${ordinal}`;
+    case "THREAD":
+      return `Follow-up thread ${ordinal}`;
+    default:
+      return `Follow-up ${ordinal}`;
+  }
+}
+
+export function postKindForAttachedMenuItem(
+  item: CombinedContent
+): string | undefined {
+  if (item.type !== "post") return undefined;
+  if (item.postKind) return item.postKind;
+  return (item.originalData as PostData).postKind;
+}
+
+/**
+ * Schedule/publish instant for nested follow-up rows. Prefer {@link CombinedContent.originalData}
+ * so listing hydration cannot surface the parent row's timestamps on the child.
+ */
+export function effectiveScheduledOrPublishedAtForAttachedMenuItem(
+  item: CombinedContent,
+  listType: "scheduled" | "published"
+): Date | undefined {
+  const od = item.originalData;
+  if (listType === "scheduled") {
+    if (item.type === "post") {
+      const p = od as PostData;
+      const u = p.scheduledAtUtc ?? item.scheduledAtUtc;
+      return u instanceof Date && !Number.isNaN(u.getTime()) ? u : undefined;
+    }
+    const lf = od as LongFormPostData;
+    const u = lf.scheduledAtUtc ?? item.scheduledAtUtc;
+    return u instanceof Date && !Number.isNaN(u.getTime()) ? u : undefined;
+  }
+  if (item.type === "post") {
+    const p = od as PostData;
+    const d = p.publishedAt ?? item.publishedAt;
+    return d instanceof Date && !Number.isNaN(d.getTime()) ? d : undefined;
+  }
+  const lf = od as LongFormPostData;
+  const d = lf.publishedAt ?? item.publishedAt;
+  return d instanceof Date && !Number.isNaN(d.getTime()) ? d : undefined;
 }
 
 function sortByScheduledTime(a: PostData, b: PostData): number {

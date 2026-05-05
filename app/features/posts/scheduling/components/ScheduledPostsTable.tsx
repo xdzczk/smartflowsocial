@@ -110,6 +110,8 @@ interface ScheduledPostsTableProps {
   onScrollContainerReady?: (el: HTMLDivElement | null) => void;
   /** Thread roots only — for “select all” when rows are merged by thread. */
   selectableRootIds: string[];
+  /** Follow-ups tab: render attached children as ordinary rows with row actions. */
+  showFollowUpsAsRows?: boolean;
 }
 
 interface SortableHeaderProps {
@@ -423,6 +425,7 @@ export function ScheduledPostsTable({
   isFetchingNextPage = false,
   onScrollContainerReady,
   selectableRootIds,
+  showFollowUpsAsRows = false,
 }: ScheduledPostsTableProps) {
   const { dateLocale } = useFormattedDate();
   const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
@@ -482,15 +485,21 @@ export function ScheduledPostsTable({
   );
 
   const threadRows = useMemo(() => {
+    if (showFollowUpsAsRows) {
+      return posts.map((post) => ({ root: post, threadSegments: [] }));
+    }
     const built = buildPostThreadRows(posts, "scheduled");
     return [...built].sort((a, b) =>
       comparePostDataByScheduledSort(a.root, b.root, sortConfig)
     );
-  }, [posts, sortConfig]);
+  }, [posts, showFollowUpsAsRows, sortConfig]);
 
   const attachedByParentId = useMemo(
-    () => attachedPostsByParentId(posts),
-    [posts]
+    () =>
+      showFollowUpsAsRows
+        ? new Map<string, PostData[]>()
+        : attachedPostsByParentId(posts),
+    [posts, showFollowUpsAsRows]
   );
 
   const combinedContent = useMemo(
@@ -812,7 +821,7 @@ export function ScheduledPostsTable({
                       )}
                     </td>
                     <td className="p-3 text-center">
-                      {isAttachedFollowUpPost(post) ? (
+                      {isAttachedFollowUpPost(post) && !showFollowUpsAsRows ? (
                         <span
                           className="text-text-secondary text-xs"
                           aria-hidden

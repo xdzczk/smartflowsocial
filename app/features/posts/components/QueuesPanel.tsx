@@ -1,4 +1,5 @@
 import { Link, useFetcher, useRevalidator } from "@remix-run/react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   ListPlus,
   MoreHorizontal,
@@ -27,6 +28,7 @@ import {
   DASHBOARD_PAIR_HEADER_ACTION_CLASS,
 } from "~/features/posts/components/dashboard-pair-card";
 import { buildComposeCreateUrl } from "~/features/posts/composer";
+import { invalidateDependentCaches } from "~/features/posts/hooks/useRefreshPostViews";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import { isQueuePaused } from "~/features/posts/queue-status";
 import { runQueueResumeAutoResign } from "~/features/posts/scheduling/utils/queue-resume-auto-resign.client";
@@ -154,6 +156,7 @@ export function QueuesPanel({
   const [clientReferenceNowMs] = useState(() => Date.now());
   const referenceNowMs = referenceNowMsProp ?? clientReferenceNowMs;
   const revalidator = useRevalidator();
+  const queryClient = useQueryClient();
   const toggleFetcher = useFetcher<QueueToggleFetcherData>();
   const prevFetcherSubmitting = useRef(false);
   const lastProcessedFetcherJson = useRef<string | null>(null);
@@ -237,6 +240,9 @@ export function QueuesPanel({
 
         setFeedback(buildResumeQueueSuccessFeedback(data));
 
+        // Scheduled uses TanStack infinite queries; Remix revalidate alone does not refetch them.
+        invalidateDependentCaches(queryClient);
+
         // Always run batch resign after resume: rows can already be
         // NEEDS_RESIGN_AFTER_QUEUE_RESUME (e.g. left from a prior resume) and are
         // not part of the HELD_BY_QUEUE batch, so the action's count alone can be 0.
@@ -263,6 +269,7 @@ export function QueuesPanel({
             } else {
               toast.error(outcome.message);
             }
+            invalidateDependentCaches(queryClient);
             revalidator.revalidate();
           })();
         }
@@ -273,7 +280,13 @@ export function QueuesPanel({
         setFeedback(buildPauseQueueSuccessFeedback(data));
       }
     });
-  }, [toggleFetcher.data, toggleFetcher.state, revalidator, queueTypes]);
+  }, [
+    toggleFetcher.data,
+    toggleFetcher.state,
+    queryClient,
+    revalidator,
+    queueTypes,
+  ]);
 
   const createDisabled = !canCreateMoreQueues || !onCreateQueueClick;
   const createTitle =

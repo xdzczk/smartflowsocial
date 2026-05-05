@@ -28,6 +28,10 @@ import type {
   QueueType,
 } from "~/features/posts/types";
 import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
+import {
+  isAttachedFollowUpPost,
+  isStandaloneRepostPost,
+} from "~/features/posts/utils/attached-follow-up-rows";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
 import type { User as _User } from "~/features/user";
 import { useInfiniteRemixQuery } from "~/lib/query/hooks/useInfiniteRemixQuery";
@@ -406,6 +410,7 @@ function createEmptyPublishedPostsData<TFetchNextPage>(
     totalContentCount: 0,
     totalPostsCount: 0,
     totalRepostsCount: 0,
+    totalFollowUpsCount: 0,
     totalLongformCount: 0,
   };
 }
@@ -653,6 +658,14 @@ export function usePublishedPostsInfiniteData() {
       "number"
       ? (firstPage as { totalRepostsCount: number }).totalRepostsCount
       : undefined;
+  const serverTotalFollowUpsCount =
+    firstPage &&
+    typeof firstPage === "object" &&
+    "totalFollowUpsCount" in firstPage &&
+    typeof (firstPage as { totalFollowUpsCount?: number })
+      .totalFollowUpsCount === "number"
+      ? (firstPage as { totalFollowUpsCount: number }).totalFollowUpsCount
+      : undefined;
   const serverTotalLongformCount =
     firstPage &&
     typeof firstPage === "object" &&
@@ -671,9 +684,15 @@ export function usePublishedPostsInfiniteData() {
       : undefined;
 
   const totalPostsCount =
-    serverTotalPostsCount ?? allPosts.filter((p) => !isRepostPost(p)).length;
+    serverTotalPostsCount ??
+    allPosts.filter((p) => !isRepostPost(p) && !isAttachedFollowUpPost(p))
+      .length;
   const totalRepostsCount =
-    serverTotalRepostsCount ?? allPosts.filter((p) => isRepostPost(p)).length;
+    serverTotalRepostsCount ??
+    allPosts.filter((p) => isStandaloneRepostPost(p)).length;
+  const totalFollowUpsCount =
+    serverTotalFollowUpsCount ??
+    allPosts.filter((p) => isAttachedFollowUpPost(p)).length;
   const totalLongformCount =
     serverTotalLongformCount ?? allLongformPosts.length;
   const totalContentCount =
@@ -694,6 +713,7 @@ export function usePublishedPostsInfiniteData() {
     // Pagination totals for display (server totals when available)
     totalPostsCount,
     totalRepostsCount,
+    totalFollowUpsCount,
     totalLongformCount,
     totalContentCount,
     isLoading,

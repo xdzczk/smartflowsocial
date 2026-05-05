@@ -98,6 +98,42 @@ describe("thread-list-grouping", () => {
     expect(rows[0]?.threadSegments).toHaveLength(0);
   });
 
+  it("buildThreadListRows shows orphan attached follow-ups as standalone rows (parent not in list)", () => {
+    const tg = "thread-a";
+    /** Parent published — not present in scheduled listing */
+    const sibling = {
+      id: "seg-2",
+      threadGroupId: tg,
+      caption: "segment",
+      scheduledAtUtc: new Date("2025-06-01T10:00:00Z"),
+      userId: "u",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      status: "SCHEDULED",
+      currentState: "SCHEDULED",
+      fileUrl: [],
+    };
+    const orphanFollowUp = {
+      ...sibling,
+      id: "follow-up-1",
+      caption: "follow-up",
+      scheduledAtUtc: new Date("2025-06-01T12:00:00Z"),
+      dependencyMode: "attached" as const,
+      parentScheduledActionId: "parent-published",
+    };
+    const combined = [sibling, orphanFollowUp].map((p) =>
+      postToCombinedContent(p as never)
+    );
+    const rows = buildThreadListRows(combined, "scheduled");
+    expect(rows).toHaveLength(2);
+    const ids = rows.map((r) => r.root.id).sort();
+    expect(ids).toEqual(["follow-up-1", "seg-2"]);
+    const fu = rows.find((r) => r.root.id === "follow-up-1");
+    expect(fu?.threadSegments).toHaveLength(0);
+    const segRow = rows.find((r) => r.root.id === "seg-2");
+    expect(segRow?.threadSegments).toHaveLength(0);
+  });
+
   it("filterPostsBySearchWithThreads keeps parent when only attached follow-up caption matches", () => {
     const parent = {
       id: "p1",

@@ -6,11 +6,9 @@ const {
   mockPostFindMany,
   mockPostUpdate,
   mockPostUpdateMany,
-  mockPostCount,
   mockLongFormFindMany,
   mockLongFormUpdate,
   mockLongFormUpdateMany,
-  mockLongFormPostCount,
   mockOutboxDeleteMany,
   mockTransaction,
   mockCancelPostJob,
@@ -20,17 +18,16 @@ const {
   mockCascadeAttachedReschedule,
   mockSchedulePostExecute,
   mockScheduleLongFormExecute,
+  mockLoadNeedsResignItemsForQueue,
 } = vi.hoisted(() => ({
   mockQueueTypeFindFirst: vi.fn(),
   mockQueueTypeUpdate: vi.fn(),
   mockPostFindMany: vi.fn(),
   mockPostUpdate: vi.fn(),
   mockPostUpdateMany: vi.fn(),
-  mockPostCount: vi.fn(),
   mockLongFormFindMany: vi.fn(),
   mockLongFormUpdate: vi.fn(),
   mockLongFormUpdateMany: vi.fn(),
-  mockLongFormPostCount: vi.fn(),
   mockOutboxDeleteMany: vi.fn(),
   mockTransaction: vi.fn(),
   mockCancelPostJob: vi.fn(),
@@ -40,6 +37,7 @@ const {
   mockCascadeAttachedReschedule: vi.fn(),
   mockSchedulePostExecute: vi.fn(),
   mockScheduleLongFormExecute: vi.fn(),
+  mockLoadNeedsResignItemsForQueue: vi.fn(),
 }));
 
 vi.mock("~/lib/prisma.server", () => ({
@@ -52,13 +50,11 @@ vi.mock("~/lib/prisma.server", () => ({
       findMany: mockPostFindMany,
       update: mockPostUpdate,
       updateMany: mockPostUpdateMany,
-      count: mockPostCount,
     },
     longFormPost: {
       findMany: mockLongFormFindMany,
       update: mockLongFormUpdate,
       updateMany: mockLongFormUpdateMany,
-      count: mockLongFormPostCount,
     },
     outboxEvent: {
       deleteMany: mockOutboxDeleteMany,
@@ -105,6 +101,10 @@ vi.mock(
   })
 );
 
+vi.mock("~/features/posts/data/queue-needs-resign.server", () => ({
+  loadNeedsResignItemsForQueue: mockLoadNeedsResignItemsForQueue,
+}));
+
 import {
   pauseQueueById,
   resumeQueueById,
@@ -116,8 +116,7 @@ const CADENCE_PROBE_EPSILON_MS = 50;
 describe("queue pause/resume service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockPostCount.mockResolvedValue(0);
-    mockLongFormPostCount.mockResolvedValue(0);
+    mockLoadNeedsResignItemsForQueue.mockResolvedValue({ items: [] });
     mockTransaction.mockImplementation(
       async (callback: typeof mockTransaction) =>
         callback({
@@ -259,8 +258,12 @@ describe("queue pause/resume service", () => {
       new Date("2026-05-01T09:00:00Z")
     );
     mockCascadeAttachedReschedule.mockResolvedValue(["child-1"]);
-    mockPostCount.mockResolvedValue(2);
-    mockLongFormPostCount.mockResolvedValue(0);
+    mockLoadNeedsResignItemsForQueue.mockResolvedValue({
+      items: [
+        { kind: "post", post: { id: "root-1" } },
+        { kind: "post", post: { id: "child-1" } },
+      ],
+    });
 
     const result = await resumeQueueById({
       userId: "user-1",

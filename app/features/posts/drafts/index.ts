@@ -26,6 +26,9 @@ export {
   isThreadDraftPost,
   isShortPostDraftForPostsTab,
   isRepostDraftPost,
+  isAttachedFollowUpDraftPost,
+  isStandaloneRepostDraftPost,
+  type DraftPostDependencyFields,
 } from "./utils/draft-post-classification";
 export {
   getShortDraftComposeType,

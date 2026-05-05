@@ -13,7 +13,13 @@ export function buildCalendarContentTypeFilterItems({
 }: {
   basePath: string;
   searchParams: URLSearchParams;
-  totals: { all: number; posts: number; reposts: number; longform: number };
+  totals: {
+    all: number;
+    posts: number;
+    reposts: number;
+    followups: number;
+    longform: number;
+  };
 }): PublishingContentTypeFilterItem[] {
   return [
     {
@@ -36,6 +42,13 @@ export function buildCalendarContentTypeFilterItems({
       triggerLabel: "Reposts",
       menuLabel: `Reposts (${totals.reposts})`,
       ariaLabel: "Reposts",
+    },
+    {
+      id: "followups",
+      to: withTab(basePath, searchParams, "followups"),
+      triggerLabel: "Follow-ups",
+      menuLabel: `Follow-ups (${totals.followups})`,
+      ariaLabel: "Follow-ups",
     },
     {
       id: "longform",

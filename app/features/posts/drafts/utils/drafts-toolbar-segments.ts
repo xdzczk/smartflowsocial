@@ -13,6 +13,7 @@ export function buildDraftsContentTypeFilterItems({
   totalPollsCount,
   totalThreadsCount,
   totalRepostsCount,
+  totalFollowUpsCount,
   totalLongformCount,
   bulkCount,
 }: {
@@ -24,6 +25,7 @@ export function buildDraftsContentTypeFilterItems({
   totalPollsCount: number;
   totalThreadsCount: number;
   totalRepostsCount: number;
+  totalFollowUpsCount: number;
   totalLongformCount: number;
   bulkCount: number;
 }): PublishingContentTypeFilterItem[] {
@@ -75,6 +77,13 @@ export function buildDraftsContentTypeFilterItems({
       triggerLabel: "Repost",
       menuLabel: menuWithCount("Repost", totalRepostsCount),
       ariaLabel: `Repost drafts, ${totalRepostsCount} items`,
+    },
+    {
+      id: "followups",
+      to: withTab("followups"),
+      triggerLabel: "Follow-up",
+      menuLabel: menuWithCount("Follow-up", totalFollowUpsCount),
+      ariaLabel: `Follow-up drafts, ${totalFollowUpsCount} items`,
     },
     {
       id: "bulk",

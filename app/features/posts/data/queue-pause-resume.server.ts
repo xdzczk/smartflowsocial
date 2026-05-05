@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 
+import { loadNeedsResignItemsForQueue } from "~/features/posts/data/queue-needs-resign.server";
 import { ScheduleLongFormPostUseCase } from "~/features/posts/longform/use-cases/schedule-longform-post.use-case.server";
 import { toSignedEvent } from "~/features/posts/queue-payload.server";
 import {
@@ -498,25 +499,13 @@ export async function resumeQueueById(params: {
     });
   }
 
-  const [needsResignPostCount, needsResignLongformCount] = await Promise.all([
-    prisma.post.count({
-      where: {
-        userId,
-        queueTypeId,
-        currentState: "SCHEDULED",
-        queueHoldStatus: "NEEDS_RESIGN_AFTER_QUEUE_RESUME",
-      },
-    }),
-    prisma.longFormPost.count({
-      where: {
-        userId,
-        queueTypeId,
-        currentState: "SCHEDULED",
-        queueHoldStatus: "NEEDS_RESIGN_AFTER_QUEUE_RESUME",
-      },
-    }),
-  ]);
-  const needsResignCount = needsResignPostCount + needsResignLongformCount;
+  /** Same pipeline as GET /api/queue-needs-resign — avoids mismatch vs raw prisma counts. */
+  const needsResignSnapshot = await loadNeedsResignItemsForQueue(
+    userId,
+    queueTypeId
+  );
+  const needsResignCount =
+    "error" in needsResignSnapshot ? 0 : needsResignSnapshot.items.length;
 
   return {
     queue: updatedQueue,

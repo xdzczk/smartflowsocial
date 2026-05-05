@@ -86,6 +86,7 @@ export default function ScheduledPostsPage() {
     totalContentCount,
     totalPostsCount,
     totalRepostsCount,
+    totalFollowUpsCount,
     totalLongformCount,
     scheduledContestLaunches,
     isLoading: _isDataLoading,
@@ -376,7 +377,11 @@ export default function ScheduledPostsPage() {
         .filter((item) => selectedPosts.has(item.id))
         .some((item) => isPureRepostSourceContent(item));
     }
-    if (currentTab === "posts" || currentTab === "reposts") {
+    if (
+      currentTab === "posts" ||
+      currentTab === "reposts" ||
+      currentTab === "followups"
+    ) {
       return filteredPosts
         .filter((p) => selectedPosts.has(p.id))
         .some((p) => isPureRepostSourcePost(p));
@@ -388,6 +393,7 @@ export default function ScheduledPostsPage() {
     currentTab === "all" ||
     currentTab === "posts" ||
     currentTab === "reposts" ||
+    currentTab === "followups" ||
     currentTab === "longform";
 
   const optimisticallyRemoveScheduledItems = useCallback(
@@ -419,6 +425,7 @@ export default function ScheduledPostsPage() {
               totalContentCount={totalContentCount}
               totalPostsCount={totalPostsCount}
               totalRepostsCount={totalRepostsCount}
+              totalFollowUpsCount={totalFollowUpsCount}
               totalLongformCount={totalLongformCount}
               data-testid="scheduled-type-segments"
             />
@@ -559,7 +566,9 @@ export default function ScheduledPostsPage() {
               optimisticallyRemoveScheduledItems([postId])
             }
           />
-        ) : currentTab === "posts" || currentTab === "reposts" ? (
+        ) : currentTab === "posts" ||
+          currentTab === "reposts" ||
+          currentTab === "followups" ? (
           <div className="flex min-h-0 flex-1 flex-col">
             <ContentBulkActions
               type="scheduled"
@@ -612,6 +621,7 @@ export default function ScheduledPostsPage() {
               sentinelRef={isMobile ? sentinelRef : undefined}
               isFetchingNextPage={isFetchingNextPage}
               onScrollContainerReady={isMobile ? setScrollRoot : undefined}
+              showFollowUpsAsRows={currentTab === "followups"}
             />
           </div>
         ) : (

@@ -35,6 +35,10 @@ import {
   PublishingPageHeader,
   PublishingQueueFilter,
 } from "~/features/posts/ui";
+import {
+  isAttachedFollowUpPost,
+  isStandaloneRepostPost,
+} from "~/features/posts/utils/attached-follow-up-rows";
 import { loadScheduledRepostDataAsBulkPosts } from "~/features/posts/utils/bulk-composer-data";
 import {
   isPureRepostSourceContent,
@@ -85,6 +89,7 @@ export default function PublishedPostsPage() {
     totalContentCount,
     totalPostsCount,
     totalRepostsCount,
+    totalFollowUpsCount,
     totalLongformCount,
     isLoading: _isLoading,
     isFetching,
@@ -279,19 +284,25 @@ export default function PublishedPostsPage() {
   const filteredPosts = useMemo(() => {
     const byTab =
       currentTab === "posts"
-        ? sortedPosts.filter((p) => !isRepostPost(p))
+        ? sortedPosts.filter(
+            (p) => !isRepostPost(p) && !isAttachedFollowUpPost(p)
+          )
         : currentTab === "reposts"
-          ? sortedPosts.filter((p) => isRepostPost(p))
-          : sortedPosts;
+          ? sortedPosts.filter((p) => isStandaloneRepostPost(p))
+          : currentTab === "followups"
+            ? sortedPosts.filter((p) => isAttachedFollowUpPost(p))
+            : sortedPosts;
     return filterPostsBySearchWithThreads(byTab, searchTerm);
   }, [sortedPosts, searchTerm, currentTab]);
 
   const publishedSelectableIds = useMemo(
     () =>
-      selectableRootIdsFromPostRows(
-        buildPostThreadRows(filteredPosts, "published")
-      ),
-    [filteredPosts]
+      currentTab === "followups"
+        ? filteredPosts.map((post) => post.id)
+        : selectableRootIdsFromPostRows(
+            buildPostThreadRows(filteredPosts, "published")
+          ),
+    [filteredPosts, currentTab]
   );
 
   const publishedMixedSelectableIds = useMemo(
@@ -393,6 +404,7 @@ export default function PublishedPostsPage() {
     currentTab === "all" ||
     currentTab === "posts" ||
     currentTab === "reposts" ||
+    currentTab === "followups" ||
     currentTab === "longform";
 
   // Handle nullable user - if user is null, we should not render the component
@@ -447,6 +459,7 @@ export default function PublishedPostsPage() {
               totalContentCount={totalContentCount}
               totalPostsCount={totalPostsCount}
               totalRepostsCount={totalRepostsCount}
+              totalFollowUpsCount={totalFollowUpsCount}
               totalLongformCount={totalLongformCount}
               data-testid="published-type-segments"
             />
@@ -549,7 +562,9 @@ export default function PublishedPostsPage() {
               optimisticallyRemovePublishedItems([postId])
             }
           />
-        ) : currentTab === "posts" || currentTab === "reposts" ? (
+        ) : currentTab === "posts" ||
+          currentTab === "reposts" ||
+          currentTab === "followups" ? (
           <>
             <ContentBulkActions
               type="published"
@@ -607,6 +622,7 @@ export default function PublishedPostsPage() {
               onBeforeDelete={(postId) =>
                 optimisticallyRemovePublishedItems([postId])
               }
+              showFollowUpsAsRows={currentTab === "followups"}
             />
           </>
         ) : (

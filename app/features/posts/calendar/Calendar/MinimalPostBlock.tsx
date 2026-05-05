@@ -15,6 +15,8 @@ import {
   getStatusColor,
   getDisplayTime,
   getQueueColorStyleProps,
+  getCalendarFollowUpKindLabel,
+  prefixCalendarAriaPreview,
 } from "./PostBlock.utils";
 import { PostIcon } from "./PostIcon";
 interface MinimalPostBlockProps extends PostBlockBaseProps {
@@ -166,13 +168,15 @@ function UltraCompactLayout({
   const { formatDate } = useFormattedDate();
   const formattedTime = formatDate(displayTime);
   const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} p-0.5 focus-visible:ring-1 focus-visible:ring-focus-ring ${isCalendarSelected ? CALENDAR_SELECTED_POST_RING : ""}`;
+  const previewForA11y = prefixCalendarAriaPreview(post, postPreview);
   const ariaLabel = getAriaLabel(
-    postPreview,
+    previewForA11y,
     isLongform,
     isPast,
     formattedTime
   );
   const title = getTitleText(postPreview, isLongform, isPast, formattedTime);
+  const followUpLabel = getCalendarFollowUpKindLabel(post);
   const { style: queueStyle, unassignedBgClass } = getQueueColorStyleProps(
     queueColorStyle as QueueColorStyle | null
   );
@@ -192,6 +196,11 @@ function UltraCompactLayout({
       title={title}
     >
       <div className="relative flex flex-col items-center space-y-0.5">
+        {followUpLabel ? (
+          <span className="text-text-secondary max-w-full truncate px-0.5 text-center text-[9px] leading-none">
+            {followUpLabel}
+          </span>
+        ) : null}
         <PostThumbnail
           firstImage={firstImage}
           post={post}
@@ -253,13 +262,15 @@ function RegularLayout({
   const { formatDate } = useFormattedDate();
   const formattedTime = formatDate(displayTime);
   const className = `${getClassName(isPast, isDragging, queueColorStyle, post, isLongform)} focus-ring px-2 py-1 ${isCalendarSelected ? CALENDAR_SELECTED_POST_RING : ""}`;
+  const previewForA11y = prefixCalendarAriaPreview(post, postPreview);
   const ariaLabel = getAriaLabel(
-    postPreview,
+    previewForA11y,
     isLongform,
     isPast,
     formattedTime
   );
   const title = getTitleText(postPreview, isLongform, isPast, formattedTime);
+  const followUpLabel = getCalendarFollowUpKindLabel(post);
   const rows = slotExpandRows ?? 1;
   const allowMultipleLines = rows >= 2;
   const lineClampClass =
@@ -297,29 +308,36 @@ function RegularLayout({
       style={queueColorStyle ? queueStyle : undefined}
       title={title}
     >
-      <div className="cluster-tight.5 relative">
-        {timeLabel ? (
-          <span className="flex-shrink-0 text-xs tabular-nums opacity-90">
-            {timeLabel}
+      <div className="flex min-w-0 flex-col gap-0.5">
+        {followUpLabel ? (
+          <span className="text-text-secondary w-full flex-shrink-0 truncate text-[10px] leading-tight">
+            {followUpLabel}
           </span>
         ) : null}
-        <PostThumbnail
-          firstImage={firstImage}
-          post={post}
-          isLongform={isLongform}
-          size="sm"
-          hideVideoPlayButton={hideVideoPlayButton}
-        />
-        {allowMultipleLines ? (
-          <div
-            className={`min-w-0 flex-1 text-xs leading-relaxed break-words ${useDynamicLineClamp ? "" : lineClampClass}`}
-            style={lineClampStyle}
-          >
-            {postPreview}
-          </div>
-        ) : (
-          <span className="min-w-0 flex-1 truncate">{postPreview}</span>
-        )}
+        <div className="cluster-tight.5 relative min-w-0 flex-1">
+          {timeLabel ? (
+            <span className="flex-shrink-0 text-xs tabular-nums opacity-90">
+              {timeLabel}
+            </span>
+          ) : null}
+          <PostThumbnail
+            firstImage={firstImage}
+            post={post}
+            isLongform={isLongform}
+            size="sm"
+            hideVideoPlayButton={hideVideoPlayButton}
+          />
+          {allowMultipleLines ? (
+            <div
+              className={`min-w-0 flex-1 text-xs leading-relaxed break-words ${useDynamicLineClamp ? "" : lineClampClass}`}
+              style={lineClampStyle}
+            >
+              {postPreview}
+            </div>
+          ) : (
+            <span className="min-w-0 flex-1 truncate">{postPreview}</span>
+          )}
+        </div>
       </div>
     </div>
   );

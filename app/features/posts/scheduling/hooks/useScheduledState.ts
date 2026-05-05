@@ -15,6 +15,10 @@ import type {
   LongFormPostData,
   PostData,
 } from "~/features/posts/types";
+import {
+  isAttachedFollowUpPost,
+  isStandaloneRepostPost,
+} from "~/features/posts/utils/attached-follow-up-rows";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
 import {
   buildPostThreadRows,
@@ -195,20 +199,26 @@ export function useScheduledState({
   const filteredPosts = useMemo(() => {
     const byTab =
       currentTab === "posts"
-        ? sortedPosts.filter((p) => !isRepostPost(p))
+        ? sortedPosts.filter(
+            (p) => !isRepostPost(p) && !isAttachedFollowUpPost(p)
+          )
         : currentTab === "reposts"
-          ? sortedPosts.filter((p) => isRepostPost(p))
-          : sortedPosts;
+          ? sortedPosts.filter((p) => isStandaloneRepostPost(p))
+          : currentTab === "followups"
+            ? sortedPosts.filter((p) => isAttachedFollowUpPost(p))
+            : sortedPosts;
     return filterPostsBySearchWithThreads(byTab, searchTerm);
   }, [sortedPosts, searchTerm, currentTab]);
 
   /** One selectable id per visible row (thread roots only). */
   const selectablePostIds = useMemo(
     () =>
-      selectableRootIdsFromPostRows(
-        buildPostThreadRows(filteredPosts, "scheduled")
-      ),
-    [filteredPosts]
+      currentTab === "followups"
+        ? filteredPosts.map((post) => post.id)
+        : selectableRootIdsFromPostRows(
+            buildPostThreadRows(filteredPosts, "scheduled")
+          ),
+    [filteredPosts, currentTab]
   );
 
   /** Mixed All tab: posts + longform, same grouping/search as AllContentListing. */
