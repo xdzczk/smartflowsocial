@@ -9,6 +9,7 @@ export function PublishingLibraryContentSegments({
   totalContentCount,
   totalPostsCount,
   totalRepostsCount,
+  totalFollowUpsCount,
   totalLongformCount,
   ariaLabel = "Content type",
   "data-testid": dataTestId,
@@ -18,6 +19,7 @@ export function PublishingLibraryContentSegments({
   totalContentCount: number;
   totalPostsCount: number;
   totalRepostsCount: number;
+  totalFollowUpsCount: number;
   totalLongformCount: number;
   ariaLabel?: string;
   "data-testid"?: string;
@@ -33,6 +35,7 @@ export function PublishingLibraryContentSegments({
     totalContentCount,
     totalPostsCount,
     totalRepostsCount,
+    totalFollowUpsCount,
     totalLongformCount,
   });
 

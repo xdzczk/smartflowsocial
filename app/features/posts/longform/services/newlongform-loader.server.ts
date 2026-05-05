@@ -5,6 +5,7 @@
 
 import { requireAnySubscription } from "~/features/payments/subscriptions.server";
 import type { ComposerContext } from "~/features/posts/composer";
+import { getAccountDisplayLabel } from "~/features/posts/composer/index.server";
 import { getLongFormPost } from "~/features/posts/server";
 import { loadComposerRelayLists } from "~/features/relays/relay-resolution.server";
 import {
@@ -18,6 +19,16 @@ import {
   getUserHashTagPresets,
   getUserUploadProvider,
 } from "~/features/user";
+import { dateFormatToLocale, formatForDisplay, fromDate } from "~/lib/temporal";
+
+interface LongformEditingMeta {
+  modeLabel: string;
+  accountLabel: string;
+  scheduledForLabel?: string;
+  statusLabel?: string;
+  queueLabel?: string;
+  parentActionId?: string;
+}
 
 /**
  * Load new longform post page data. When templateId is in the URL, load that template for prefill.
@@ -26,7 +37,7 @@ import {
 export async function loadNewLongFormData(
   userId: string,
   templateId: string | null = null,
-  composerContext: ComposerContext = { mode: "create" }
+  routeComposerContext: ComposerContext = { mode: "create" }
 ) {
   await requireAnySubscription(userId);
 
@@ -67,11 +78,15 @@ export async function loadNewLongFormData(
       id: template.id,
       name: template.name,
     })),
+    composerContext: routeComposerContext,
+    editingMeta: null as LongformEditingMeta | null,
+    hydrationStatus: "ready" as const,
+    hydrationError: null as string | null,
   };
 
-  if (composerContext.mode === "edit_scheduled") {
+  if (routeComposerContext.mode === "edit_scheduled") {
     const post = await getLongFormPost({
-      id: composerContext.scheduledActionId,
+      id: routeComposerContext.scheduledActionId,
       userId,
     });
     if (!post) {
@@ -84,6 +99,34 @@ export async function loadNewLongFormData(
       );
     }
     const qt = post.queueType;
+    const timezone =
+      typeof user?.timezone === "string" && user.timezone.trim().length > 0
+        ? user.timezone.trim()
+        : "UTC";
+    const userTimeFormat: "12h" | "24h" =
+      user?.timeFormat === "24h" ? "24h" : "12h";
+    const userDateFormat =
+      user?.dateFormat === "mmddyyyy" || user?.dateFormat === "yyyymmdd"
+        ? user.dateFormat
+        : "ddmmyyyy";
+    const dateLocale = dateFormatToLocale(userDateFormat);
+    const scheduledForLabel =
+      post.scheduledAtUtc != null
+        ? formatForDisplay(
+            fromDate(post.scheduledAtUtc, "UTC"),
+            timezone,
+            {
+              month: "2-digit",
+              day: "2-digit",
+              year: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+            },
+            userTimeFormat,
+            dateLocale
+          )
+        : undefined;
+
     return {
       ...base,
       initialTemplateData: {
@@ -94,6 +137,13 @@ export async function loadNewLongFormData(
         image: post.image ?? "",
         tags: Array.isArray(post.tags) ? post.tags : [],
         queueType: qt ? { name: qt.name } : undefined,
+      },
+      editingMeta: {
+        modeLabel: "Editing scheduled article",
+        accountLabel: getAccountDisplayLabel(user),
+        scheduledForLabel,
+        statusLabel: post.currentState,
+        queueLabel: qt?.name ?? undefined,
       },
     };
   }

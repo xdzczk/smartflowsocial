@@ -30,6 +30,7 @@ vi.mock("~/features/posts/composer", () => ({
   useLocalDraft: () => ({
     restored: null,
     saveSnapshot: vi.fn(),
+    flushSnapshot: vi.fn(),
     clearSnapshot: vi.fn(),
   }),
 }));

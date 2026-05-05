@@ -77,6 +77,36 @@ export function useLongFormEditor({
           content: initialMarkdown,
           contentType: "markdown",
           immediatelyRender: false,
+          /**
+           * Rich HTML paste: convert to markdown and insert once.
+           * Must return `true` from ProseMirror `handlePaste` so the default
+           * clipboard transaction does not also run (otherwise pasted text
+           * appears twice). The core Paste extension emits `paste` but does not
+           * return true; relying on `onPaste` alone still allows default paste.
+           */
+          editorProps: {
+            handlePaste: (_view, event) => {
+              const html = event.clipboardData?.getData("text/html");
+              if (!html?.trim()) {
+                return false;
+              }
+              event.preventDefault();
+              const ed = editorInstanceRef.current;
+              if (!ed) {
+                return true;
+              }
+              void (async () => {
+                const markdown = await htmlToMarkdown(html);
+                if (markdown) {
+                  ed.chain()
+                    .focus()
+                    .insertContent(markdown, { contentType: "markdown" })
+                    .run();
+                }
+              })();
+              return true;
+            },
+          },
           onUpdate: ({ editor: ed }) => {
             if (debounceRef.current) clearTimeout(debounceRef.current);
             debounceRef.current = setTimeout(() => {
@@ -87,23 +117,6 @@ export function useLongFormEditor({
                   : "";
               onContentChangeRef.current(md);
             }, DEBOUNCE_MS);
-          },
-          onPaste: (event) => {
-            void (async () => {
-              const ed = editorInstanceRef.current;
-              if (!ed) return;
-              const html = event.clipboardData?.getData("text/html");
-              if (html?.trim()) {
-                event.preventDefault();
-                const markdown = await htmlToMarkdown(html);
-                if (markdown) {
-                  ed.chain()
-                    .focus()
-                    .insertContent(markdown, { contentType: "markdown" })
-                    .run();
-                }
-              }
-            })();
           },
           onCreate: ({ editor: ed }) => {
             editorInstanceRef.current = ed;

@@ -80,6 +80,7 @@ interface CalendarProps {
     totalContentCount?: number;
     totalPostsCount?: number;
     totalRepostsCount?: number;
+    totalFollowUpsCount?: number;
     totalLongformCount?: number;
   };
   /** Optional initial view when opening from URL (e.g. from Next 7 days day row). */
@@ -259,6 +260,7 @@ function CalendarToolbar({
                     all: calendarPageTabs.totalContentCount ?? 0,
                     posts: calendarPageTabs.totalPostsCount ?? 0,
                     reposts: calendarPageTabs.totalRepostsCount ?? 0,
+                    followups: calendarPageTabs.totalFollowUpsCount ?? 0,
                     longform: calendarPageTabs.totalLongformCount ?? 0,
                   },
                 })}
@@ -950,11 +952,6 @@ export function Calendar({
             setSelectedPost(null);
             setCalendarLiveMessage("Article deleted");
             refreshPostViews();
-          }}
-          onEdit={(post) => {
-            setDetailModalPost(null);
-            setSelectedPost(null);
-            handleContentEditFromCalendar(post as unknown as CalendarPost);
           }}
           onReschedule={(post) => {
             setDetailModalPost(null);

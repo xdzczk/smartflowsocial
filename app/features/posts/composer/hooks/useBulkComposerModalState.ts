@@ -27,6 +27,7 @@ import {
 } from "~/features/posts/server";
 import type { RepostConditions } from "~/features/posts/types";
 import { useBulkPostEvents } from "~/features/posts/useBulkPostEvents";
+import { swapAdjacentBulkPostRowContent } from "~/features/posts/utils/bulk-post-reorder";
 import { getFileUrlArrayForDraft } from "~/features/posts/utils/bulk-posts.client";
 import { createBulkPostClientId } from "~/features/posts/utils/client-id";
 import {
@@ -611,6 +612,22 @@ export function useBulkComposerModalState({
     [posts]
   );
 
+  const handleReorderBulkPost = useCallback(
+    (index: number, direction: "up" | "down") => {
+      setPosts((prev) => {
+        const swapped = swapAdjacentBulkPostRowContent(prev, index, direction);
+        if (swapped) {
+          queueMicrotask(() => {
+            setPreparedEvents([]);
+          });
+          return swapped;
+        }
+        return prev;
+      });
+    },
+    []
+  );
+
   const handleRepostSchedulesChange = useCallback(
     (
       index: number,
@@ -742,6 +759,7 @@ export function useBulkComposerModalState({
       prepareEvents,
       startPrepareFlow,
       duplicatePost,
+      handleReorderBulkPost,
       handleRepostSchedulesChange,
       handleQuoteSchedulesChange,
       handleRepostAll,

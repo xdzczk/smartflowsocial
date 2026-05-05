@@ -7,6 +7,7 @@ import { SMALL_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 
 import { getQueueAccentHex } from "../queue-colors";
 import type { CombinedContent } from "../types";
+import { attachedFollowUpChipLabelFromCombinedContent } from "../utils/attached-follow-up-rows";
 import { getMediaPreviewUrls, isRepostContent } from "../utils/content-helpers";
 
 import { MediaPreviewCollage } from "./MediaPreviewCollage";
@@ -153,6 +154,84 @@ function getNextGlowDurationMs(minutesUntil: number): number {
   return Math.round(oneHourMs + (maxMs - oneHourMs) * t);
 }
 
+function formatPostKindSecondaryLabel(item: CombinedContent): string | null {
+  if (item.type !== "post" || !item.postKind || item.postKind === "POST") {
+    return null;
+  }
+  return item.postKind.charAt(0) + item.postKind.slice(1).toLowerCase();
+}
+
+function getFlowCardKindLabels(
+  item: CombinedContent,
+  followUpChip: string | null
+): { postKindLabel: string | null; kindForAria: string } {
+  const postKindLabel =
+    followUpChip != null ? null : formatPostKindSecondaryLabel(item);
+  const kindForAria =
+    followUpChip ??
+    (item.type === "longform" ? "Article" : (postKindLabel ?? "Post"));
+  return { postKindLabel, kindForAria };
+}
+
+function computeFlowCardTimeLabel(args: {
+  isScheduled: boolean;
+  displayAsScheduled: boolean;
+  effectiveMinutesUntil: number;
+  minutesAgo: number;
+  displayTime: Date;
+  userTimezone: string;
+  userTimeFormat: "12h" | "24h";
+}): string {
+  const {
+    isScheduled,
+    displayAsScheduled,
+    effectiveMinutesUntil,
+    minutesAgo,
+    displayTime,
+    userTimezone,
+    userTimeFormat,
+  } = args;
+  if (isScheduled || displayAsScheduled) {
+    return getRelativeTimeLabel(
+      effectiveMinutesUntil,
+      displayTime,
+      userTimezone,
+      userTimeFormat
+    );
+  }
+  return getRelativeTimeLabelForPast(
+    minutesAgo,
+    displayTime,
+    userTimezone,
+    userTimeFormat
+  );
+}
+
+function computeNextScheduledPresentation(args: {
+  isNextScheduled: boolean;
+  item: CombinedContent;
+  minutesUntil: number | undefined;
+  displayAsScheduled: boolean;
+}): {
+  isNextScheduledAndFuture: boolean;
+  glowStyle: CSSProperties | undefined;
+} {
+  const { isNextScheduled, item, minutesUntil, displayAsScheduled } = args;
+  const isNextScheduledAndFuture =
+    (isNextScheduled &&
+      !item.publishedAt &&
+      minutesUntil != null &&
+      minutesUntil >= 0) ||
+    displayAsScheduled;
+  const safeMinutes = minutesUntil ?? 0;
+  const glowStyle = isNextScheduledAndFuture
+    ? {
+        ["--flow-glow-duration" as string]: `${getNextGlowDurationMs(safeMinutes)}ms`,
+      }
+    : undefined;
+  return { isNextScheduledAndFuture, glowStyle };
+}
+
 function FlowCardInner({
   item,
   onClick,
@@ -186,22 +265,22 @@ function FlowCardInner({
   const displayAsScheduled =
     Boolean(isNextScheduled) && minutesUntil != null && minutesUntil >= 0;
 
-  const timeLabel =
-    isScheduled || displayAsScheduled
-      ? getRelativeTimeLabel(
-          effectiveMinutesUntil,
-          displayTime,
-          userTimezone,
-          userTimeFormat
-        )
-      : getRelativeTimeLabelForPast(
-          minutesAgo,
-          displayTime,
-          userTimezone,
-          userTimeFormat
-        );
+  const timeLabel = computeFlowCardTimeLabel({
+    isScheduled,
+    displayAsScheduled,
+    effectiveMinutesUntil,
+    minutesAgo,
+    displayTime,
+    userTimezone,
+    userTimeFormat,
+  });
   const preview = getFlowPreview(item);
   const contentSummaryText = getContentSummaryText(item);
+  const followUpChip = attachedFollowUpChipLabelFromCombinedContent(item);
+  const { postKindLabel, kindForAria } = getFlowCardKindLabels(
+    item,
+    followUpChip
+  );
   const mediaUrls = getMediaPreviewUrls(item, 4);
   const hasMedia = mediaUrls.length > 0;
   const queueColor =
@@ -210,25 +289,15 @@ function FlowCardInner({
       : undefined;
   const queueName = item.queueType?.name ?? "";
   const statusLabel = displayAsScheduled ? "Scheduled" : getStatusLabel(item);
-  const postKindLabel =
-    item.type === "post" && item.postKind && item.postKind !== "POST"
-      ? item.postKind.charAt(0) + item.postKind.slice(1).toLowerCase()
-      : null;
-  const defaultAriaLabel = `${item.type === "longform" ? "Article" : (postKindLabel ?? "Post")}: ${preview}, ${statusLabel} ${timeLabel}`;
+  const defaultAriaLabel = `${kindForAria}: ${preview}, ${statusLabel} ${timeLabel}`;
 
-  // Only the next scheduled (first future) post glows; stop glowing as soon as it's posted.
-  // Use displayAsScheduled so we still show glow when we're forcing scheduled display (stale/wrong publishedAt).
-  const isNextScheduledAndFuture =
-    (isNextScheduled &&
-      !item.publishedAt &&
-      minutesUntil != null &&
-      minutesUntil >= 0) ||
-    displayAsScheduled;
-  const glowStyle = isNextScheduledAndFuture
-    ? {
-        ["--flow-glow-duration" as string]: `${getNextGlowDurationMs(minutesUntil)}ms`,
-      }
-    : undefined;
+  const { isNextScheduledAndFuture, glowStyle } =
+    computeNextScheduledPresentation({
+      isNextScheduled,
+      item,
+      minutesUntil,
+      displayAsScheduled,
+    });
 
   // --queue-color: next-scheduled shadow pulse + subtle hover tint overlay (low mix).
   const shadowColor = queueColor ?? "hsl(var(--brand-strong) / 0.72)";
@@ -322,6 +391,11 @@ function FlowCardInner({
           ) : isNextScheduledAndFuture ? (
             <span className="bg-surface-selected text-surface-selected-foreground mb-0.5 self-start rounded-xs px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
               Next
+            </span>
+          ) : null}
+          {followUpChip ? (
+            <span className="text-text-secondary bg-surface-hover/55 mb-0.5 self-start rounded-xs px-2 py-0.5 text-[10px] leading-tight font-medium">
+              {followUpChip}
             </span>
           ) : null}
           <span

@@ -126,12 +126,12 @@ describe("Calendar data layer", () => {
   describe("collapseCalendarThreadSegments", () => {
     const gid = "thread_same_group";
 
-    it("keeps one post per threadGroupId (earliest schedule)", () => {
+    it("keeps one post per thread burst (earliest schedule within chain gap)", () => {
       const earlyTs = Math.floor(
         new Date("2025-02-17T09:00:00Z").getTime() / 1000
       );
       const lateTs = Math.floor(
-        new Date("2025-02-17T10:00:00Z").getTime() / 1000
+        new Date("2025-02-17T09:35:00Z").getTime() / 1000
       );
       /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- fixtures */
       const a = {
@@ -154,6 +154,75 @@ describe("Calendar data layer", () => {
       });
       expect(out.scheduledPosts.map((p) => p.id)).toEqual(["seg-a"]);
       expect(out.pastPosts).toEqual([]);
+    });
+
+    it("merges attached follow-ups into the thread row when scheduled within the chain gap", () => {
+      const earlyTs = Math.floor(
+        new Date("2025-02-17T09:00:00Z").getTime() / 1000
+      );
+      const soonTs = Math.floor(
+        new Date("2025-02-17T09:08:00Z").getTime() / 1000
+      );
+      /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- fixtures */
+      const segment = {
+        id: "seg-main",
+        caption: "main",
+        threadGroupId: gid,
+        scheduledFor: String(earlyTs),
+      } as CalendarPost;
+      /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- fixtures */
+      const attachedSoon = {
+        id: "fu-attached",
+        caption: "follow-up",
+        threadGroupId: gid,
+        scheduledFor: String(soonTs),
+        dependencyMode: "attached" as const,
+        postKind: "REPOST",
+      } as CalendarPost;
+
+      const out = collapseCalendarThreadSegments([segment, attachedSoon], [], {
+        isLongform: false,
+        isAll: false,
+      });
+      expect(out.scheduledPosts.map((p) => p.id)).toEqual(["seg-main"]);
+    });
+
+    it("keeps attached follow-ups as separate cards when scheduled beyond the thread chain gap", () => {
+      const earlyTs = Math.floor(
+        new Date("2025-02-17T09:00:00Z").getTime() / 1000
+      );
+      const lateTs = Math.floor(
+        new Date("2025-02-17T10:00:00Z").getTime() / 1000
+      );
+      /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- fixtures */
+      const segment = {
+        id: "seg-main",
+        caption: "main",
+        threadGroupId: gid,
+        scheduledFor: String(earlyTs),
+      } as CalendarPost;
+      /* eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- fixtures */
+      const attachedFollowUp = {
+        id: "fu-attached",
+        caption: "follow-up",
+        threadGroupId: gid,
+        scheduledFor: String(lateTs),
+        dependencyMode: "attached" as const,
+        postKind: "REPOST",
+      } as CalendarPost;
+
+      const out = collapseCalendarThreadSegments(
+        [segment, attachedFollowUp],
+        [],
+        {
+          isLongform: false,
+          isAll: false,
+        }
+      );
+      expect(out.scheduledPosts.map((p) => p.id).sort()).toEqual([
+        "fu-attached",
+        "seg-main",
+      ]);
     });
 
     it("does not merge posts without threadGroupId", () => {

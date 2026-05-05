@@ -11,6 +11,8 @@ import {
   getStatusColor,
   getDisplayTime,
   getQueueColorStyleProps,
+  getCalendarFollowUpKindLabel,
+  prefixCalendarAriaPreview,
 } from "./PostBlock.utils";
 import { PostIcon } from "./PostIcon";
 import { PostStatusBadges } from "./PostStatusIcons";
@@ -58,6 +60,9 @@ export function FullPostBlock({
   const { style: queueStyle, unassignedBgClass } =
     getQueueColorStyleProps(queueColorStyle);
 
+  const previewForA11y = prefixCalendarAriaPreview(post, postPreview);
+  const followUpLabel = getCalendarFollowUpKindLabel(post);
+
   return (
     <div
       draggable={!isPast}
@@ -67,7 +72,7 @@ export function FullPostBlock({
       onKeyDown={onKeyDown}
       tabIndex={0}
       role="button"
-      aria-label={`${isPast ? "View" : "Edit"} post: ${postPreview}, ${isPast ? "published" : "scheduled"} for ${formattedDateTime}`}
+      aria-label={`${isPast ? "View" : "Edit"} post: ${previewForA11y}, ${isPast ? "published" : "scheduled"} for ${formattedDateTime}`}
       className={`focus-ring relative overflow-hidden rounded-[var(--calendar-radius-md)] border p-3 transition-[transform,opacity,box-shadow] ${isCalendarSelected ? CALENDAR_SELECTED_POST_RING : ""} ${
         queueColorStyle ? "border-0" : "border border-current/20"
       } ${isPast ? "cursor-default" : "cursor-pointer"} ${
@@ -130,6 +135,12 @@ export function FullPostBlock({
             <PostBadges post={post} size="md" position="absolute-large" />
           </div>
         </div>
+      ) : null}
+
+      {followUpLabel ? (
+        <p className="text-text-secondary mb-1 text-xs font-medium">
+          {followUpLabel}
+        </p>
       ) : null}
 
       <p className="text-text-secondary text-sm">

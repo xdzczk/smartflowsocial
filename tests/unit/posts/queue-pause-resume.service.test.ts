@@ -18,6 +18,7 @@ const {
   mockCascadeAttachedReschedule,
   mockSchedulePostExecute,
   mockScheduleLongFormExecute,
+  mockLoadNeedsResignItemsForQueue,
 } = vi.hoisted(() => ({
   mockQueueTypeFindFirst: vi.fn(),
   mockQueueTypeUpdate: vi.fn(),
@@ -36,6 +37,7 @@ const {
   mockCascadeAttachedReschedule: vi.fn(),
   mockSchedulePostExecute: vi.fn(),
   mockScheduleLongFormExecute: vi.fn(),
+  mockLoadNeedsResignItemsForQueue: vi.fn(),
 }));
 
 vi.mock("~/lib/prisma.server", () => ({
@@ -99,6 +101,10 @@ vi.mock(
   })
 );
 
+vi.mock("~/features/posts/data/queue-needs-resign.server", () => ({
+  loadNeedsResignItemsForQueue: mockLoadNeedsResignItemsForQueue,
+}));
+
 import {
   pauseQueueById,
   resumeQueueById,
@@ -110,6 +116,7 @@ const CADENCE_PROBE_EPSILON_MS = 50;
 describe("queue pause/resume service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockLoadNeedsResignItemsForQueue.mockResolvedValue({ items: [] });
     mockTransaction.mockImplementation(
       async (callback: typeof mockTransaction) =>
         callback({
@@ -251,6 +258,12 @@ describe("queue pause/resume service", () => {
       new Date("2026-05-01T09:00:00Z")
     );
     mockCascadeAttachedReschedule.mockResolvedValue(["child-1"]);
+    mockLoadNeedsResignItemsForQueue.mockResolvedValue({
+      items: [
+        { kind: "post", post: { id: "root-1" } },
+        { kind: "post", post: { id: "child-1" } },
+      ],
+    });
 
     const result = await resumeQueueById({
       userId: "user-1",

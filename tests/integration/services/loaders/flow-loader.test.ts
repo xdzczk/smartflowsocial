@@ -113,6 +113,23 @@ describe("Flow Loader", () => {
     );
   });
 
+  it("followups tab requests attached posts only (no longform window queries)", async () => {
+    await loadFlowData({
+      userId: TEST_USER_ID,
+      queueType: "all",
+      contentTab: "followups",
+    });
+
+    expect(getScheduledPosts).toHaveBeenCalledWith(
+      expect.objectContaining({ contentTab: "followups" })
+    );
+    expect(getPastPosts).toHaveBeenCalledWith(
+      expect.objectContaining({ contentTab: "followups" })
+    );
+    expect(getScheduledLongFormPosts).not.toHaveBeenCalled();
+    expect(getPastLongFormPosts).not.toHaveBeenCalled();
+  });
+
   it("should accept before cursor for load more past", async () => {
     const result = await loadFlowData({
       userId: TEST_USER_ID,

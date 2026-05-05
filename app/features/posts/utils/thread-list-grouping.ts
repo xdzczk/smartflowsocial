@@ -7,6 +7,8 @@ import { postToCombinedContent } from "~/features/posts/combined";
 
 import type { CombinedContent, PostData } from "../types";
 
+import { isAttachedFollowUpContent } from "./attached-follow-up-rows";
+
 export interface ThreadListRow {
   root: CombinedContent;
   threadSegments: CombinedContent[];
@@ -48,10 +50,28 @@ export function buildThreadListRows(
   }
 
   const mode = listType;
+  const postIds = new Set(
+    sortedFlat.filter((item) => item.type === "post").map((item) => item.id)
+  );
+  const isNestedAttachedFollowUp = (item: CombinedContent) =>
+    isAttachedFollowUpContent(item) &&
+    item.parentScheduledActionId != null &&
+    postIds.has(item.parentScheduledActionId);
+
+  /** Parent not in this listing (e.g. published while follow-up still scheduled): never merge into thread rows. */
+  const isOrphanAttachedFollowUp = (item: CombinedContent) =>
+    isAttachedFollowUpContent(item) &&
+    item.parentScheduledActionId != null &&
+    item.parentScheduledActionId !== "" &&
+    !postIds.has(item.parentScheduledActionId);
 
   const groups = new Map<string, CombinedContent[]>();
   for (const item of sortedFlat) {
     if (item.type !== "post") continue;
+    /** Queue follow-ups nest under a visible parent row; otherwise they need their own row. */
+    if (isNestedAttachedFollowUp(item)) continue;
+    /** Orphan follow-ups must not become thread segments of a sibling row. */
+    if (isOrphanAttachedFollowUp(item)) continue;
     const gid = item.threadGroupId;
     if (!gid) continue;
     const arr = groups.get(gid) ?? [];
@@ -71,6 +91,13 @@ export function buildThreadListRows(
       continue;
     }
     // After the longform branch, `item` is the post branch of `CombinedContent`.
+    if (isNestedAttachedFollowUp(item)) {
+      continue;
+    }
+    if (isOrphanAttachedFollowUp(item)) {
+      rows.push({ root: item, threadSegments: [] });
+      continue;
+    }
     if (!item.threadGroupId) {
       rows.push({ root: item, threadSegments: [] });
       continue;
@@ -90,10 +117,13 @@ export function buildThreadListRows(
 export function threadListRowMatchesSearch(
   row: ThreadListRow,
   type: "scheduled" | "published" | "draft",
-  matchesItem: (item: CombinedContent, t: typeof type) => boolean
+  matchesItem: (item: CombinedContent, t: typeof type) => boolean,
+  /** Queue follow-ups nested under the parent row (not in `threadSegments`). */
+  attachedForRoot: CombinedContent[] = []
 ): boolean {
   if (matchesItem(row.root, type)) return true;
-  return row.threadSegments.some((s) => matchesItem(s, type));
+  if (row.threadSegments.some((s) => matchesItem(s, type))) return true;
+  return attachedForRoot.some((a) => matchesItem(a, type));
 }
 
 /** Include every post in a thread if any segment’s caption matches the search term. */
@@ -104,14 +134,23 @@ export function filterPostsBySearchWithThreads(
   const term = searchTerm.trim().toLowerCase();
   if (!term) return posts;
   const groupsWithMatch = new Set<string>();
+  const parentIdsForAttachedMatch = new Set<string>();
   for (const p of posts) {
     if (p.caption?.toLowerCase().includes(term) && p.threadGroupId) {
       groupsWithMatch.add(p.threadGroupId);
+    }
+    if (
+      p.dependencyMode !== "standalone" &&
+      p.parentScheduledActionId &&
+      p.caption?.toLowerCase().includes(term)
+    ) {
+      parentIdsForAttachedMatch.add(p.parentScheduledActionId);
     }
   }
   return posts.filter((p) => {
     if (p.caption?.toLowerCase().includes(term)) return true;
     if (p.threadGroupId && groupsWithMatch.has(p.threadGroupId)) return true;
+    if (parentIdsForAttachedMatch.has(p.id)) return true;
     return false;
   });
 }

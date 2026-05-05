@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 
+import { loadNeedsResignItemsForQueue } from "~/features/posts/data/queue-needs-resign.server";
 import { ScheduleLongFormPostUseCase } from "~/features/posts/longform/use-cases/schedule-longform-post.use-case.server";
 import { toSignedEvent } from "~/features/posts/queue-payload.server";
 import {
@@ -310,7 +311,6 @@ export async function resumeQueueById(params: {
   const postScheduleUseCase = new SchedulePostUseCase();
   const longFormScheduleUseCase = new ScheduleLongFormPostUseCase();
   let resumedCount = 0;
-  let needsResignCount = 0;
 
   const markAttachedDescendantsForResign = async (
     rootPostId: string,
@@ -436,10 +436,7 @@ export async function resumeQueueById(params: {
         },
       });
       resumedCount++;
-      needsResignCount += await markAttachedDescendantsForResign(
-        item.row.id,
-        nextScheduledAtUtc
-      );
+      await markAttachedDescendantsForResign(item.row.id, nextScheduledAtUtc);
       continue;
     }
 
@@ -481,11 +478,7 @@ export async function resumeQueueById(params: {
           queueHeldByQueueTypeId: queueTypeId,
         },
       });
-      needsResignCount++;
-      needsResignCount += await markAttachedDescendantsForResign(
-        item.row.id,
-        nextScheduledAtUtc
-      );
+      await markAttachedDescendantsForResign(item.row.id, nextScheduledAtUtc);
       continue;
     }
 
@@ -504,8 +497,15 @@ export async function resumeQueueById(params: {
         queueHeldByQueueTypeId: queueTypeId,
       },
     });
-    needsResignCount++;
   }
+
+  /** Same pipeline as GET /api/queue-needs-resign — avoids mismatch vs raw prisma counts. */
+  const needsResignSnapshot = await loadNeedsResignItemsForQueue(
+    userId,
+    queueTypeId
+  );
+  const needsResignCount =
+    "error" in needsResignSnapshot ? 0 : needsResignSnapshot.items.length;
 
   return {
     queue: updatedQueue,

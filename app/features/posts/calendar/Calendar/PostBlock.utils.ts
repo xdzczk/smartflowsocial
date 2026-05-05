@@ -36,6 +36,34 @@ function getMediaFallbackLabel(
   return isRepost ? "Repost (image)" : "Image post";
 }
 
+/** Short label for attached queue follow-ups (calendar cards + screen readers). */
+export function getCalendarFollowUpKindLabel(
+  post: CalendarPost
+): string | null {
+  if (post.dependencyMode !== "attached") return null;
+  const isRepost = post.repost === true || post.postKind === "REPOST";
+  if (isRepost) return "Follow-up repost";
+  switch (post.postKind) {
+    case "QUOTE":
+      return "Follow-up quote";
+    case "REPLY":
+      return "Follow-up reply";
+    case "THREAD":
+      return "Follow-up thread";
+    case "POST":
+    default:
+      return "Follow-up post";
+  }
+}
+
+export function prefixCalendarAriaPreview(
+  post: CalendarPost,
+  preview: string
+): string {
+  const label = getCalendarFollowUpKindLabel(post);
+  return label ? `${label}: ${preview}` : preview;
+}
+
 export function getPostPreview(
   post: CalendarPost,
   isLongform: boolean,

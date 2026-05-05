@@ -1,3 +1,8 @@
+import type {
+  ComposerContext,
+  ComposerEditingMeta,
+} from "~/features/posts/composer";
+import { parseComposerContextFromLoader } from "~/features/posts/composer";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
 import { convertJsonValueToScheduleConfig } from "~/features/posts/types";
 import type { HashTagPreset, QueueType } from "~/features/posts/types";
@@ -23,6 +28,10 @@ export interface NewLongFormPostLoaderParsed {
   scheduleIntervals: number[];
   queueTypes: QueueType[];
   hashTagPresets: HashTagPreset[];
+  composerContext: ComposerContext;
+  editingMeta: ComposerEditingMeta | null;
+  hydrationStatus: "ready" | "error";
+  hydrationError: string | null;
 }
 
 function parseScheduleIntervals(scheduleIntervalsRaw: unknown): number[] {
@@ -177,110 +186,103 @@ function parseHashTagPresets(hashTagPresetsRaw: unknown): HashTagPreset[] {
     }));
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function readLoaderField(loaderData: unknown, key: string): unknown {
+  return isRecord(loaderData) && key in loaderData
+    ? loaderData[key]
+    : undefined;
+}
+
+function parseStringRelayList(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((r): r is string => typeof r === "string" && r.length > 0);
+}
+
+function parseInitialTemplateData(
+  loaderData: unknown
+): NewLongFormPostLoaderParsed["initialTemplateData"] {
+  if (!isRecord(loaderData) || !("initialTemplateData" in loaderData)) {
+    return null;
+  }
+  const raw = loaderData["initialTemplateData"];
+  if (raw === null || typeof raw !== "object") {
+    return null;
+  }
+  return raw as NewLongFormPostLoaderParsed["initialTemplateData"];
+}
+
+function parseEditingMetaFromLoader(raw: unknown): ComposerEditingMeta | null {
+  if (
+    !raw ||
+    typeof raw !== "object" ||
+    !("modeLabel" in raw) ||
+    !("accountLabel" in raw)
+  ) {
+    return null;
+  }
+  const o = raw as { modeLabel: unknown; accountLabel: unknown };
+  if (typeof o.modeLabel !== "string" || typeof o.accountLabel !== "string") {
+    return null;
+  }
+  return raw as ComposerEditingMeta;
+}
+
+function parseTemplatesFromLoader(
+  loaderData: unknown
+): Array<{ id: string; name: string | null }> {
+  const raw = readLoaderField(loaderData, "templates");
+  return Array.isArray(raw)
+    ? (raw as Array<{ id: string; name: string | null }>)
+    : [];
+}
+
 /**
  * Normalizes Remix loader data for the new longform composer page.
  */
 export function parseNewLongFormPostLoader(
   loaderData: unknown
 ): NewLongFormPostLoaderParsed {
-  const userTags =
-    loaderData && typeof loaderData === "object" && "tags" in loaderData
-      ? (loaderData as { tags?: unknown }).tags
-      : "";
-  const scheduleIntervalsRaw =
-    loaderData &&
-    typeof loaderData === "object" &&
-    "scheduleIntervals" in loaderData
-      ? (loaderData as { scheduleIntervals?: unknown }).scheduleIntervals
-      : null;
-  const queueTypesRaw =
-    loaderData && typeof loaderData === "object" && "queueTypes" in loaderData
-      ? (loaderData as { queueTypes?: unknown }).queueTypes
-      : [];
-  const hashTagPresetsRaw =
-    loaderData &&
-    typeof loaderData === "object" &&
-    "hashTagPresets" in loaderData
-      ? (loaderData as { hashTagPresets?: unknown }).hashTagPresets
-      : [];
-  const userTimezone =
-    loaderData && typeof loaderData === "object" && "userTimezone" in loaderData
-      ? (loaderData as { userTimezone?: unknown }).userTimezone
-      : null;
-  const uploadProvider =
-    loaderData &&
-    typeof loaderData === "object" &&
-    "uploadProvider" in loaderData
-      ? (loaderData as { uploadProvider?: unknown }).uploadProvider
-      : null;
-  const relaysRaw =
-    loaderData && typeof loaderData === "object" && "relays" in loaderData
-      ? (loaderData as { relays?: unknown }).relays
-      : [];
-  const defaultRelays = Array.isArray(relaysRaw)
-    ? relaysRaw.filter(
-        (r): r is string => typeof r === "string" && r.length > 0
-      )
-    : [];
+  const userTags = readLoaderField(loaderData, "tags") ?? "";
+  const scheduleIntervalsRaw = readLoaderField(loaderData, "scheduleIntervals");
+  const queueTypesRaw = readLoaderField(loaderData, "queueTypes");
+  const hashTagPresetsRaw = readLoaderField(loaderData, "hashTagPresets");
+  const userTimezone = readLoaderField(loaderData, "userTimezone");
+  const uploadProvider = readLoaderField(loaderData, "uploadProvider");
+  const defaultRelays = parseStringRelayList(
+    readLoaderField(loaderData, "relays")
+  );
+  const relaysApp = parseStringRelayList(
+    readLoaderField(loaderData, "relaysApp")
+  );
+  const relaysNip65Profile = parseStringRelayList(
+    readLoaderField(loaderData, "relaysNip65Profile")
+  );
 
-  const relaysAppRaw =
-    loaderData && typeof loaderData === "object" && "relaysApp" in loaderData
-      ? (loaderData as { relaysApp?: unknown }).relaysApp
-      : [];
-  const relaysApp = Array.isArray(relaysAppRaw)
-    ? relaysAppRaw.filter(
-        (r): r is string => typeof r === "string" && r.length > 0
-      )
-    : [];
-
-  const relaysNip65Raw =
-    loaderData &&
-    typeof loaderData === "object" &&
-    "relaysNip65Profile" in loaderData
-      ? (loaderData as { relaysNip65Profile?: unknown }).relaysNip65Profile
-      : [];
-  const relaysNip65Profile = Array.isArray(relaysNip65Raw)
-    ? relaysNip65Raw.filter(
-        (r): r is string => typeof r === "string" && r.length > 0
-      )
-    : [];
-
-  const prs = (loaderData as { publishRelaySource?: unknown } | null)
-    ?.publishRelaySource;
+  const prs = readLoaderField(loaderData, "publishRelaySource");
   const accountPublishRelaySource: AccountPublishRelaySource =
     prs === "nip65_profile" ? "nip65_profile" : "app";
-  const initialTemplateData =
-    loaderData &&
-    typeof loaderData === "object" &&
-    "initialTemplateData" in loaderData &&
-    (loaderData as { initialTemplateData?: unknown }).initialTemplateData !==
-      null &&
-    typeof (loaderData as { initialTemplateData?: unknown })
-      .initialTemplateData === "object"
-      ? (
-          loaderData as {
-            initialTemplateData: {
-              title?: string;
-              summary?: string;
-              content?: string;
-              image?: string;
-              tags?: string[];
-              queueType?: { name: string };
-            };
-          }
-        ).initialTemplateData
-      : null;
-  const templatesRaw =
-    loaderData &&
-    typeof loaderData === "object" &&
-    "templates" in loaderData &&
-    Array.isArray((loaderData as { templates?: unknown }).templates)
-      ? (
-          loaderData as {
-            templates: Array<{ id: string; name: string | null }>;
-          }
-        ).templates
-      : [];
+
+  const initialTemplateData = parseInitialTemplateData(loaderData);
+  const templatesRaw = parseTemplatesFromLoader(loaderData);
+
+  const composerContext = parseComposerContextFromLoader(
+    readLoaderField(loaderData, "composerContext")
+  );
+
+  const editingMeta = parseEditingMetaFromLoader(
+    readLoaderField(loaderData, "editingMeta")
+  );
+
+  const hydrationStatus =
+    readLoaderField(loaderData, "hydrationStatus") === "error"
+      ? ("error" as const)
+      : ("ready" as const);
+  const hydrationErrorRaw = readLoaderField(loaderData, "hydrationError");
+  const hydrationError =
+    typeof hydrationErrorRaw === "string" ? hydrationErrorRaw : null;
 
   return {
     userTags,
@@ -295,5 +297,9 @@ export function parseNewLongFormPostLoader(
     scheduleIntervals: parseScheduleIntervals(scheduleIntervalsRaw),
     queueTypes: parseQueueTypes(queueTypesRaw),
     hashTagPresets: parseHashTagPresets(hashTagPresetsRaw),
+    composerContext,
+    editingMeta,
+    hydrationStatus,
+    hydrationError,
   };
 }

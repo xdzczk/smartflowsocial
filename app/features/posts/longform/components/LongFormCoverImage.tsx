@@ -13,7 +13,6 @@ interface LongFormCoverImageProps {
   uploadFetcherState: "idle" | "submitting" | "loading";
   onImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onRemove: () => void;
-  onOpenAssetBrowser: () => void;
   /** Softer label (no required asterisk in copy). */
   softLabel?: boolean;
   /** Blossom file upload disabled (no extension / remote signer). */
@@ -27,7 +26,6 @@ export function LongFormCoverImage({
   uploadFetcherState,
   onImageUpload,
   onRemove,
-  onOpenAssetBrowser,
   softLabel = false,
   coverFileUploadDisabled = false,
 }: LongFormCoverImageProps) {
@@ -68,9 +66,7 @@ export function LongFormCoverImage({
           role="note"
         >
           Cover file upload needs a NIP-07 browser extension or connected remote
-          signer (NIP-46). Open Settings to connect. You can still use{" "}
-          <span className="font-medium">From assets</span> if you have hosted
-          images.
+          signer (NIP-46). Open Settings to connect.
         </div>
       ) : null}
 
@@ -86,37 +82,24 @@ export function LongFormCoverImage({
               <p className="text-text-secondary/85 max-w-sm text-[13px] leading-relaxed">
                 Optional hero for feeds and link cards.
               </p>
-              <div
-                className="border-border/35 bg-canvas/60 flex h-9 shrink-0 overflow-hidden rounded-md border shadow-none"
-                role="group"
-                aria-label="Cover image source"
+              <button
+                type="button"
+                disabled={coverFileUploadDisabled}
+                onClick={() =>
+                  document.getElementById("cover-image-input")?.click()
+                }
+                className={cn(
+                  "border-border/35 bg-canvas/60 text-text/90 motion-fast inline-flex h-9 shrink-0 items-center rounded-md border px-3 text-xs font-medium shadow-none",
+                  "hover:bg-surface-hover/40 disabled:pointer-events-none disabled:opacity-45"
+                )}
               >
-                <button
-                  type="button"
-                  disabled={coverFileUploadDisabled}
-                  onClick={() =>
-                    document.getElementById("cover-image-input")?.click()
-                  }
-                  className={cn(
-                    "text-text/90 border-border/35 motion-fast inline-flex items-center border-r px-3 text-xs font-medium",
-                    "hover:bg-surface-hover/40 disabled:pointer-events-none disabled:opacity-45"
-                  )}
-                >
-                  <Upload
-                    className="text-text-secondary mr-1.5 h-3.5 w-3.5"
-                    strokeWidth={INLINE_ICON_STROKE}
-                    aria-hidden
-                  />
-                  Upload
-                </button>
-                <button
-                  type="button"
-                  onClick={onOpenAssetBrowser}
-                  className="text-text-secondary hover:text-text/90 hover:bg-surface-hover/30 motion-fast px-3 text-xs font-medium"
-                >
-                  From assets
-                </button>
-              </div>
+                <Upload
+                  className="text-text-secondary mr-1.5 h-3.5 w-3.5"
+                  strokeWidth={INLINE_ICON_STROKE}
+                  aria-hidden
+                />
+                Upload
+              </button>
             </div>
           )}
           <p className="text-text-secondary/45 mt-2 max-w-xl text-[10px] leading-snug">
@@ -162,16 +145,6 @@ export function LongFormCoverImage({
                   }
                   aria-label="Replace cover image"
                 />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={onOpenAssetBrowser}
-                disabled={uploadFetcherState !== "idle"}
-                className="bg-canvas/85 text-text h-8 text-xs backdrop-blur-sm"
-              >
-                Assets
               </Button>
               <Button
                 type="button"

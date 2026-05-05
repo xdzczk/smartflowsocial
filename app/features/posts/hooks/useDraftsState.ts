@@ -3,8 +3,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
+  isAttachedFollowUpDraftPost,
   isPollDraftPost,
   isShortPostDraftForPostsTab,
+  isStandaloneRepostDraftPost,
   isThreadDraftPost,
 } from "~/features/posts/drafts/utils/draft-post-classification";
 import {
@@ -30,11 +32,6 @@ export interface DraftsHookPost {
 interface CombinedContentItem {
   id: string;
   type: "post" | "longform";
-}
-
-function isRepostDraft(post: DraftsHookPost): boolean {
-  const kind = (post as { postKind?: string }).postKind;
-  return kind === "REPOST";
 }
 
 interface UseDraftsStateProps {
@@ -106,8 +103,10 @@ export function useDraftsState({
           : currentTab === "threads"
             ? sortedPosts.filter((p) => isThreadDraftPost(p))
             : currentTab === "reposts"
-              ? sortedPosts.filter((p) => isRepostDraft(p))
-              : sortedPosts;
+              ? sortedPosts.filter((p) => isStandaloneRepostDraftPost(p))
+              : currentTab === "followups"
+                ? sortedPosts.filter((p) => isAttachedFollowUpDraftPost(p))
+                : sortedPosts;
     return byTab.filter((post) =>
       matchesDraftSearch(buildShortDraftSearchHaystack(post), searchTerm)
     );

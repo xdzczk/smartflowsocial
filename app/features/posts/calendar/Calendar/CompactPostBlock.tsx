@@ -15,6 +15,8 @@ import {
   getStatusColor,
   getDisplayTime,
   getQueueColorStyleProps,
+  getCalendarFollowUpKindLabel,
+  prefixCalendarAriaPreview,
 } from "./PostBlock.utils";
 import { PostIcon } from "./PostIcon";
 import { PostStatusIcons } from "./PostStatusIcons";
@@ -136,6 +138,7 @@ function MediaPreview({
   postPreview: string;
   slotExpandRows?: number;
 }) {
+  const followUpLabel = getCalendarFollowUpKindLabel(post);
   const lineClampLines =
     slotExpandRows && slotExpandRows >= 2
       ? Math.min(12, slotExpandRows * 3)
@@ -144,6 +147,11 @@ function MediaPreview({
   if (!firstImage) {
     return (
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        {followUpLabel ? (
+          <span className="text-text-secondary mb-0.5 flex-shrink-0 text-[10px] leading-tight">
+            {followUpLabel}
+          </span>
+        ) : null}
         <p
           className="[display:-webkit-box] min-h-0 flex-1 text-xs leading-relaxed break-words [-webkit-box-orient:vertical]"
           style={{ WebkitLineClamp: lineClampLines }}
@@ -161,6 +169,11 @@ function MediaPreview({
 
   return (
     <div className="flex h-full min-h-0 flex-col space-y-1">
+      {followUpLabel ? (
+        <span className="text-text-secondary flex-shrink-0 text-[10px] leading-tight">
+          {followUpLabel}
+        </span>
+      ) : null}
       <div className="post-thumbnail relative min-h-0 w-full flex-1 overflow-hidden rounded-[var(--calendar-radius-md)]">
         <MediaThumbnail
           src={firstImage}
@@ -235,7 +248,12 @@ export function CompactPostBlock({
       onKeyDown={onKeyDown}
       tabIndex={0}
       role="button"
-      aria-label={getAriaLabel(isPast, isLongform, postPreview, formattedTime)}
+      aria-label={getAriaLabel(
+        isPast,
+        isLongform,
+        prefixCalendarAriaPreview(post, postPreview),
+        formattedTime
+      )}
       className={`${getClassName(
         isPast,
         isDragging,

@@ -14,6 +14,7 @@ export function buildLibraryContentTypeFilterItems({
   totalContentCount,
   totalPostsCount,
   totalRepostsCount,
+  totalFollowUpsCount,
   totalLongformCount,
 }: {
   basePath: string;
@@ -22,6 +23,7 @@ export function buildLibraryContentTypeFilterItems({
   totalContentCount: number;
   totalPostsCount: number;
   totalRepostsCount: number;
+  totalFollowUpsCount: number;
   totalLongformCount: number;
 }): PublishingContentTypeFilterItem[] {
   const withTab = (tab: string) => {
@@ -58,6 +60,13 @@ export function buildLibraryContentTypeFilterItems({
       triggerLabel: "Repost",
       menuLabel: menuWithCount("Repost", totalRepostsCount),
       ariaLabel: `Reposts, ${totalRepostsCount} items`,
+    },
+    {
+      id: "followups",
+      to: withTab("followups"),
+      triggerLabel: "Follow-up",
+      menuLabel: menuWithCount("Follow-up", totalFollowUpsCount),
+      ariaLabel: `Follow-ups, ${totalFollowUpsCount} items`,
     },
   ];
 }

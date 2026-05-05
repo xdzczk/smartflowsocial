@@ -13,6 +13,8 @@ vi.mock("~/features/posts/server", async () => {
     getScheduledLongFormPosts: vi.fn(),
     getScheduledPosts: vi.fn(),
     getScheduledRepostsCount: vi.fn(),
+    getScheduledFollowUpsCount: vi.fn(() => Promise.resolve(0)),
+    getScheduledNonRepostPostsCount: vi.fn(),
     pickRescheduleSourceSignedEvents,
   };
 });
@@ -48,6 +50,7 @@ import { TEST_USER_ID } from "../../../utils/test-helpers";
 import { getScheduledLongFormPosts } from "~/features/posts/server";
 import {
   getScheduledPosts,
+  getScheduledNonRepostPostsCount,
   getScheduledRepostsCount,
 } from "~/features/posts/server";
 import { loadScheduledData } from "~/features/posts/server/scheduling";
@@ -85,6 +88,9 @@ describe("Scheduled Loader", () => {
       pagination,
     });
     (getScheduledRepostsCount as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+    (
+      getScheduledNonRepostPostsCount as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(1);
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue(mockUser);
     (getQueueTypes as ReturnType<typeof vi.fn>).mockResolvedValue(
       mockQueueTypes
@@ -123,6 +129,9 @@ describe("Scheduled Loader", () => {
       pagination,
     });
     (getScheduledRepostsCount as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+    (
+      getScheduledNonRepostPostsCount as ReturnType<typeof vi.fn>
+    ).mockResolvedValue(1);
     (getUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: TEST_USER_ID,
     });

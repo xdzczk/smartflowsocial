@@ -6,6 +6,10 @@ import {
   mixedPostsToCalendarPosts,
   postsToCalendarPosts,
 } from "~/features/posts/calendar/utils/calendar-post-converter";
+import {
+  isAttachedFollowUpPost,
+  isStandaloneRepostPost,
+} from "~/features/posts/utils/attached-follow-up-rows";
 import { isRepostPost } from "~/features/posts/utils/content-helpers";
 
 export default function CalendarPage() {
@@ -22,6 +26,7 @@ export default function CalendarPage() {
     isLoading: isDataLoading,
     totalPostsCount,
     totalRepostsCount,
+    totalFollowUpsCount,
     totalLongformCount,
     totalContentCount,
   } = useCalendarData();
@@ -31,6 +36,7 @@ export default function CalendarPage() {
   const TAB_ALL = "all";
   const TAB_POSTS = "posts";
   const TAB_REPOSTS = "reposts";
+  const TAB_FOLLOWUPS = "followups";
   const TAB_LONGFORM = "longform";
   const CALENDAR_BASE_PATH = "/dashboard/calendar";
   const currentTab = searchParams.get("tab") ?? TAB_ALL;
@@ -75,6 +81,7 @@ export default function CalendarPage() {
               totalContentCount,
               totalPostsCount,
               totalRepostsCount,
+              totalFollowUpsCount,
               totalLongformCount,
             }}
             initialDate={initialDate}
@@ -83,10 +90,14 @@ export default function CalendarPage() {
         ) : currentTab === TAB_POSTS ? (
           <Calendar
             scheduledPosts={postsToCalendarPosts(
-              scheduledPosts.filter((p) => !isRepostPost(p))
+              scheduledPosts.filter(
+                (p) => !isRepostPost(p) && !isAttachedFollowUpPost(p)
+              )
             )}
             pastPosts={postsToCalendarPosts(
-              pastPosts.filter((p) => !isRepostPost(p))
+              pastPosts.filter(
+                (p) => !isRepostPost(p) && !isAttachedFollowUpPost(p)
+              )
             )}
             user={user}
             queueTypes={queueTypes}
@@ -96,6 +107,7 @@ export default function CalendarPage() {
               totalContentCount,
               totalPostsCount,
               totalRepostsCount,
+              totalFollowUpsCount,
               totalLongformCount,
             }}
             initialDate={initialDate}
@@ -104,10 +116,10 @@ export default function CalendarPage() {
         ) : currentTab === TAB_REPOSTS ? (
           <Calendar
             scheduledPosts={postsToCalendarPosts(
-              scheduledPosts.filter((p) => isRepostPost(p))
+              scheduledPosts.filter((p) => isStandaloneRepostPost(p))
             )}
             pastPosts={postsToCalendarPosts(
-              pastPosts.filter((p) => isRepostPost(p))
+              pastPosts.filter((p) => isStandaloneRepostPost(p))
             )}
             user={user}
             queueTypes={queueTypes}
@@ -117,6 +129,29 @@ export default function CalendarPage() {
               totalContentCount,
               totalPostsCount,
               totalRepostsCount,
+              totalFollowUpsCount,
+              totalLongformCount,
+            }}
+            initialDate={initialDate}
+            initialView={initialView}
+          />
+        ) : currentTab === TAB_FOLLOWUPS ? (
+          <Calendar
+            scheduledPosts={postsToCalendarPosts(
+              scheduledPosts.filter((p) => isAttachedFollowUpPost(p))
+            )}
+            pastPosts={postsToCalendarPosts(
+              pastPosts.filter((p) => isAttachedFollowUpPost(p))
+            )}
+            user={user}
+            queueTypes={queueTypes}
+            calendarPageTabs={{
+              currentTab,
+              basePath: CALENDAR_BASE_PATH,
+              totalContentCount,
+              totalPostsCount,
+              totalRepostsCount,
+              totalFollowUpsCount,
               totalLongformCount,
             }}
             initialDate={initialDate}
@@ -137,6 +172,7 @@ export default function CalendarPage() {
               totalContentCount,
               totalPostsCount,
               totalRepostsCount,
+              totalFollowUpsCount,
               totalLongformCount,
             }}
             initialDate={initialDate}

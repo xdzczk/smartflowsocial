@@ -1,3 +1,4 @@
+import type { ComposerContext } from "~/features/posts/composer";
 import type { ComposerPublishMode } from "~/features/posts/composer/components/composer";
 
 export interface LongFormQueueType {
@@ -77,4 +78,9 @@ export interface LongFormPostProps {
    * UI right away.
    */
   onPublishIntent?: () => void;
+  /**
+   * Route loader context. When not `create` (e.g. `edit_scheduled`), the right rail
+   * uses "Save changes" like the short-form composer.
+   */
+  composerContext?: ComposerContext;
 }

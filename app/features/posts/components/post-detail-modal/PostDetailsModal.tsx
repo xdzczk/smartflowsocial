@@ -8,6 +8,7 @@ import MediaModal from "~/components/ui/MediaModal";
 import type { ChildReply } from "~/features/engagement/hooks/useNotificationActions";
 import type { SignedEvent } from "~/features/nostr/types";
 import { parsePollFromSignedEvent } from "~/features/polls";
+import { needsResignAfterQueueResume } from "~/features/posts/queue-status";
 import type { ScheduledPostCapabilities } from "~/features/posts/scheduled";
 import { inferScheduledCapabilitiesFromModalPost } from "~/features/posts/scheduled";
 import { formatDate } from "~/features/posts/utils/content-helpers";
@@ -247,6 +248,13 @@ export default function PostDetailsModal({
       scheduledCapabilitiesProp ?? inferScheduledCapabilitiesFromModalPost(post)
     );
   }, [type, scheduledCapabilitiesProp, post]);
+
+  const scheduledNeedsQueueResign = useMemo(() => {
+    if (type !== "scheduled") return false;
+    return needsResignAfterQueueResume(
+      post as { queueHoldStatus?: string | null }
+    );
+  }, [type, post]);
 
   const pollOptionCount = useMemo(() => {
     if (!isPostPoll({ nip88PollsEnabled, post, type })) return null;
@@ -660,6 +668,7 @@ export default function PostDetailsModal({
               onReschedule != null ? () => onReschedule(post) : undefined
             }
             deleteForm={deleteForm}
+            scheduledNeedsQueueResign={scheduledNeedsQueueResign}
             scheduledEditDisabled={
               type === "scheduled"
                 ? Boolean(

@@ -5,6 +5,10 @@
 
 import type { CombinedContent } from "~/features/posts/types";
 import {
+  attachedCombinedByParentId,
+  attachedCombinedForThreadRow,
+} from "~/features/posts/utils/attached-follow-up-rows";
+import {
   buildThreadListRows,
   threadListRowMatchesSearch,
 } from "~/features/posts/utils/thread-list-grouping";
@@ -19,11 +23,15 @@ export function getSelectableRootIdsForMixedListing(
   listType: "scheduled" | "published",
   searchTerm: string
 ): string[] {
+  const attachedByParentId = attachedCombinedByParentId(content);
   const sortedContent = [...content];
   const displayRows = buildThreadListRows(sortedContent, listType);
   const filteredRows = displayRows.filter((row) =>
-    threadListRowMatchesSearch(row, listType, (item, t) =>
-      combinedContentMatchesSearch(item, t, searchTerm)
+    threadListRowMatchesSearch(
+      row,
+      listType,
+      (item, t) => combinedContentMatchesSearch(item, t, searchTerm),
+      attachedCombinedForThreadRow(attachedByParentId, row)
     )
   );
   return filteredRows.map((row) => row.root.id);

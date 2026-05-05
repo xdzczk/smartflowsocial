@@ -10,6 +10,7 @@ import {
   isWeeklySlotsScheduleConfig,
 } from "../types";
 import type { CombinedContent, QueueType } from "../types";
+import { isAttachedFollowUpContent } from "../utils/attached-follow-up-rows";
 
 function normalizeGlobalHours(raw: number[]): number[] {
   return raw.map((h) => Number(h)).filter((h) => Number.isFinite(h) && h > 0);
@@ -188,13 +189,6 @@ function queueHoldStatusFromCombined(
   return od.queueHoldStatus;
 }
 
-function isAttachedFollowUpPost(item: CombinedContent): boolean {
-  if (item.type !== "post") return false;
-  if (item.dependencyMode === "attached") return true;
-  const od = item.originalData as { dependencyMode?: string | null };
-  return od.dependencyMode === "attached";
-}
-
 /**
  * Earliest future scheduled time per queue name from loaded flow items (no new API).
  * Skips held rows, attached follow-ups, and non-scheduled states.
@@ -207,7 +201,7 @@ export function buildEarliestNextScheduledUtcMsByQueueFromFlow(
   for (const item of flowItems) {
     if (item.currentState !== "SCHEDULED") continue;
     if (item.repost) continue;
-    if (isAttachedFollowUpPost(item)) continue;
+    if (isAttachedFollowUpContent(item)) continue;
     if (queueHoldStatusFromCombined(item) === "HELD_BY_QUEUE") continue;
     const name = item.queueType?.name;
     const sched = item.scheduledAtUtc;

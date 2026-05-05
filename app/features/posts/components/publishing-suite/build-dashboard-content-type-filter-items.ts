@@ -5,6 +5,7 @@ export type DashboardFlowContentTab =
   | "posts"
   | "longform"
   | "reposts"
+  | "followups"
   | "polls";
 
 function withTab(basePath: string, searchParams: URLSearchParams, tab: string) {
@@ -55,6 +56,13 @@ export function buildDashboardContentTypeFilterItems({
       triggerLabel: "Reposts",
       menuLabel: "Reposts",
       ariaLabel: "Reposts",
+    },
+    {
+      id: "followups",
+      to: withTab(basePath, searchParams, "followups"),
+      triggerLabel: "Follow-ups",
+      menuLabel: "Follow-ups",
+      ariaLabel: "Queue follow-ups",
     },
   ];
 

@@ -9,6 +9,11 @@ export type {
 export { default as NewPostPage } from "./components/NewPostPage";
 export { CreateComposerShell } from "./components/CreateComposerShell";
 export {
+  ComposerEditingModeCallout,
+  type ComposerEditingMeta,
+} from "./components/ComposerEditingModeCallout";
+export { parseComposerContextFromLoader } from "./parse-composer-context-loader";
+export {
   BulkComposerModal,
   type BulkComposerMode,
   type BulkComposerModalProps,

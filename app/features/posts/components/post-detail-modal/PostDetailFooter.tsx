@@ -14,6 +14,7 @@ export function PostDetailFooterBar({
   onEdit,
   onReschedule,
   deleteForm,
+  scheduledNeedsQueueResign,
   scheduledEditDisabled,
   scheduledEditDisabledReason,
   scheduledOpenFullEditorHref,
@@ -28,6 +29,7 @@ export function PostDetailFooterBar({
   onEdit?: () => void;
   onReschedule?: () => void;
   deleteForm: React.ReactNode;
+  scheduledNeedsQueueResign?: boolean;
   scheduledEditDisabled?: boolean;
   scheduledEditDisabledReason?: string;
   scheduledOpenFullEditorHref?: string | null;
@@ -37,6 +39,7 @@ export function PostDetailFooterBar({
       <ScheduledPostActionBar
         onEdit={onEdit}
         onReschedule={onReschedule}
+        needsQueueResign={Boolean(scheduledNeedsQueueResign)}
         editDisabled={Boolean(scheduledEditDisabled)}
         editDisabledReason={scheduledEditDisabledReason}
         openFullEditorHref={scheduledOpenFullEditorHref ?? undefined}

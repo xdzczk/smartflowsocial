@@ -376,6 +376,7 @@ export default function BulkPostsPage() {
                   userTimeFormat={userTimeFormat}
                   showAlsoSchedule={showActions}
                   rowMediaUploadDisabled={mediaUploadBlocked}
+                  totalPosts={posts.length}
                   onCaptionChange={handlers.handleCaptionChange}
                   onDateChange={handlers.handleDateChange}
                   onQueueTypeChange={(i, v) => {
@@ -384,6 +385,7 @@ export default function BulkPostsPage() {
                   onIsRecyclableChange={handlers.handleIsRecyclableChange}
                   onRemove={handlers.handleRemovePost}
                   onDuplicate={handlers.duplicatePost}
+                  onReorderRow={handlers.handleReorderBulkPost}
                   onIncludeHashtagsInNoteBodyChange={
                     handlers.handleIncludeHashtagsInNoteBodyChange
                   }

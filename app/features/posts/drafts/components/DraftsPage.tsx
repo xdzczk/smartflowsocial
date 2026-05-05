@@ -12,6 +12,8 @@ import {
   getShortDraftComposeUrl,
   isPollDraftPost,
   isShortPostDraftForPostsTab,
+  isAttachedFollowUpDraftPost,
+  isStandaloneRepostDraftPost,
   isThreadDraftPost,
   useDraftsInfiniteData,
   useDraftsState,
@@ -27,7 +29,6 @@ import {
   PublishingLibraryShell,
   PublishingPageHeader,
 } from "~/features/posts/ui";
-import { isRepostPost } from "~/features/posts/utils/content-helpers";
 import { useInfiniteScrollSentinel } from "~/lib/hooks/useInfiniteScrollSentinel";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 
@@ -77,10 +78,15 @@ export default function DraftsPage() {
   const isChildRoute = Boolean(params["id"]);
   const currentTab = searchParams.get("tab") ?? "all";
 
-  const repostsCount = posts.filter((p) => isRepostPost(p)).length;
+  const repostsCount = posts.filter((p) =>
+    isStandaloneRepostDraftPost(p)
+  ).length;
   const postsCount = posts.filter((p) => isShortPostDraftForPostsTab(p)).length;
   const pollsCount = posts.filter((p) => isPollDraftPost(p)).length;
   const threadsCount = posts.filter((p) => isThreadDraftPost(p)).length;
+  const followUpsCount = posts.filter((p) =>
+    isAttachedFollowUpDraftPost(p)
+  ).length;
 
   const {
     sortConfig,
@@ -169,6 +175,7 @@ export default function DraftsPage() {
         pollsCount={pollsCount}
         threadsCount={threadsCount}
         repostsCount={repostsCount}
+        followUpsCount={followUpsCount}
         longformCount={longformPosts.length}
         bulkCount={bulkDraftGroups.length}
         queueTypes={queueTypes}

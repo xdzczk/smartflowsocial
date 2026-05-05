@@ -98,13 +98,15 @@ describe("posts utility coverage", () => {
         totalPollsCount: 1,
         totalThreadsCount: 2,
         totalRepostsCount: 1,
+        totalFollowUpsCount: 1,
         totalLongformCount: 1,
         bulkCount: 1,
       });
-      expect(items).toHaveLength(7);
+      expect(items).toHaveLength(8);
       expect(items[0]?.to).toContain("tab=all");
       expect(items[1]?.menuLabel).toContain("(4)");
-      expect(items[6]?.id).toBe("bulk");
+      expect(items[6]?.id).toBe("followups");
+      expect(items[7]?.id).toBe("bulk");
     });
   });
 });

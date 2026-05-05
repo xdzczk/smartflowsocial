@@ -1,7 +1,14 @@
 import { Link, useFetcher, useNavigate } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useCallback, useEffect, useRef, useState, type Key } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type Key,
+} from "react";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -22,6 +29,10 @@ import { draftsKeys } from "~/features/posts/hooks/useDraftsQuery";
 import { invalidateDependentCaches } from "~/features/posts/hooks/useRefreshPostViews";
 import { pruneScheduledQueryData } from "~/features/posts/scheduling/hooks/useScheduledPostsCache";
 import { scheduledPostsKeys } from "~/features/posts/scheduling/hooks/useScheduledPostsQuery";
+import {
+  attachedCombinedByParentId,
+  attachedCombinedForThreadRow,
+} from "~/features/posts/utils/attached-follow-up-rows";
 import { buildActionUrl } from "~/features/posts/utils/remix-action-url";
 import {
   buildThreadListRows,
@@ -350,6 +361,13 @@ export default function AllContentListing({
     return 0;
   });
 
+  const attachedByParentId = useMemo(() => {
+    if (type !== "scheduled" && type !== "published") {
+      return new Map<string, CombinedContent[]>();
+    }
+    return attachedCombinedByParentId(content);
+  }, [content, type]);
+
   const displayRows: ThreadListRow[] =
     type === "draft"
       ? sortedContent.map((root) => ({
@@ -369,8 +387,11 @@ export default function AllContentListing({
         });
 
   const filteredRows = displayRows.filter((row) =>
-    threadListRowMatchesSearch(row, type, (item, t) =>
-      combinedContentMatchesSearch(item, t, searchTerm)
+    threadListRowMatchesSearch(
+      row,
+      type,
+      (item, t) => combinedContentMatchesSearch(item, t, searchTerm),
+      attachedCombinedForThreadRow(attachedByParentId, row)
     )
   );
 
@@ -512,6 +533,10 @@ export default function AllContentListing({
                         onScheduleQuote={onScheduleQuote}
                         onBeforeDelete={onBeforeDelete}
                         onDelete={scheduledDeleteHandler}
+                        attachedFollowUpItems={attachedCombinedForThreadRow(
+                          attachedByParentId,
+                          row
+                        )}
                       />
                     ))}
               </tbody>
@@ -622,6 +647,10 @@ export default function AllContentListing({
                             onScheduleQuote={onScheduleQuote}
                             onBeforeDelete={onBeforeDelete}
                             onDelete={scheduledDeleteHandler}
+                            attachedFollowUpItems={attachedCombinedForThreadRow(
+                              attachedByParentId,
+                              row
+                            )}
                             onMenuOpenChange={(open) =>
                               setOpenMenuRowKey(open ? virtualRow.key : null)
                             }
@@ -702,6 +731,10 @@ export default function AllContentListing({
                       onScheduleQuote={onScheduleQuote}
                       onBeforeDelete={onBeforeDelete}
                       onDelete={scheduledDeleteHandler}
+                      attachedFollowUpItems={attachedCombinedForThreadRow(
+                        attachedByParentId,
+                        row
+                      )}
                       onMenuOpenChange={(open) =>
                         setOpenMenuRowKey(open ? virtualRow.key : null)
                       }

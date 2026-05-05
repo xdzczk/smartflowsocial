@@ -24,6 +24,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import MediaThumbnail from "~/components/ui/MediaThumbnail";
@@ -35,6 +38,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { postToCombinedContent } from "~/features/posts/combined";
+import { AttachedFollowUpsMenu } from "~/features/posts/components/AttachedFollowUpsMenu";
 import {
   CONTENT_LIST_CARD_GAP_PX,
   CONTENT_MOBILE_BREAKPOINT_PX,
@@ -51,13 +55,20 @@ import {
 import { ThreadSegmentsMenu } from "~/features/posts/components/ThreadSegmentsMenu";
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
 import { invalidateDependentCaches } from "~/features/posts/hooks/useRefreshPostViews";
+import { needsResignAfterQueueResume } from "~/features/posts/queue-status";
 import type { CombinedContent, PostData } from "~/features/posts/types";
+import {
+  attachedPostsByParentId,
+  attachedPostsForThreadRow,
+  isAttachedFollowUpPost,
+} from "~/features/posts/utils/attached-follow-up-rows";
 import { getPostRowThumbnailBadge } from "~/features/posts/utils/content-helpers";
 import { buildActionUrl } from "~/features/posts/utils/remix-action-url";
 import { isPureRepostSourcePost } from "~/features/posts/utils/repost-chain-policy";
 import {
   buildPostThreadRows,
   comparePostDataByScheduledSort,
+  type PostThreadRow,
 } from "~/features/posts/utils/thread-list-grouping";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
@@ -99,6 +110,8 @@ interface ScheduledPostsTableProps {
   onScrollContainerReady?: (el: HTMLDivElement | null) => void;
   /** Thread roots only — for “select all” when rows are merged by thread. */
   selectableRootIds: string[];
+  /** Follow-ups tab: render attached children as ordinary rows with row actions. */
+  showFollowUpsAsRows?: boolean;
 }
 
 interface SortableHeaderProps {
@@ -106,6 +119,67 @@ interface SortableHeaderProps {
   label: string;
   sortConfig: { key: string; direction: "asc" | "desc" };
   onRequestSort: (key: string) => void;
+}
+
+function ScheduledTableCaptionColumn({
+  post,
+  row,
+  attachedFollowUps,
+  userTimezone,
+  userTimeFormat,
+  onSelectPost,
+}: {
+  post: PostData;
+  row: PostThreadRow;
+  attachedFollowUps: PostData[];
+  userTimezone?: string | null;
+  userTimeFormat?: "12h" | "24h" | null;
+  onSelectPost: (p: PostData) => void;
+}) {
+  const tf = userTimeFormat === "24h" ? "24h" : "12h";
+  const tz = userTimezone ?? undefined;
+  return (
+    <>
+      <p
+        className={cn(
+          "font-medium",
+          post.dependencyMode === "attached" && "pl-3"
+        )}
+      >
+        {post.caption && post.caption.length > 21
+          ? post.caption.substring(0, 21) + "..."
+          : post.caption}
+      </p>
+      {post.dependencyMode === "attached" ? (
+        <p className="text-text-secondary text-xs">
+          Follow-up
+          {post.followUpTimingMode === "offset_from_parent"
+            ? " · Offset from parent"
+            : " · Fixed date/time"}
+        </p>
+      ) : null}
+      {row.threadSegments.length > 0 ? (
+        <ThreadSegmentsMenu
+          segments={row.threadSegments.map((p) => postToCombinedContent(p))}
+          listType="scheduled"
+          userTimezone={tz}
+          userTimeFormat={tf}
+          onSelectSegment={(c) => onSelectPost(c.originalData as PostData)}
+          triggerClassName="mt-1"
+        />
+      ) : null}
+      {attachedFollowUps.length > 0 ? (
+        <AttachedFollowUpsMenu
+          items={attachedFollowUps.map((p) => postToCombinedContent(p))}
+          listType="scheduled"
+          userTimezone={tz}
+          userTimeFormat={tf}
+          onSelectFollowUp={(c) => onSelectPost(c.originalData as PostData)}
+          triggerClassName={row.threadSegments.length > 0 ? "mt-0.5" : "mt-1"}
+        />
+      ) : null}
+    </>
+  );
 }
 
 const SortableHeader = ({
@@ -143,6 +217,8 @@ interface ScheduledPostTableRowActionsProps {
   ) => void;
   queryClient: QueryClient;
   lastMoveSubmissionRef: MutableRefObject<{ postId: string } | null>;
+  /** Queue follow-ups attached to this parent; actions live here instead of on their own row. */
+  attachedFollowUps?: PostData[];
 }
 
 function ScheduledPostTableRowActions({
@@ -158,6 +234,7 @@ function ScheduledPostTableRowActions({
   handleDeleteWithCascade,
   queryClient,
   lastMoveSubmissionRef,
+  attachedFollowUps = [],
 }: ScheduledPostTableRowActionsProps) {
   return (
     <DropdownMenu>
@@ -178,6 +255,11 @@ function ScheduledPostTableRowActions({
         <DropdownMenuItem onSelect={() => onReschedulePost(post)}>
           Reschedule
         </DropdownMenuItem>
+        {needsResignAfterQueueResume(post) ? (
+          <DropdownMenuItem onSelect={() => onReschedulePost(post)}>
+            Re-sign
+          </DropdownMenuItem>
+        ) : null}
         {onScheduleRepost && !blockRepostQuoteChain ? (
           <DropdownMenuItem onSelect={() => onScheduleRepost(post)}>
             Schedule repost
@@ -188,6 +270,93 @@ function ScheduledPostTableRowActions({
             Schedule quote
           </DropdownMenuItem>
         ) : null}
+        {attachedFollowUps.map((child) => {
+          const blockChild = isPureRepostSourcePost(child);
+          const preview = (child.caption ?? "").trim().slice(0, 40);
+          return (
+            <DropdownMenuSub key={child.id}>
+              <DropdownMenuSubTrigger className="max-w-[min(100%,18rem)]">
+                <span className="truncate">
+                  Follow-up
+                  {preview ? (
+                    <span className="text-text-secondary font-normal">
+                      {" "}
+                      · {preview}
+                      {(child.caption?.trim().length ?? 0) > 40 ? "…" : ""}
+                    </span>
+                  ) : null}
+                </span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent
+                alignOffset={-4}
+                className="min-w-[10rem]"
+              >
+                <DropdownMenuItem onSelect={() => onEditPost(child)}>
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => onReschedulePost(child)}>
+                  Reschedule
+                </DropdownMenuItem>
+                {needsResignAfterQueueResume(child) ? (
+                  <DropdownMenuItem onSelect={() => onReschedulePost(child)}>
+                    Re-sign
+                  </DropdownMenuItem>
+                ) : null}
+                {onScheduleRepost && !blockChild ? (
+                  <DropdownMenuItem onSelect={() => onScheduleRepost(child)}>
+                    Schedule repost
+                  </DropdownMenuItem>
+                ) : null}
+                {onScheduleQuote && !blockChild ? (
+                  <DropdownMenuItem onSelect={() => onScheduleQuote(child)}>
+                    Schedule quote
+                  </DropdownMenuItem>
+                ) : null}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  disabled={
+                    moveToDraftFetcher.state !== "idle" ||
+                    deletingPostId != null ||
+                    bulkDeleteState !== "idle"
+                  }
+                  onSelect={() => {
+                    queryClient.setQueriesData(
+                      { queryKey: scheduledPostsKeys.all },
+                      (old) => pruneScheduledQueryData(old, new Set([child.id]))
+                    );
+                    lastMoveSubmissionRef.current = {
+                      postId: child.id,
+                    };
+                    const fd = new FormData();
+                    fd.set("postId", child.id);
+                    fd.set("_action", "moveToDraft");
+                    fd.set("type", "post");
+                    moveToDraftFetcher.submit(fd, { method: "post" });
+                  }}
+                >
+                  {moveToDraftFetcher.state !== "idle" &&
+                  moveToDraftFetcher.formData?.get("_action") ===
+                    "moveToDraft" &&
+                  /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- formData can be undefined during submit */
+                  moveToDraftFetcher.formData?.get("postId") === child.id
+                    ? "Moving..."
+                    : "Move to drafts"}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={
+                    moveToDraftFetcher.state !== "idle" ||
+                    deletingPostId != null ||
+                    bulkDeleteState !== "idle"
+                  }
+                  className="text-danger focus:text-danger"
+                  onSelect={() => handleDeleteWithCascade(child.id, "post")}
+                >
+                  {deletingPostId === child.id ? "Deleting..." : "Delete"}
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          );
+        })}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           disabled={
@@ -256,6 +425,7 @@ export function ScheduledPostsTable({
   isFetchingNextPage = false,
   onScrollContainerReady,
   selectableRootIds,
+  showFollowUpsAsRows = false,
 }: ScheduledPostsTableProps) {
   const { dateLocale } = useFormattedDate();
   const isMobile = useIsMobile(CONTENT_MOBILE_BREAKPOINT_PX);
@@ -315,11 +485,22 @@ export function ScheduledPostsTable({
   );
 
   const threadRows = useMemo(() => {
+    if (showFollowUpsAsRows) {
+      return posts.map((post) => ({ root: post, threadSegments: [] }));
+    }
     const built = buildPostThreadRows(posts, "scheduled");
     return [...built].sort((a, b) =>
       comparePostDataByScheduledSort(a.root, b.root, sortConfig)
     );
-  }, [posts, sortConfig]);
+  }, [posts, showFollowUpsAsRows, sortConfig]);
+
+  const attachedByParentId = useMemo(
+    () =>
+      showFollowUpsAsRows
+        ? new Map<string, PostData[]>()
+        : attachedPostsByParentId(posts),
+    [posts, showFollowUpsAsRows]
+  );
 
   const combinedContent = useMemo(
     () => threadRows.map((r) => postToCombinedContent(r.root)),
@@ -497,6 +678,10 @@ export function ScheduledPostsTable({
             <tbody>
               {threadRows.map((row) => {
                 const post = row.root;
+                const attachedFollowUps = attachedPostsForThreadRow(
+                  attachedByParentId,
+                  row
+                );
                 const blockRepostQuoteChain = isPureRepostSourcePost(post);
                 const rowThumbBadge = getPostRowThumbnailBadge({
                   contentKind: "post",
@@ -581,40 +766,14 @@ export function ScheduledPostsTable({
                       </div>
                     </td>
                     <td className="p-3">
-                      <p
-                        className={cn(
-                          "font-medium",
-                          post.dependencyMode === "attached" && "pl-3"
-                        )}
-                      >
-                        {post.caption && post.caption.length > 21
-                          ? post.caption.substring(0, 21) + "..."
-                          : post.caption}
-                      </p>
-                      {post.dependencyMode === "attached" ? (
-                        <p className="text-text-secondary text-xs">
-                          Follow-up
-                          {post.followUpTimingMode === "offset_from_parent"
-                            ? " · Offset from parent"
-                            : " · Fixed date/time"}
-                        </p>
-                      ) : null}
-                      {row.threadSegments.length > 0 ? (
-                        <ThreadSegmentsMenu
-                          segments={row.threadSegments.map((p) =>
-                            postToCombinedContent(p)
-                          )}
-                          listType="scheduled"
-                          userTimezone={userTimezone ?? undefined}
-                          userTimeFormat={
-                            userTimeFormat === "24h" ? "24h" : "12h"
-                          }
-                          onSelectSegment={(c) =>
-                            onPostClick(c.originalData as PostData)
-                          }
-                          triggerClassName="mt-1"
-                        />
-                      ) : null}
+                      <ScheduledTableCaptionColumn
+                        post={post}
+                        row={row}
+                        attachedFollowUps={attachedFollowUps}
+                        userTimezone={userTimezone}
+                        userTimeFormat={userTimeFormat}
+                        onSelectPost={onPostClick}
+                      />
                     </td>
                     <td className={cn("p-3", PUBLISHING_DATETIME_CELL_CLASS)}>
                       {formatDate(post.scheduledAtUtc)}
@@ -662,20 +821,30 @@ export function ScheduledPostsTable({
                       )}
                     </td>
                     <td className="p-3 text-center">
-                      <ScheduledPostTableRowActions
-                        post={post}
-                        blockRepostQuoteChain={blockRepostQuoteChain}
-                        onEditPost={onEditPost}
-                        onReschedulePost={onReschedulePost}
-                        onScheduleRepost={onScheduleRepost}
-                        onScheduleQuote={onScheduleQuote}
-                        moveToDraftFetcher={moveToDraftFetcher}
-                        bulkDeleteState={bulkDeleteState}
-                        deletingPostId={deletingPostId}
-                        handleDeleteWithCascade={handleDeleteWithCascade}
-                        queryClient={queryClient}
-                        lastMoveSubmissionRef={lastMoveSubmissionRef}
-                      />
+                      {isAttachedFollowUpPost(post) && !showFollowUpsAsRows ? (
+                        <span
+                          className="text-text-secondary text-xs"
+                          aria-hidden
+                        >
+                          —
+                        </span>
+                      ) : (
+                        <ScheduledPostTableRowActions
+                          post={post}
+                          blockRepostQuoteChain={blockRepostQuoteChain}
+                          onEditPost={onEditPost}
+                          onReschedulePost={onReschedulePost}
+                          onScheduleRepost={onScheduleRepost}
+                          onScheduleQuote={onScheduleQuote}
+                          moveToDraftFetcher={moveToDraftFetcher}
+                          bulkDeleteState={bulkDeleteState}
+                          deletingPostId={deletingPostId}
+                          handleDeleteWithCascade={handleDeleteWithCascade}
+                          queryClient={queryClient}
+                          lastMoveSubmissionRef={lastMoveSubmissionRef}
+                          attachedFollowUps={attachedFollowUps}
+                        />
+                      )}
                     </td>
                   </tr>
                 );
@@ -799,6 +968,10 @@ export function ScheduledPostsTable({
                             onScheduleRepost={onScheduleRepost}
                             onScheduleQuote={onScheduleQuote}
                             onDelete={handleDeleteWithCascade}
+                            attachedFollowUpItems={attachedPostsForThreadRow(
+                              attachedByParentId,
+                              row
+                            ).map((p) => postToCombinedContent(p))}
                             onMenuOpenChange={(open) =>
                               setOpenMenuRowKey(open ? virtualRow.key : null)
                             }
@@ -874,6 +1047,10 @@ export function ScheduledPostsTable({
                       onScheduleRepost={onScheduleRepost}
                       onScheduleQuote={onScheduleQuote}
                       onDelete={handleDeleteWithCascade}
+                      attachedFollowUpItems={attachedPostsForThreadRow(
+                        attachedByParentId,
+                        row
+                      ).map((p) => postToCombinedContent(p))}
                       onMenuOpenChange={(open) =>
                         setOpenMenuRowKey(open ? virtualRow.key : null)
                       }

@@ -1,4 +1,4 @@
-import { ChevronDown, Copy, Pencil } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, Copy, Pencil } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Button } from "~/components/ui/button";
@@ -36,6 +36,9 @@ interface BulkComposerPostCardProps {
   onIsRecyclableChange: (index: number, checked: boolean) => void;
   onRemove: (index: number) => void;
   onDuplicate?: (index: number) => void;
+  /** Reorder row content while keeping each row's queue + schedule (build only). */
+  onReorderRow?: (index: number, direction: "up" | "down") => void;
+  totalPosts: number;
   onIncludeHashtagsInNoteBodyChange: (index: number, checked: boolean) => void;
   onMediaClick: (src: string) => void;
   onRowFileSelect?: (index: number, file: File | null) => Promise<void>;
@@ -75,6 +78,8 @@ export function BulkComposerPostCard({
   onIsRecyclableChange,
   onRemove,
   onDuplicate,
+  onReorderRow,
+  totalPosts,
   onIncludeHashtagsInNoteBodyChange,
   onMediaClick,
   onRowFileSelect,
@@ -101,6 +106,9 @@ export function BulkComposerPostCard({
     queueTypeId: selectedQueueTypeId,
     enabled: variant === "build" && post.scheduledFor.trim().length > 0,
   });
+
+  const canMoveUp = index > 0;
+  const canMoveDown = index < totalPosts - 1;
 
   const reviewDisplay = useMemo(() => {
     if (!preparedEvent) return null;
@@ -176,6 +184,40 @@ export function BulkComposerPostCard({
         <div className="cluster-tight">
           {variant === "build" ? (
             <>
+              {onReorderRow && totalPosts > 1 ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-text-secondary h-8 px-2"
+                    disabled={!canMoveUp}
+                    onClick={() => onReorderRow(index, "up")}
+                    aria-label="Move content up one slot"
+                    title="Move content up (queue times stay on fixed slots)"
+                  >
+                    <ArrowUp
+                      className="size-4"
+                      strokeWidth={INLINE_ICON_STROKE}
+                    />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-text-secondary h-8 px-2"
+                    disabled={!canMoveDown}
+                    onClick={() => onReorderRow(index, "down")}
+                    aria-label="Move content down one slot"
+                    title="Move content down (queue times stay on fixed slots)"
+                  >
+                    <ArrowDown
+                      className="size-4"
+                      strokeWidth={INLINE_ICON_STROKE}
+                    />
+                  </Button>
+                </>
+              ) : null}
               {onDuplicate ? (
                 <Button
                   type="button"
