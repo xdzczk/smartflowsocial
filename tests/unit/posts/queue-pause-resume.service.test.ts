@@ -6,9 +6,11 @@ const {
   mockPostFindMany,
   mockPostUpdate,
   mockPostUpdateMany,
+  mockPostCount,
   mockLongFormFindMany,
   mockLongFormUpdate,
   mockLongFormUpdateMany,
+  mockLongFormPostCount,
   mockOutboxDeleteMany,
   mockTransaction,
   mockCancelPostJob,
@@ -24,9 +26,11 @@ const {
   mockPostFindMany: vi.fn(),
   mockPostUpdate: vi.fn(),
   mockPostUpdateMany: vi.fn(),
+  mockPostCount: vi.fn(),
   mockLongFormFindMany: vi.fn(),
   mockLongFormUpdate: vi.fn(),
   mockLongFormUpdateMany: vi.fn(),
+  mockLongFormPostCount: vi.fn(),
   mockOutboxDeleteMany: vi.fn(),
   mockTransaction: vi.fn(),
   mockCancelPostJob: vi.fn(),
@@ -48,11 +52,13 @@ vi.mock("~/lib/prisma.server", () => ({
       findMany: mockPostFindMany,
       update: mockPostUpdate,
       updateMany: mockPostUpdateMany,
+      count: mockPostCount,
     },
     longFormPost: {
       findMany: mockLongFormFindMany,
       update: mockLongFormUpdate,
       updateMany: mockLongFormUpdateMany,
+      count: mockLongFormPostCount,
     },
     outboxEvent: {
       deleteMany: mockOutboxDeleteMany,
@@ -110,6 +116,8 @@ const CADENCE_PROBE_EPSILON_MS = 50;
 describe("queue pause/resume service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockPostCount.mockResolvedValue(0);
+    mockLongFormPostCount.mockResolvedValue(0);
     mockTransaction.mockImplementation(
       async (callback: typeof mockTransaction) =>
         callback({
@@ -251,6 +259,8 @@ describe("queue pause/resume service", () => {
       new Date("2026-05-01T09:00:00Z")
     );
     mockCascadeAttachedReschedule.mockResolvedValue(["child-1"]);
+    mockPostCount.mockResolvedValue(2);
+    mockLongFormPostCount.mockResolvedValue(0);
 
     const result = await resumeQueueById({
       userId: "user-1",

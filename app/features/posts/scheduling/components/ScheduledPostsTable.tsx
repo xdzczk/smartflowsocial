@@ -38,6 +38,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { postToCombinedContent } from "~/features/posts/combined";
+import { AttachedFollowUpsMenu } from "~/features/posts/components/AttachedFollowUpsMenu";
 import {
   CONTENT_LIST_CARD_GAP_PX,
   CONTENT_MOBILE_BREAKPOINT_PX,
@@ -54,6 +55,7 @@ import {
 import { ThreadSegmentsMenu } from "~/features/posts/components/ThreadSegmentsMenu";
 import { dashboardKeys } from "~/features/posts/hooks/useDashboardQuery";
 import { invalidateDependentCaches } from "~/features/posts/hooks/useRefreshPostViews";
+import { needsResignAfterQueueResume } from "~/features/posts/queue-status";
 import type { CombinedContent, PostData } from "~/features/posts/types";
 import {
   attachedPostsByParentId,
@@ -66,6 +68,7 @@ import { isPureRepostSourcePost } from "~/features/posts/utils/repost-chain-poli
 import {
   buildPostThreadRows,
   comparePostDataByScheduledSort,
+  type PostThreadRow,
 } from "~/features/posts/utils/thread-list-grouping";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
@@ -114,6 +117,67 @@ interface SortableHeaderProps {
   label: string;
   sortConfig: { key: string; direction: "asc" | "desc" };
   onRequestSort: (key: string) => void;
+}
+
+function ScheduledTableCaptionColumn({
+  post,
+  row,
+  attachedFollowUps,
+  userTimezone,
+  userTimeFormat,
+  onSelectPost,
+}: {
+  post: PostData;
+  row: PostThreadRow;
+  attachedFollowUps: PostData[];
+  userTimezone?: string | null;
+  userTimeFormat?: "12h" | "24h" | null;
+  onSelectPost: (p: PostData) => void;
+}) {
+  const tf = userTimeFormat === "24h" ? "24h" : "12h";
+  const tz = userTimezone ?? undefined;
+  return (
+    <>
+      <p
+        className={cn(
+          "font-medium",
+          post.dependencyMode === "attached" && "pl-3"
+        )}
+      >
+        {post.caption && post.caption.length > 21
+          ? post.caption.substring(0, 21) + "..."
+          : post.caption}
+      </p>
+      {post.dependencyMode === "attached" ? (
+        <p className="text-text-secondary text-xs">
+          Follow-up
+          {post.followUpTimingMode === "offset_from_parent"
+            ? " · Offset from parent"
+            : " · Fixed date/time"}
+        </p>
+      ) : null}
+      {row.threadSegments.length > 0 ? (
+        <ThreadSegmentsMenu
+          segments={row.threadSegments.map((p) => postToCombinedContent(p))}
+          listType="scheduled"
+          userTimezone={tz}
+          userTimeFormat={tf}
+          onSelectSegment={(c) => onSelectPost(c.originalData as PostData)}
+          triggerClassName="mt-1"
+        />
+      ) : null}
+      {attachedFollowUps.length > 0 ? (
+        <AttachedFollowUpsMenu
+          items={attachedFollowUps.map((p) => postToCombinedContent(p))}
+          listType="scheduled"
+          userTimezone={tz}
+          userTimeFormat={tf}
+          onSelectFollowUp={(c) => onSelectPost(c.originalData as PostData)}
+          triggerClassName={row.threadSegments.length > 0 ? "mt-0.5" : "mt-1"}
+        />
+      ) : null}
+    </>
+  );
 }
 
 const SortableHeader = ({
@@ -189,6 +253,11 @@ function ScheduledPostTableRowActions({
         <DropdownMenuItem onSelect={() => onReschedulePost(post)}>
           Reschedule
         </DropdownMenuItem>
+        {needsResignAfterQueueResume(post) ? (
+          <DropdownMenuItem onSelect={() => onReschedulePost(post)}>
+            Re-sign
+          </DropdownMenuItem>
+        ) : null}
         {onScheduleRepost && !blockRepostQuoteChain ? (
           <DropdownMenuItem onSelect={() => onScheduleRepost(post)}>
             Schedule repost
@@ -226,6 +295,11 @@ function ScheduledPostTableRowActions({
                 <DropdownMenuItem onSelect={() => onReschedulePost(child)}>
                   Reschedule
                 </DropdownMenuItem>
+                {needsResignAfterQueueResume(child) ? (
+                  <DropdownMenuItem onSelect={() => onReschedulePost(child)}>
+                    Re-sign
+                  </DropdownMenuItem>
+                ) : null}
                 {onScheduleRepost && !blockChild ? (
                   <DropdownMenuItem onSelect={() => onScheduleRepost(child)}>
                     Schedule repost
@@ -595,6 +669,10 @@ export function ScheduledPostsTable({
             <tbody>
               {threadRows.map((row) => {
                 const post = row.root;
+                const attachedFollowUps = attachedPostsForThreadRow(
+                  attachedByParentId,
+                  row
+                );
                 const blockRepostQuoteChain = isPureRepostSourcePost(post);
                 const rowThumbBadge = getPostRowThumbnailBadge({
                   contentKind: "post",
@@ -679,40 +757,14 @@ export function ScheduledPostsTable({
                       </div>
                     </td>
                     <td className="p-3">
-                      <p
-                        className={cn(
-                          "font-medium",
-                          post.dependencyMode === "attached" && "pl-3"
-                        )}
-                      >
-                        {post.caption && post.caption.length > 21
-                          ? post.caption.substring(0, 21) + "..."
-                          : post.caption}
-                      </p>
-                      {post.dependencyMode === "attached" ? (
-                        <p className="text-text-secondary text-xs">
-                          Follow-up
-                          {post.followUpTimingMode === "offset_from_parent"
-                            ? " · Offset from parent"
-                            : " · Fixed date/time"}
-                        </p>
-                      ) : null}
-                      {row.threadSegments.length > 0 ? (
-                        <ThreadSegmentsMenu
-                          segments={row.threadSegments.map((p) =>
-                            postToCombinedContent(p)
-                          )}
-                          listType="scheduled"
-                          userTimezone={userTimezone ?? undefined}
-                          userTimeFormat={
-                            userTimeFormat === "24h" ? "24h" : "12h"
-                          }
-                          onSelectSegment={(c) =>
-                            onPostClick(c.originalData as PostData)
-                          }
-                          triggerClassName="mt-1"
-                        />
-                      ) : null}
+                      <ScheduledTableCaptionColumn
+                        post={post}
+                        row={row}
+                        attachedFollowUps={attachedFollowUps}
+                        userTimezone={userTimezone}
+                        userTimeFormat={userTimeFormat}
+                        onSelectPost={onPostClick}
+                      />
                     </td>
                     <td className={cn("p-3", PUBLISHING_DATETIME_CELL_CLASS)}>
                       {formatDate(post.scheduledAtUtc)}
@@ -781,10 +833,7 @@ export function ScheduledPostsTable({
                           handleDeleteWithCascade={handleDeleteWithCascade}
                           queryClient={queryClient}
                           lastMoveSubmissionRef={lastMoveSubmissionRef}
-                          attachedFollowUps={attachedPostsForThreadRow(
-                            attachedByParentId,
-                            row
-                          )}
+                          attachedFollowUps={attachedFollowUps}
                         />
                       )}
                     </td>

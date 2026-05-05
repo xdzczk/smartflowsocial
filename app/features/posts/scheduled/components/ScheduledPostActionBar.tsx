@@ -12,6 +12,8 @@ import { cn } from "~/lib/utils";
 export interface ScheduledPostActionBarProps {
   onEdit?: () => void;
   onReschedule?: () => void;
+  /** When true, shows a primary “Re-sign” control (uses the same handler as Reschedule). */
+  needsQueueResign?: boolean;
   /** When true, Edit post is shown disabled (e.g. pure repost). */
   editDisabled?: boolean;
   editDisabledReason?: string;
@@ -27,6 +29,7 @@ export interface ScheduledPostActionBarProps {
 export function ScheduledPostActionBar({
   onEdit,
   onReschedule,
+  needsQueueResign = false,
   editDisabled = false,
   editDisabledReason = "This scheduled item cannot be edited here.",
   openFullEditorHref,
@@ -68,6 +71,16 @@ export function ScheduledPostActionBar({
               asChild
             >
               <Link to={openFullEditorHref}>{openFullEditorLabel}</Link>
+            </Button>
+          ) : null}
+          {needsQueueResign && onReschedule ? (
+            <Button
+              variant="default"
+              size="sm"
+              type="button"
+              onClick={onReschedule}
+            >
+              Re-sign
             </Button>
           ) : null}
           {onReschedule ? (

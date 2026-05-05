@@ -231,16 +231,21 @@ export function QueuesPanel({
       lastActionMetaRef.current = null;
 
       if (meta?.action === "resume_queue") {
-        const needsResign = data.needsResignCount ?? 0;
+        const needsResignHint = data.needsResignCount ?? 0;
         const queueIdForResign = lastResumeQueueIdRef.current;
         lastResumeQueueIdRef.current = null;
 
         setFeedback(buildResumeQueueSuccessFeedback(data));
 
-        if (needsResign > 0 && queueIdForResign) {
+        // Always run batch resign after resume: rows can already be
+        // NEEDS_RESIGN_AFTER_QUEUE_RESUME (e.g. left from a prior resume) and are
+        // not part of the HELD_BY_QUEUE batch, so the action's count alone can be 0.
+        if (queueIdForResign) {
           void (async () => {
             const tid = toast.loading(
-              `Signing ${needsResign} scheduled ${needsResign === 1 ? "item" : "items"}…`
+              needsResignHint > 0
+                ? `Signing ${needsResignHint} scheduled ${needsResignHint === 1 ? "item" : "items"}…`
+                : "Checking for posts that need signatures…"
             );
             const outcome = await runQueueResumeAutoResign({
               queueTypeId: queueIdForResign,

@@ -310,7 +310,6 @@ export async function resumeQueueById(params: {
   const postScheduleUseCase = new SchedulePostUseCase();
   const longFormScheduleUseCase = new ScheduleLongFormPostUseCase();
   let resumedCount = 0;
-  let needsResignCount = 0;
 
   const markAttachedDescendantsForResign = async (
     rootPostId: string,
@@ -436,10 +435,7 @@ export async function resumeQueueById(params: {
         },
       });
       resumedCount++;
-      needsResignCount += await markAttachedDescendantsForResign(
-        item.row.id,
-        nextScheduledAtUtc
-      );
+      await markAttachedDescendantsForResign(item.row.id, nextScheduledAtUtc);
       continue;
     }
 
@@ -481,11 +477,7 @@ export async function resumeQueueById(params: {
           queueHeldByQueueTypeId: queueTypeId,
         },
       });
-      needsResignCount++;
-      needsResignCount += await markAttachedDescendantsForResign(
-        item.row.id,
-        nextScheduledAtUtc
-      );
+      await markAttachedDescendantsForResign(item.row.id, nextScheduledAtUtc);
       continue;
     }
 
@@ -504,8 +496,27 @@ export async function resumeQueueById(params: {
         queueHeldByQueueTypeId: queueTypeId,
       },
     });
-    needsResignCount++;
   }
+
+  const [needsResignPostCount, needsResignLongformCount] = await Promise.all([
+    prisma.post.count({
+      where: {
+        userId,
+        queueTypeId,
+        currentState: "SCHEDULED",
+        queueHoldStatus: "NEEDS_RESIGN_AFTER_QUEUE_RESUME",
+      },
+    }),
+    prisma.longFormPost.count({
+      where: {
+        userId,
+        queueTypeId,
+        currentState: "SCHEDULED",
+        queueHoldStatus: "NEEDS_RESIGN_AFTER_QUEUE_RESUME",
+      },
+    }),
+  ]);
+  const needsResignCount = needsResignPostCount + needsResignLongformCount;
 
   return {
     queue: updatedQueue,

@@ -1,19 +1,25 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="6" failures="0" errors="0" time="0.00531375">
-    <testsuite name="tests/unit/posts/attached-follow-up-rows.test.ts" timestamp="2026-05-04T14:19:02.057Z" hostname="Ivans-MacBook-Pro.local" tests="1" failures="0" errors="0" skipped="0" time="0.001935291">
-        <testcase classname="tests/unit/posts/attached-follow-up-rows.test.ts" name="attached-follow-up-rows &gt; attachedCombinedForThreadRow collects follow-ups keyed to root or any thread segment" time="0.00123475">
+<testsuites name="vitest tests" tests="9" failures="0" errors="0" time="0.0056595">
+    <testsuite name="tests/unit/posts/attached-follow-up-rows.test.ts" timestamp="2026-05-05T04:46:29.589Z" hostname="Ivans-MacBook-Pro.local" tests="1" failures="0" errors="0" skipped="0" time="0.002205">
+        <testcase classname="tests/unit/posts/attached-follow-up-rows.test.ts" name="attached-follow-up-rows &gt; attachedCombinedForThreadRow collects follow-ups keyed to root or any thread segment" time="0.001411417">
         </testcase>
     </testsuite>
-    <testsuite name="tests/unit/posts/thread-list-grouping.test.ts" timestamp="2026-05-04T14:19:02.058Z" hostname="Ivans-MacBook-Pro.local" tests="5" failures="0" errors="0" skipped="0" time="0.003378459">
-        <testcase classname="tests/unit/posts/thread-list-grouping.test.ts" name="thread-list-grouping &gt; buildThreadListRows keeps earliest segment as root" time="0.001568291">
+    <testsuite name="tests/unit/posts/queue-runway.test.ts" timestamp="2026-05-05T04:46:29.590Z" hostname="Ivans-MacBook-Pro.local" tests="8" failures="0" errors="0" skipped="0" time="0.0034545">
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; estimatePostsPerDayForQueue uses 24h / interval for INTERVAL" time="0.000914083">
         </testcase>
-        <testcase classname="tests/unit/posts/thread-list-grouping.test.ts" name="thread-list-grouping &gt; filterPostsBySearchWithThreads includes full thread when any segment matches" time="0.000462417">
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; estimatePostsPerDayForQueue returns 0 when queue disabled" time="0.000137667">
         </testcase>
-        <testcase classname="tests/unit/posts/thread-list-grouping.test.ts" name="thread-list-grouping &gt; buildThreadListRows omits attached follow-ups as their own row" time="0.000230458">
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; estimatePostsPerDayForQueue uses slot count for FIXED_SLOTS" time="0.000119875">
         </testcase>
-        <testcase classname="tests/unit/posts/thread-list-grouping.test.ts" name="thread-list-grouping &gt; filterPostsBySearchWithThreads keeps parent when only attached follow-up caption matches" time="0.000127333">
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; estimatePostsPerDayForQueue averages weekly slots over 7 days" time="0.000199">
         </testcase>
-        <testcase classname="tests/unit/posts/thread-list-grouping.test.ts" name="thread-list-grouping &gt; buildPostThreadRows matches combined grouping" time="0.000233542">
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; formatQueueRunwayDaysLabel uses ceil of posts / rate" time="0.000198">
+        </testcase>
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; formatShortCadenceLabel prefers cadenceLabel when set" time="0.000160541">
+        </testcase>
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; buildEarliestNextScheduledUtcMsByQueueFromFlow ignores attached follow-ups" time="0.000656">
+        </testcase>
+        <testcase classname="tests/unit/posts/queue-runway.test.ts" name="queue-runway &gt; buildEarliestNextScheduledUtcMsByQueueFromFlow reads dependencyMode from originalData when missing on item" time="0.000143167">
         </testcase>
     </testsuite>
 </testsuites>

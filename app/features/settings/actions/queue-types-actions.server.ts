@@ -336,13 +336,24 @@ async function handleToggleQueueEnabled(
   if (!existing) {
     return json({ error: "Queue type not found" }, { status: 404 });
   }
-  const actionResult = isEnabled
-    ? await resumeQueueById({ userId, queueTypeId: id })
-    : await pauseQueueById({ userId, queueTypeId: id });
+  if (isEnabled) {
+    const resumed = await resumeQueueById({ userId, queueTypeId: id });
+    await invalidateQueueTypesCache(userId);
+    return json({
+      success: true,
+      queueType: queueTypeToClient(resumed.queue),
+      resumedCount: resumed.resumedCount,
+      needsResignCount: resumed.needsResignCount,
+    });
+  }
+
+  const paused = await pauseQueueById({ userId, queueTypeId: id });
   await invalidateQueueTypesCache(userId);
   return json({
     success: true,
-    queueType: queueTypeToClient(actionResult.queue),
+    queueType: queueTypeToClient(paused.queue),
+    pausedPostCount: paused.pausedPostCount,
+    pausedLongFormCount: paused.pausedLongFormCount,
   });
 }
 

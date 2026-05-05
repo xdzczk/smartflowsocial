@@ -73,3 +73,13 @@ export function normalizeQueueHoldStatus(
 export function isHeldByQueue(status: string | null | undefined): boolean {
   return normalizeQueueHoldStatus(status) !== "none";
 }
+
+/** True when a scheduled post/article must be signed again (e.g. after queue resume). */
+export function needsResignAfterQueueResume(content: {
+  queueHoldStatus?: string | null;
+}): boolean {
+  return (
+    normalizeQueueHoldStatus(content.queueHoldStatus) ===
+    "needs_resign_after_queue_resume"
+  );
+}

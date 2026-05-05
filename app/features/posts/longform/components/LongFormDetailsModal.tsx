@@ -26,6 +26,7 @@ import { buildComposeEditUrl } from "~/features/posts/composer";
 import { optimisticallyRemovePostIdsFromViews } from "~/features/posts/hooks/post-cache-prune";
 import { invalidateDependentCaches } from "~/features/posts/hooks/useRefreshPostViews";
 import { getQueueColor } from "~/features/posts/queue-colors";
+import { needsResignAfterQueueResume } from "~/features/posts/queue-status";
 import { ScheduledPostActionBar } from "~/features/posts/scheduled/components/ScheduledPostActionBar";
 import type {
   LongFormPostType,
@@ -749,6 +750,7 @@ export default function LongFormDetailsModal({
         {type === "scheduled" ? (
           <ScheduledPostActionBar
             onReschedule={onReschedule ? () => onReschedule(post) : undefined}
+            needsQueueResign={needsResignAfterQueueResume(post)}
             openFullEditorHref={buildComposeEditUrl(
               { mode: "edit_scheduled", scheduledActionId: String(post.id) },
               { composeType: "article" }

@@ -51,6 +51,7 @@ import {
   isRepostContent,
 } from "../utils/content-helpers";
 
+import { AttachedFollowUpsMenu } from "./AttachedFollowUpsMenu";
 import { ThreadSegmentsMenu } from "./ThreadSegmentsMenu";
 
 // Helper to safely access formData from a fetcher
@@ -266,6 +267,17 @@ export function ContentTableRow({
             userTimezone={userTimezone}
             userTimeFormat={userTimeFormat}
             onSelectSegment={(seg) => onPostSelect?.(seg)}
+          />
+        ) : null}
+        {(type === "scheduled" || type === "published") &&
+        attachedFollowUpItems.length > 0 ? (
+          <AttachedFollowUpsMenu
+            items={attachedFollowUpItems}
+            listType={type === "scheduled" ? "scheduled" : "published"}
+            userTimezone={userTimezone}
+            userTimeFormat={userTimeFormat}
+            onSelectFollowUp={(c) => onPostSelect?.(c)}
+            triggerClassName={threadSegments.length > 0 ? "mt-0.5" : "mt-1"}
           />
         ) : null}
       </td>

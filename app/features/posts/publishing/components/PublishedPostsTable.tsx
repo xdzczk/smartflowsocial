@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { postToCombinedContent } from "~/features/posts/combined";
+import { AttachedFollowUpsMenu } from "~/features/posts/components/AttachedFollowUpsMenu";
 import {
   CONTENT_LIST_CARD_GAP_PX,
   CONTENT_MOBILE_BREAKPOINT_PX,
@@ -54,7 +55,10 @@ import {
   getPostRowThumbnailBadge,
 } from "~/features/posts/utils/content-helpers";
 import { isPureRepostSourcePost } from "~/features/posts/utils/repost-chain-policy";
-import { buildPostThreadRows } from "~/features/posts/utils/thread-list-grouping";
+import {
+  buildPostThreadRows,
+  type PostThreadRow,
+} from "~/features/posts/utils/thread-list-grouping";
 import { getImageUrls } from "~/lib/helpers";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import {
@@ -97,6 +101,52 @@ interface SortableHeaderProps {
   label: string;
   sortConfig: { key: string; direction: "asc" | "desc" };
   requestSort: (key: string) => void;
+}
+
+function PublishedTableCaptionColumn({
+  post,
+  row,
+  attachedFollowUps,
+  userTimezone,
+  userTimeFormat,
+  onSelectPost,
+}: {
+  post: PostData;
+  row: PostThreadRow;
+  attachedFollowUps: PostData[];
+  userTimezone?: string;
+  userTimeFormat?: "12h" | "24h";
+  onSelectPost: (p: PostData) => void;
+}) {
+  return (
+    <>
+      <p className="font-medium">
+        {post.caption && post.caption.length > 21
+          ? post.caption.substring(0, 21) + "..."
+          : (post.caption ?? "")}
+      </p>
+      {row.threadSegments.length > 0 ? (
+        <ThreadSegmentsMenu
+          segments={row.threadSegments.map((p) => postToCombinedContent(p))}
+          listType="published"
+          userTimezone={userTimezone}
+          userTimeFormat={userTimeFormat}
+          onSelectSegment={(c) => onSelectPost(c.originalData as PostData)}
+          triggerClassName="mt-1"
+        />
+      ) : null}
+      {attachedFollowUps.length > 0 ? (
+        <AttachedFollowUpsMenu
+          items={attachedFollowUps.map((p) => postToCombinedContent(p))}
+          listType="published"
+          userTimezone={userTimezone}
+          userTimeFormat={userTimeFormat}
+          onSelectFollowUp={(c) => onSelectPost(c.originalData as PostData)}
+          triggerClassName={row.threadSegments.length > 0 ? "mt-0.5" : "mt-1"}
+        />
+      ) : null}
+    </>
+  );
 }
 
 const SortableHeader = ({
@@ -309,6 +359,10 @@ export default function PublishedPostsTable({
             <tbody>
               {threadRows.map((row) => {
                 const post = row.root;
+                const attachedFollowUps = attachedPostsForThreadRow(
+                  attachedByParentId,
+                  row
+                );
                 const postStats = getPostStats(post, stats);
                 const blockRepostQuoteChain = isPureRepostSourcePost(post);
                 const rowThumbBadge = getPostRowThumbnailBadge({
@@ -395,25 +449,14 @@ export default function PublishedPostsTable({
                       )}
                     </td>
                     <td className="p-3">
-                      <p className="font-medium">
-                        {post.caption && post.caption.length > 21
-                          ? post.caption.substring(0, 21) + "..."
-                          : (post.caption ?? "")}
-                      </p>
-                      {row.threadSegments.length > 0 ? (
-                        <ThreadSegmentsMenu
-                          segments={row.threadSegments.map((p) =>
-                            postToCombinedContent(p)
-                          )}
-                          listType="published"
-                          userTimezone={userTimezone}
-                          userTimeFormat={userTimeFormat}
-                          onSelectSegment={(c) =>
-                            setSelectedPost(c.originalData as PostData)
-                          }
-                          triggerClassName="mt-1"
-                        />
-                      ) : null}
+                      <PublishedTableCaptionColumn
+                        post={post}
+                        row={row}
+                        attachedFollowUps={attachedFollowUps}
+                        userTimezone={userTimezone}
+                        userTimeFormat={userTimeFormat}
+                        onSelectPost={setSelectedPost}
+                      />
                     </td>
                     <td className={cn("p-3", PUBLISHING_DATETIME_CELL_CLASS)}>
                       {post.publishedAt

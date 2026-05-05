@@ -3,7 +3,20 @@
  * Used to nest follow-up actions under the parent's row menu instead of duplicating per row.
  */
 
-import type { CombinedContent, PostData } from "../types";
+import type {
+  CombinedContent,
+  PostData,
+  ScheduledDependencyMode,
+} from "../types";
+
+/** Resolves `dependencyMode` from the row or from `originalData` when loaders omit the top-level field. */
+export function effectiveDependencyModeForContent(
+  item: CombinedContent
+): ScheduledDependencyMode | undefined {
+  if (item.dependencyMode != null) return item.dependencyMode;
+  const od = item.originalData as { dependencyMode?: ScheduledDependencyMode };
+  return od.dependencyMode;
+}
 
 export function isAttachedFollowUpPost(post: PostData): boolean {
   if (
@@ -17,13 +30,13 @@ export function isAttachedFollowUpPost(post: PostData): boolean {
 
 export function isAttachedFollowUpContent(item: CombinedContent): boolean {
   if (item.type !== "post") return false;
-  if (
-    item.parentScheduledActionId == null ||
-    item.parentScheduledActionId === ""
-  ) {
-    return false;
-  }
-  return item.dependencyMode !== "standalone";
+  const mode = effectiveDependencyModeForContent(item);
+  if (mode === "standalone") return false;
+  if (mode === "attached") return true;
+  const hasParent =
+    item.parentScheduledActionId != null && item.parentScheduledActionId !== "";
+  if (!hasParent) return false;
+  return true;
 }
 
 function sortByScheduledTime(a: PostData, b: PostData): number {

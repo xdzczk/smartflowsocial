@@ -19,6 +19,7 @@ import {
   getLongFormDraftEditUrl,
   getShortDraftComposeUrl,
 } from "~/features/posts/drafts/utils/draft-editor-navigation";
+import { needsResignAfterQueueResume } from "~/features/posts/queue-status";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import {
   INLINE_ICON_SIZE_CLASS,
@@ -43,6 +44,7 @@ import {
   isRepostContent,
 } from "../utils/content-helpers";
 
+import { AttachedFollowUpsMenu } from "./AttachedFollowUpsMenu";
 import { CONTENT_LIST_CARD_HEIGHT_PX } from "./constants";
 import { MediaPreviewCollage } from "./MediaPreviewCollage";
 import { ContentStatusChip, QueueStatusChip } from "./publishing-suite";
@@ -264,6 +266,17 @@ export function ContentListCard({
             userTimezone={userTimezone}
             userTimeFormat={userTimeFormat}
             onSelectSegment={(seg) => onPostSelect?.(seg)}
+            triggerClassName="mt-0.5"
+          />
+        ) : null}
+        {(type === "scheduled" || type === "published") &&
+        attachedFollowUpItems.length > 0 ? (
+          <AttachedFollowUpsMenu
+            items={attachedFollowUpItems}
+            listType={type === "scheduled" ? "scheduled" : "published"}
+            userTimezone={userTimezone}
+            userTimeFormat={userTimeFormat}
+            onSelectFollowUp={(c) => onPostSelect?.(c)}
             triggerClassName="mt-0.5"
           />
         ) : null}
@@ -679,6 +692,13 @@ export function ContentListCard({
                 >
                   Reschedule
                 </DropdownMenuItem>
+                {needsResignAfterQueueResume(item.originalData) ? (
+                  <DropdownMenuItem
+                    onSelect={() => onReschedulePost?.(item.originalData)}
+                  >
+                    Re-sign
+                  </DropdownMenuItem>
+                ) : null}
                 {item.type === "post" &&
                 onScheduleRepost &&
                 !blockRepostQuoteChain ? (
@@ -737,6 +757,17 @@ export function ContentListCard({
                         >
                           Reschedule
                         </DropdownMenuItem>
+                        {needsResignAfterQueueResume(
+                          child.originalData as PostData
+                        ) ? (
+                          <DropdownMenuItem
+                            onSelect={() =>
+                              onReschedulePost?.(child.originalData)
+                            }
+                          >
+                            Re-sign
+                          </DropdownMenuItem>
+                        ) : null}
                         {onScheduleRepost && !blockChild ? (
                           <DropdownMenuItem
                             onSelect={() =>
