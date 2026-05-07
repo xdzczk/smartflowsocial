@@ -28,4 +28,15 @@ describe("budgetSatsFromGiveawayRow", () => {
       })
     ).toBe(60);
   });
+
+  it("falls back to plannedPayoutSats when config is missing", () => {
+    expect(
+      budgetSatsFromGiveawayRow({
+        winnerSnapshot: null,
+        engagementConfig: null,
+        winnerCount: 5,
+        plannedPayoutSats: 500,
+      })
+    ).toBe(500);
+  });
 });

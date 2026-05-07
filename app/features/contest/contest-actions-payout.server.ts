@@ -1,10 +1,17 @@
-/* eslint-disable no-restricted-imports, import/order, sonarjs/no-duplicate-string, @typescript-eslint/consistent-type-assertions -- Contest v1 domain scaffolding will be hardened in follow-up cleanup. */
+/* eslint-disable no-restricted-imports, import/order, sonarjs/no-duplicate-string, @typescript-eslint/consistent-type-assertions -- Contest payout batch reads winners via prisma (existing boundary). */
 import { prisma } from "~/lib/prisma.server";
+
+import {
+  PAYOUT_SKIP_NOTE_PAYOUT_UNAVAILABLE,
+  PAYOUT_SKIP_NOTE_WALLET_NOT_CONNECTED,
+} from "~/features/payments/payout-skip-messages.server";
+import { listPayoutItemsByRunId } from "~/features/payments/repositories/payout-ledger-data.server";
 
 import type { Prisma } from "./data/contest-prisma-types.server";
 import {
   normalizeContestPayoutState,
   type ContestPayoutEntryStatus,
+  type ContestPayoutState,
 } from "./contest-payout.server";
 import { getContestById } from "./contest-actions-queries.server";
 import { updateContest as updateContestRow } from "./repositories/contest-actions-data.server";
@@ -12,6 +19,40 @@ import {
   executeCampaignPayoutBatch,
   executeCampaignPayoutBatchStep,
 } from "../payments/services/payout-executor.server";
+
+function syncContestPayoutFromLedgerItems(args: {
+  state: ContestPayoutState;
+  winnerPubkeys: string[];
+  itemByPubkey: Map<string, { status: string; errorMessage: string | null }>;
+  nowIso: string;
+}) {
+  const { state, winnerPubkeys, itemByPubkey, nowIso } = args;
+  for (const pk of winnerPubkeys) {
+    const item = itemByPubkey.get(pk);
+    if (!item) continue;
+    if (item.status === "paid") {
+      state[pk] = { status: "sent", updatedAt: nowIso };
+    } else if (item.status === "failed") {
+      state[pk] = {
+        status: "failed",
+        updatedAt: nowIso,
+        note: item.errorMessage ?? undefined,
+      };
+    } else if (item.status === "claim_needed") {
+      state[pk] = {
+        status: "claim_needed",
+        updatedAt: nowIso,
+        note: item.errorMessage ?? "Winner needs claim",
+      };
+    } else if (item.status === "skipped") {
+      state[pk] = {
+        status: "skipped",
+        updatedAt: nowIso,
+        note: item.errorMessage ?? undefined,
+      };
+    }
+  }
+}
 
 export async function setContestWinnerPayoutStatus(
   userId: string,
@@ -63,7 +104,12 @@ export async function runContestPayoutBatchWithNwc(
   userId: string,
   contestId: string,
   options?: { trigger?: "manual_trigger" | "autorun"; spendCapSats?: number }
-): Promise<{ success: boolean; error?: string; runId?: string | null }> {
+): Promise<{
+  success: boolean;
+  error?: string;
+  runId?: string | null;
+  code?: string;
+}> {
   const contest = await getContestById(contestId, userId);
   if (!contest) return { success: false, error: "Contest not found" };
   if (contest.status !== "LOCKED" && contest.status !== "PAYOUT_IN_PROGRESS") {
@@ -96,32 +142,34 @@ export async function runContestPayoutBatchWithNwc(
     })),
   });
 
-  // Sync ledger outcomes back into the existing contest payoutState JSON for current UI.
-  const items = exec.runId
-    ? await prisma.payoutItem.findMany({ where: { runId: exec.runId } })
-    : [];
+  const items = exec.runId ? await listPayoutItemsByRunId(exec.runId) : [];
   const itemByPubkey = new Map(items.map((i) => [i.winnerPubkey, i]));
 
   const now = new Date().toISOString();
-  for (const w of winners) {
-    const pk = w.entry.authorPubkey;
-    const item = itemByPubkey.get(pk);
-    if (!item) continue;
+  syncContestPayoutFromLedgerItems({
+    state: payoutState,
+    winnerPubkeys,
+    itemByPubkey: itemByPubkey as Map<
+      string,
+      { status: string; errorMessage: string | null }
+    >,
+    nowIso: now,
+  });
 
-    if (item.status === "paid") {
-      payoutState[pk] = { status: "sent", updatedAt: now };
-    } else if (item.status === "failed") {
-      payoutState[pk] = {
-        status: "failed",
-        updatedAt: now,
-        note: item.errorMessage ?? undefined,
-      };
-    } else if (item.status === "claim_needed") {
-      payoutState[pk] = {
-        status: "failed",
-        updatedAt: now,
-        note: item.errorMessage ?? "Winner needs claim",
-      };
+  if (!exec.eligible) {
+    const note =
+      exec.eligibilityErrorCode === "nwc_not_connected"
+        ? PAYOUT_SKIP_NOTE_WALLET_NOT_CONNECTED
+        : PAYOUT_SKIP_NOTE_PAYOUT_UNAVAILABLE;
+    for (const pk of winnerPubkeys) {
+      const current = payoutState[pk]?.status ?? "pending";
+      if (current === "pending" || current === "claim_needed") {
+        payoutState[pk] = {
+          status: "skipped",
+          updatedAt: now,
+          note,
+        };
+      }
     }
   }
 
@@ -145,6 +193,18 @@ export async function runContestPayoutBatchWithNwc(
     },
   });
 
+  if (!exec.eligible) {
+    return {
+      success: false,
+      error:
+        exec.eligibilityErrorCode === "nwc_not_connected"
+          ? PAYOUT_SKIP_NOTE_WALLET_NOT_CONNECTED
+          : PAYOUT_SKIP_NOTE_PAYOUT_UNAVAILABLE,
+      code: exec.eligibilityErrorCode,
+      runId: exec.runId,
+    };
+  }
+
   return { success: true, runId: exec.runId };
 }
 
@@ -154,7 +214,7 @@ export async function runContestPayoutBatchStepWithNwc(
   stepIndex: number,
   options?: { trigger?: "manual_trigger" | "autorun"; spendCapSats?: number }
 ): Promise<
-  | { success: false; error?: string }
+  | { success: false; error: string }
   | ({ success: true } & Awaited<
       ReturnType<typeof executeCampaignPayoutBatchStep>
     >)
@@ -194,31 +254,34 @@ export async function runContestPayoutBatchStepWithNwc(
     stepIndex
   );
 
-  const items = exec.runId
-    ? await prisma.payoutItem.findMany({ where: { runId: exec.runId } })
-    : [];
+  const items = exec.runId ? await listPayoutItemsByRunId(exec.runId) : [];
   const itemByPubkey = new Map(items.map((i) => [i.winnerPubkey, i]));
 
   const now = new Date().toISOString();
-  for (const w of winners) {
-    const pk = w.entry.authorPubkey;
-    const item = itemByPubkey.get(pk);
-    if (!item) continue;
+  syncContestPayoutFromLedgerItems({
+    state: payoutState,
+    winnerPubkeys,
+    itemByPubkey: itemByPubkey as Map<
+      string,
+      { status: string; errorMessage: string | null }
+    >,
+    nowIso: now,
+  });
 
-    if (item.status === "paid") {
-      payoutState[pk] = { status: "sent", updatedAt: now };
-    } else if (item.status === "failed") {
-      payoutState[pk] = {
-        status: "failed",
-        updatedAt: now,
-        note: item.errorMessage ?? undefined,
-      };
-    } else if (item.status === "claim_needed") {
-      payoutState[pk] = {
-        status: "failed",
-        updatedAt: now,
-        note: item.errorMessage ?? "Winner needs claim",
-      };
+  if (!exec.eligible) {
+    const note =
+      exec.eligibilityErrorCode === "nwc_not_connected"
+        ? PAYOUT_SKIP_NOTE_WALLET_NOT_CONNECTED
+        : PAYOUT_SKIP_NOTE_PAYOUT_UNAVAILABLE;
+    for (const pk of winnerPubkeys) {
+      const current = payoutState[pk]?.status ?? "pending";
+      if (current === "pending" || current === "claim_needed") {
+        payoutState[pk] = {
+          status: "skipped",
+          updatedAt: now,
+          note,
+        };
+      }
     }
   }
 
@@ -246,6 +309,16 @@ export async function runContestPayoutBatchStepWithNwc(
         }
       : {}),
   });
+
+  if (!exec.eligible) {
+    return {
+      success: false,
+      error:
+        exec.eligibilityErrorCode === "nwc_not_connected"
+          ? PAYOUT_SKIP_NOTE_WALLET_NOT_CONNECTED
+          : PAYOUT_SKIP_NOTE_PAYOUT_UNAVAILABLE,
+    };
+  }
 
   return { success: true, ...exec };
 }
@@ -295,4 +368,5 @@ export async function updateContestPayoutSettings(
   });
   return { success: true };
 }
+
 /* eslint-enable no-restricted-imports, import/order, sonarjs/no-duplicate-string, @typescript-eslint/consistent-type-assertions */

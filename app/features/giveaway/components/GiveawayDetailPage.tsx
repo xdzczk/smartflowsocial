@@ -77,6 +77,7 @@ export type { GiveawayPayoutProgress, WinnerProfileDisplay };
 interface GiveawayDetailPageProps {
   nwc: {
     enabled: boolean;
+    usable?: boolean;
     maskedString?: string | null;
     lastUsed?: string | null;
   };
@@ -1200,7 +1201,7 @@ export function GiveawayDetailPage({
                 (giveaway as { payoutAutoRunSpendCapSats?: number | null })
                   .payoutAutoRunSpendCapSats ?? null
               }
-              nwcEnabled={nwc.enabled}
+              nwcEnabled={Boolean(nwc.usable)}
               autoPayLabel={payoutCopy.autoPayAfterLock}
             />
           </form>
@@ -1213,7 +1214,7 @@ export function GiveawayDetailPage({
             payoutState={giveaway.payoutState}
             paidFetcher={paidFetcher}
             getProfileUrl={nostrUrls.profileUrl}
-            nwcEnabled={nwc.enabled}
+            nwcEnabled={Boolean(nwc.usable)}
           />
         </div>
       ) : null}

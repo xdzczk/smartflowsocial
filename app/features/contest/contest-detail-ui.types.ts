@@ -17,6 +17,7 @@ export interface ContestWinnerRow {
   entryEventId: string;
   replySnippet: string | null;
   payoutStatus: string;
+  payoutNote?: string;
 }
 
 export interface ContestLeaderboardEntryRow {

@@ -4,6 +4,8 @@ import type { ContestRankReward, ContestStatus } from "./types";
 export interface ContestDetailPageData {
   nwc: {
     enabled: boolean;
+    /** True when NWC is configured and decrypts to a usable connection string (batch / auto-pay). */
+    usable: boolean;
     maskedString: string | null;
     lastUsed: string | null;
   };
@@ -85,6 +87,7 @@ export interface ContestDetailPageData {
     entryEventId: string;
     replySnippet: string | null;
     payoutStatus: string;
+    payoutNote?: string;
   }>;
   leaderboardEligible: Array<{
     rank: number | null;

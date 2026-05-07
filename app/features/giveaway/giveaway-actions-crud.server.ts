@@ -97,12 +97,21 @@ export async function createGiveaway(
       : [...DEFAULT_ENGAGEMENT_TYPES];
 
   const engagementConfigStored =
-    scopeIsFollowGraphAccountPool(input.scopeType) ||
     !input.engagementConfig ||
     typeof input.engagementConfig !== "object" ||
     Object.keys(input.engagementConfig).length === 0
       ? undefined
       : input.engagementConfig;
+
+  const plannedPayoutSats =
+    isSimpleUnifiedEngagementConfig(engagementConfigStored) &&
+    scopeIsFollowGraphAccountPool(input.scopeType)
+      ? Math.max(
+          0,
+          Math.floor(engagementConfigStored._simpleUnified.satsPerWinner) *
+            Math.max(0, Math.floor(winnerCount))
+        )
+      : undefined;
 
   const selectionModeStored = scopeIsFollowGraphAccountPool(input.scopeType)
     ? "UNIQUE_USER"
@@ -128,6 +137,7 @@ export async function createGiveaway(
           | Prisma.InputJsonValue
           | undefined),
     filters: (input.filters ?? undefined) as Prisma.InputJsonValue | undefined,
+    plannedPayoutSats,
     status: "DRAFT",
     activityLog: appendGiveawayActivityLog(null, "giveaway_created"),
   });

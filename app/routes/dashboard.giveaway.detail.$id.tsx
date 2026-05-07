@@ -53,7 +53,7 @@ import {
   getPlanDisplayName,
   getUserPlanType,
 } from "~/features/payments/types";
-import { getUserNWC } from "~/features/user";
+import { getUserNWC, hasUsableNwc } from "~/features/user";
 import { ExternalServiceError } from "~/lib/errors";
 import {
   DeferredRouteLoaderProvider,
@@ -70,10 +70,11 @@ async function loadGiveawayDetailData({ request, params }: LoaderFunctionArgs) {
     throw new Response("Not found", { status: 404 });
   }
 
-  const [giveaway, subscriptionData, nwc] = await Promise.all([
+  const [giveaway, subscriptionData, nwc, nwcUsable] = await Promise.all([
     getGiveawayById(id, userId),
     getSubscriptionData(userId),
     getUserNWC(userId),
+    hasUsableNwc(userId),
   ]);
   if (!giveaway) {
     throw new Response("Not found", { status: 404 });
@@ -186,6 +187,7 @@ async function loadGiveawayDetailData({ request, params }: LoaderFunctionArgs) {
   return {
     nwc: {
       enabled: nwc.enabled,
+      usable: nwcUsable,
       maskedString: nwc.maskedString ?? null,
       lastUsed: nwc.lastUsed ? nwc.lastUsed.toISOString() : null,
     },
@@ -346,6 +348,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
       return redirect("/dashboard/giveaway");
     }
     case "runBatchPayout": {
+      const usableNwc = await hasUsableNwc(userId);
+      if (!usableNwc) {
+        return json(
+          {
+            success: false,
+            error: "Skipped — wallet not connected",
+            code: "NWC_UNUSABLE",
+          },
+          { status: 400 }
+        );
+      }
       const spendCapSatsRaw = String(formData.get("spendCapSats") ?? "").trim();
       const spendCapSats =
         spendCapSatsRaw !== "" ? Number(spendCapSatsRaw) : undefined;
@@ -408,7 +421,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
           { status: 400 }
         );
       }
-      const allowed = ["pending", "sent", "failed", "marked_paid"] as const;
+      const allowed = [
+        "pending",
+        "sent",
+        "failed",
+        "marked_paid",
+        "claim_needed",
+        "skipped",
+      ] as const;
       if (!allowed.includes(payoutStatus as (typeof allowed)[number])) {
         return json({ error: "Invalid payout status" }, { status: 400 });
       }

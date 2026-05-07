@@ -10,7 +10,7 @@ import {
 } from "~/features/payments/types";
 import type { UserSubscription } from "~/features/payments/types";
 import { getPostById } from "~/features/posts/server";
-import { getUserNWC } from "~/features/user";
+import { getUserNWC, hasUsableNwc } from "~/features/user";
 
 import { getContestById, getContestByIdPublic } from "./contest-actions.server";
 import type { ContestDetailPageData } from "./contest-detail.types";
@@ -63,7 +63,10 @@ export async function getContestDetailPageData(
   const contest = await getContestById(contestId, userId);
   if (!contest) return null;
 
-  const nwc = await getUserNWC(userId);
+  const [nwc, nwcUsable] = await Promise.all([
+    getUserNWC(userId),
+    hasUsableNwc(userId),
+  ]);
 
   const subscription = await getUserSubscription(userId);
   const planType = getUserPlanType(subscription as UserSubscription | null);
@@ -219,6 +222,7 @@ export async function getContestDetailPageData(
     replySnippet: w.entry.replySnippet,
     payoutStatus:
       payoutState[w.entry.authorPubkey]?.status ?? w.payoutStatus ?? "pending",
+    payoutNote: payoutState[w.entry.authorPubkey]?.note,
   }));
 
   const leaderboardEligible = eligible.map((row) => ({
@@ -345,6 +349,7 @@ export async function getContestDetailPageData(
   return {
     nwc: {
       enabled: nwc.enabled,
+      usable: nwcUsable,
       maskedString: nwc.maskedString ?? null,
       lastUsed: nwc.lastUsed ? nwc.lastUsed.toISOString() : null,
     },

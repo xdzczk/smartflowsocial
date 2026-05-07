@@ -204,6 +204,62 @@ describe("giveaway-actions", () => {
         })
       ).rejects.toThrow("Queue filter is available on paid plans");
     });
+
+    it("persists simple payout intent for FOLLOWERS scope", async () => {
+      const created = {
+        id: giveawayId,
+        userId,
+        status: "DRAFT",
+        scopeType: "FOLLOWERS",
+      } as unknown as Giveaway;
+      mockCreateGiveawayRow.mockResolvedValue(created);
+
+      await createGiveaway(userId, {
+        scopeType: "FOLLOWERS",
+        scopeReference: {},
+        engagementTypes: ["REACTION"],
+        winnerCount: 5,
+        engagementConfig: { _simpleUnified: { satsPerWinner: 100 } },
+      });
+
+      expect(mockCreateGiveawayRow).toHaveBeenCalledWith(
+        userId,
+        expect.objectContaining({
+          scopeType: "FOLLOWERS",
+          winnerCount: 5,
+          plannedPayoutSats: 500,
+          engagementConfig: { _simpleUnified: { satsPerWinner: 100 } },
+        })
+      );
+    });
+
+    it("persists simple payout intent for FOLLOWING scope", async () => {
+      const created = {
+        id: giveawayId,
+        userId,
+        status: "DRAFT",
+        scopeType: "FOLLOWING",
+      } as unknown as Giveaway;
+      mockCreateGiveawayRow.mockResolvedValue(created);
+
+      await createGiveaway(userId, {
+        scopeType: "FOLLOWING",
+        scopeReference: {},
+        engagementTypes: ["REACTION"],
+        winnerCount: 5,
+        engagementConfig: { _simpleUnified: { satsPerWinner: 100 } },
+      });
+
+      expect(mockCreateGiveawayRow).toHaveBeenCalledWith(
+        userId,
+        expect.objectContaining({
+          scopeType: "FOLLOWING",
+          winnerCount: 5,
+          plannedPayoutSats: 500,
+          engagementConfig: { _simpleUnified: { satsPerWinner: 100 } },
+        })
+      );
+    });
   });
 
   describe("previewGiveaway", () => {

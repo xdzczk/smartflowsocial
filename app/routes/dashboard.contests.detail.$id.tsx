@@ -25,6 +25,8 @@ import {
 } from "~/features/contest";
 import { saveContestPresetFromDetailForm } from "~/features/contest/contest-save-preset-from-detail.server";
 import { requireAnySubscription } from "~/features/payments";
+import { PAYOUT_SKIP_NOTE_WALLET_NOT_CONNECTED } from "~/features/payments/payout-skip-messages.server";
+import { hasUsableNwc } from "~/features/user";
 import { featureFlags } from "~/lib/feature-flags.server";
 import {
   DeferredRouteLoaderProvider,
@@ -130,18 +132,34 @@ async function handleContestDetailIntent(args: {
         | "pending"
         | "sent"
         | "failed"
-        | "marked_paid";
+        | "marked_paid"
+        | "claim_needed"
+        | "skipped";
+      const noteRaw = formData.get("payoutNote");
+      const payoutNote = typeof noteRaw === "string" ? noteRaw : undefined;
       const result = await setContestWinnerPayoutStatus(
         userId,
         contestId,
         winnerPubkey,
-        payoutStatus
+        payoutStatus,
+        payoutNote
       );
       if (!result.success)
         return json({ error: result.error }, { status: 400 });
       return redirect(`/dashboard/contests/detail/${contestId}`);
     }
     case "runBatchPayout": {
+      const usableNwc = await hasUsableNwc(userId);
+      if (!usableNwc) {
+        return json(
+          {
+            success: false,
+            error: PAYOUT_SKIP_NOTE_WALLET_NOT_CONNECTED,
+            code: "NWC_UNUSABLE",
+          },
+          { status: 400 }
+        );
+      }
       const stepRaw = formData.get("stepIndex");
       const hasStep = stepRaw != null && String(stepRaw).trim() !== "";
       if (hasStep) {
@@ -159,10 +177,7 @@ async function handleContestDetailIntent(args: {
           }
         );
         if (!result.success) {
-          return json(
-            { success: false, error: result.error ?? "Batch payout failed" },
-            { status: 400 }
-          );
+          return json(result, { status: 400 });
         }
         return json(result);
       }
@@ -170,8 +185,7 @@ async function handleContestDetailIntent(args: {
         trigger: "manual_trigger",
         spendCapSats: parseSpendCapSats(formData),
       });
-      if (!result.success)
-        return json({ error: result.error }, { status: 400 });
+      if (!result.success) return json(result, { status: 400 });
       return redirect(`/dashboard/contests/detail/${contestId}`);
     }
     case "updatePayoutSettings": {

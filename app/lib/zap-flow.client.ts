@@ -27,13 +27,67 @@ export const ZAP_FLOW_ERROR_LNURL =
   "Could not load recipient Lightning pay link";
 export const ZAP_FLOW_ERROR_INVOICE = "Could not get invoice";
 export const ZAP_FLOW_ERROR_PAYMENT = "Payment failed";
+/** WebLN did not settle within {@link WEBLN_SEND_PAYMENT_TIMEOUT_MS} (wallet UI stuck, slow routing, etc.). */
+export const ZAP_FLOW_ERROR_WEBLN_TIMEOUT =
+  "Payment timed out waiting for your wallet";
+
+/** Max time to wait for `webln.sendPayment` before falling back to invoice/QR (many wallets never reject if routing hangs). */
+export const WEBLN_SEND_PAYMENT_TIMEOUT_MS = 120_000;
+
+export async function raceWithTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  timeoutError: string
+): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = window.setTimeout(() => {
+        reject(new Error(timeoutError));
+      }, ms);
+    });
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutId !== undefined) {
+      window.clearTimeout(timeoutId);
+    }
+  }
+}
+
+/**
+ * Whole sats (> 0) for LNURL/zap amount tags.
+ * Remix/JSON sometimes yields numeric strings; strict `typeof === "number"` would wrongly fall back to 1 sat.
+ */
+export function coercePositiveAmountSats(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    return Math.max(1, Math.floor(value));
+  }
+  if (typeof value === "string") {
+    const t = value.trim();
+    if (t === "") return undefined;
+    const n = Number(t);
+    if (Number.isFinite(n) && n > 0) {
+      return Math.max(1, Math.floor(n));
+    }
+  }
+  if (typeof value === "bigint" && value > 0n) {
+    const n = Number(value);
+    if (Number.isFinite(n) && n > 0) {
+      return Math.max(1, Math.floor(n));
+    }
+  }
+  return undefined;
+}
 
 export interface ZapRecipientOptions {
   npub: string;
-  amountSats?: number;
+  /** Prefer `number`; string/bigint coerced at runtime (loader JSON edge cases). */
+  amountSats?: number | string;
   relays?: string[];
   /** When set, adds an `e` tag so the zap request targets this note (NIP-57). */
   eventIdHex?: string;
+  /** When true, return invoice instead of throwing when no local wallet payment path exists. */
+  returnInvoiceOnNoWallet?: boolean;
 }
 
 /**
@@ -107,6 +161,10 @@ function npubToHex(npub: string): string {
 export interface ZapRecipientResult {
   /** True if payment completed (NWC or WebLN); false if fallback (e.g. opened in new tab). */
   paid: boolean;
+  /** BOLT11 invoice (when generated) for external/manual payment fallback. */
+  invoice?: string;
+  /** True when WebLN did not complete before the timeout (see {@link WEBLN_SEND_PAYMENT_TIMEOUT_MS}). */
+  weblnTimedOut?: boolean;
 }
 
 /**
@@ -168,7 +226,13 @@ export function buildZapRequestKind9734Tags(params: {
 export async function zapRecipient(
   options: ZapRecipientOptions
 ): Promise<ZapRecipientResult> {
-  const { npub, amountSats, relays = DEFAULT_RELAYS, eventIdHex } = options;
+  const {
+    npub,
+    amountSats,
+    relays = DEFAULT_RELAYS,
+    eventIdHex,
+    returnInvoiceOnNoWallet = false,
+  } = options;
 
   const lud16 = await fetchLud16(npub);
   if (!lud16) {
@@ -178,11 +242,10 @@ export async function zapRecipient(
   const lnurlPayUrl = lud16ToLnurlPayUrl(lud16);
   const metadata = await fetchLnurlPayMetadata(lnurlPayUrl);
 
+  const sats = coercePositiveAmountSats(amountSats);
   const millisats = Math.max(
     1000,
-    typeof amountSats === "number" && amountSats > 0
-      ? Math.round(amountSats * 1000)
-      : 1000
+    sats !== undefined ? Math.round(sats * 1000) : 1000
   );
 
   if (metadata.allowsNostr !== true) {
@@ -294,6 +357,9 @@ export async function zapRecipient(
   }
 
   if (!window.webln?.sendPayment) {
+    if (returnInvoiceOnNoWallet) {
+      return { paid: false, invoice: pr };
+    }
     throw new Error(ZAP_FLOW_ERROR_NO_WEBLN);
   }
 
@@ -303,6 +369,25 @@ export async function zapRecipient(
     throw new Error(ZAP_FLOW_ERROR_NO_WEBLN);
   }
 
-  await window.webln.sendPayment(pr);
-  return { paid: true };
+  try {
+    // Alby and other WebLN providers often leave `sendPayment` pending until the preimage
+    // returns; routing failures can stall indefinitely. Race with a timeout so manual payout
+    // can fall back to QR / copy.
+    await raceWithTimeout(
+      window.webln.sendPayment(pr),
+      WEBLN_SEND_PAYMENT_TIMEOUT_MS,
+      ZAP_FLOW_ERROR_WEBLN_TIMEOUT
+    );
+    return { paid: true };
+  } catch (err) {
+    if (returnInvoiceOnNoWallet) {
+      const timedOut =
+        err instanceof Error && err.message === ZAP_FLOW_ERROR_WEBLN_TIMEOUT;
+      return { paid: false, invoice: pr, weblnTimedOut: timedOut };
+    }
+    if (err instanceof Error && err.message === ZAP_FLOW_ERROR_WEBLN_TIMEOUT) {
+      throw err;
+    }
+    throw new Error(ZAP_FLOW_ERROR_PAYMENT);
+  }
 }

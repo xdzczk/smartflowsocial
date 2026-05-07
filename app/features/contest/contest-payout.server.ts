@@ -2,7 +2,9 @@ export type ContestPayoutEntryStatus =
   | "pending"
   | "sent"
   | "failed"
-  | "marked_paid";
+  | "marked_paid"
+  | "claim_needed"
+  | "skipped";
 
 export interface ContestPayoutEntryState {
   status: ContestPayoutEntryStatus;
@@ -11,6 +13,15 @@ export interface ContestPayoutEntryState {
 }
 
 export type ContestPayoutState = Record<string, ContestPayoutEntryState>;
+
+const VALID: ContestPayoutEntryStatus[] = [
+  "pending",
+  "sent",
+  "failed",
+  "marked_paid",
+  "claim_needed",
+  "skipped",
+];
 
 export function buildInitialContestPayoutState(
   pubkeys: string[]
@@ -26,16 +37,32 @@ export function normalizeContestPayoutState(
   payoutState: unknown,
   winnerPubkeys: string[]
 ): ContestPayoutState {
+  const now = new Date().toISOString();
   const state: ContestPayoutState = {};
   const source =
     payoutState && typeof payoutState === "object"
-      ? (payoutState as Record<string, ContestPayoutEntryState>)
+      ? (payoutState as Record<string, unknown>)
       : {};
   for (const pubkey of winnerPubkeys) {
-    state[pubkey] =
-      source[pubkey] && typeof source[pubkey] === "object"
-        ? source[pubkey]
-        : { status: "pending", updatedAt: new Date().toISOString() };
+    const e = source[pubkey];
+    if (e && typeof e === "object" && "status" in e) {
+      const rec = e as Record<string, unknown>;
+      const st = rec["status"];
+      if (
+        typeof st === "string" &&
+        VALID.includes(st as ContestPayoutEntryStatus)
+      ) {
+        const updatedRaw = rec["updatedAt"];
+        const noteRaw = rec["note"];
+        state[pubkey] = {
+          status: st as ContestPayoutEntryStatus,
+          updatedAt: typeof updatedRaw === "string" ? updatedRaw : now,
+          note: typeof noteRaw === "string" ? noteRaw : undefined,
+        };
+        continue;
+      }
+    }
+    state[pubkey] = { status: "pending", updatedAt: now };
   }
   return state;
 }

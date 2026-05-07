@@ -12,7 +12,9 @@ export type GiveawayPayoutEntryStatus =
   | "pending"
   | "sent"
   | "failed"
-  | "marked_paid";
+  | "marked_paid"
+  | "claim_needed"
+  | "skipped";
 
 export interface GiveawayPayoutEntry {
   status: GiveawayPayoutEntryStatus;
@@ -27,6 +29,8 @@ const VALID: GiveawayPayoutEntryStatus[] = [
   "sent",
   "failed",
   "marked_paid",
+  "claim_needed",
+  "skipped",
 ];
 
 export function buildInitialPayoutState(
@@ -117,10 +121,14 @@ export function budgetSatsFromGiveawayRow(g: {
   winnerSnapshot: unknown;
   engagementConfig: unknown;
   winnerCount?: number;
+  plannedPayoutSats?: number | null;
 }): number {
   const snapshot = (g.winnerSnapshot as GiveawayWinnerEntry[] | null) ?? null;
   if (snapshot && snapshot.length > 0) {
     return totalSatsBudgetFromSnapshot(snapshot);
+  }
+  if (typeof g.plannedPayoutSats === "number" && g.plannedPayoutSats > 0) {
+    return g.plannedPayoutSats;
   }
   if (isSimpleUnifiedEngagementConfig(g.engagementConfig)) {
     const sats = g.engagementConfig._simpleUnified.satsPerWinner;
