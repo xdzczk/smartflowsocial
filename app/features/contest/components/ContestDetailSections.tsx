@@ -400,6 +400,8 @@ export function ContestDetailFormsSection({
   const batchPayoutFetcher = useFetcher<{
     success?: boolean;
     error?: string;
+    code?: string;
+    eligible?: boolean;
     done?: boolean;
     nextStep?: number | null;
     stepIndex?: number;
@@ -416,6 +418,7 @@ export function ContestDetailFormsSection({
   const batchProgressSnapshot: BatchPayoutProgressSnapshot | null =
     batchPayoutFetcher.data &&
     batchPayoutFetcher.data.success === true &&
+    batchPayoutFetcher.data.eligible !== false &&
     batchPayoutFetcher.data.totals &&
     typeof batchPayoutFetcher.data.stepIndex === "number" &&
     typeof batchPayoutFetcher.data.totalSteps === "number"
@@ -528,7 +531,7 @@ export function ContestDetailFormsSection({
               walletMode={contest.payoutWalletMode}
               autoPayEnabled={contest.payoutAutoRunEnabled}
               autoPayCapSats={contest.payoutAutoRunSpendCapSats}
-              nwcEnabled={data.nwc.enabled}
+              nwcEnabled={Boolean(data.nwc.usable)}
               autoPayLabel={payoutCopy.autoPayAtEnd}
             />
           </Form>
@@ -536,7 +539,7 @@ export function ContestDetailFormsSection({
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 type="button"
-                disabled={!data.nwc.enabled || isBatchPayoutPending}
+                disabled={!data.nwc.usable || isBatchPayoutPending}
                 onClick={() => {
                   const fd = new FormData();
                   fd.set("intent", "runBatchPayout");
@@ -544,9 +547,9 @@ export function ContestDetailFormsSection({
                   batchPayoutFetcher.submit(fd, { method: "post" });
                 }}
                 title={
-                  data.nwc.enabled
+                  data.nwc.usable
                     ? "Pay all winners using your connected wallet"
-                    : "Connect NWC in Settings to enable auto payouts"
+                    : "Connect a wallet to pay winners automatically"
                 }
               >
                 {isBatchPayoutPending ? (
@@ -561,9 +564,10 @@ export function ContestDetailFormsSection({
                   payoutCopy.payWinnersNow
                 )}
               </Button>
-              {!data.nwc.enabled ? (
+              {!data.nwc.usable ? (
                 <p className="text-text-secondary text-xs">
-                  Auto payout requires NWC. Manual zaps still work.
+                  Connect a wallet to pay winners automatically. Manual zaps
+                  still work.
                 </p>
               ) : null}
             </div>
@@ -603,6 +607,7 @@ export function ContestDetailFormsSection({
                   winner={winner}
                   profile={data.profiles[winner.authorPubkey]}
                   payoutStatus={winner.payoutStatus}
+                  payoutNote={winner.payoutNote}
                   getProfileUrl={(npub) => nostr.profileUrl(npub)}
                 />
               ))}

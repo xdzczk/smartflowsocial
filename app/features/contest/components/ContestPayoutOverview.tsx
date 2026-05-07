@@ -91,6 +91,7 @@ export function ContestPayoutWinnerRow({
   winner,
   profile,
   payoutStatus,
+  payoutNote,
   getProfileUrl,
 }: {
   winner: {
@@ -107,6 +108,7 @@ export function ContestPayoutWinnerRow({
     npub: string;
   };
   payoutStatus: string;
+  payoutNote?: string;
   getProfileUrl: (npub: string) => string;
 }) {
   const payoutFetcher = useFetcher();
@@ -116,13 +118,18 @@ export function ContestPayoutWinnerRow({
   const hasNpub = npub.length > 0;
   const profileHref = hasNpub ? getProfileUrl(npub) : "";
 
-  const submitPayout = (status: string) => {
+  const submitPayout = (status: string, note?: string) => {
     const fd = new FormData();
     fd.set("intent", "payout");
     fd.set("winnerPubkey", winner.authorPubkey);
     fd.set("payoutStatus", status);
+    if (note && note.trim() !== "") {
+      fd.set("payoutNote", note.trim());
+    }
     payoutFetcher.submit(fd, { method: "post" });
   };
+
+  const noteTrimmed = payoutNote?.trim();
 
   const npubShort =
     npub.length > 24 ? `${npub.slice(0, 12)}…${npub.slice(-8)}` : npub;
@@ -153,7 +160,11 @@ export function ContestPayoutWinnerRow({
   const zapAmount = winner.rewardSats > 0 ? winner.rewardSats : undefined;
   const canRetry = phase === "Failed" || phase === NEEDS_REVIEW_PHASE;
   const canMarkFailed = phase === "Pending" || phase === PAID_MANUALLY_PHASE;
-  const canMarkManual = phase === "Pending" || phase === "Failed";
+  const canMarkManual =
+    phase === "Pending" ||
+    phase === "Failed" ||
+    phase === NEEDS_REVIEW_PHASE ||
+    phase === "Skipped";
   const canUseWallet =
     hasNpub && (phase === "Pending" || phase === NEEDS_REVIEW_PHASE);
 
@@ -222,6 +233,11 @@ export function ContestPayoutWinnerRow({
                 score {winner.score}
               </span>
             </div>
+            {noteTrimmed ? (
+              <p className="text-text-secondary mt-1.5 max-w-prose text-xs leading-snug">
+                {noteTrimmed}
+              </p>
+            ) : null}
           </div>
         </div>
       </div>
@@ -233,6 +249,12 @@ export function ContestPayoutWinnerRow({
             size="sm"
             onZapped={() => {
               submitPayout("sent");
+            }}
+            onInvoiceCreated={() => {
+              submitPayout(
+                "claim_needed",
+                "Invoice generated; awaiting payment confirmation"
+              );
             }}
           />
         ) : null}

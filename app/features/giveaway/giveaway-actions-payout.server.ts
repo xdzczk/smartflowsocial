@@ -1,3 +1,7 @@
+import {
+  PAYOUT_SKIP_NOTE_PAYOUT_UNAVAILABLE,
+  PAYOUT_SKIP_NOTE_WALLET_NOT_CONNECTED,
+} from "~/features/payments/payout-skip-messages.server";
 import { listPayoutItemsByRunId } from "~/features/payments/repositories/payout-ledger-data.server";
 
 import {
@@ -13,9 +17,6 @@ import { normalizePayoutState } from "./giveaway-payout.server";
 import type { GiveawayPayoutEntryStatus } from "./giveaway-payout.server";
 import { updateGiveaway as updateGiveawayRow } from "./repositories/giveaway-actions-data.server";
 import type { GiveawayWinnerEntry } from "./types";
-
-const SKIPPED_NOTE_WALLET_NOT_CONNECTED = "Skipped — wallet not connected";
-const SKIPPED_NOTE_PAYOUT_UNAVAILABLE = "Skipped — payout unavailable";
 
 function syncPayoutStateFromLedgerItems(args: {
   state: ReturnType<typeof normalizePayoutState>;
@@ -138,8 +139,8 @@ export async function runGiveawayPayoutBatchWithNwc(
   if (!exec.eligible) {
     const note =
       exec.eligibilityErrorCode === "nwc_not_connected"
-        ? SKIPPED_NOTE_WALLET_NOT_CONNECTED
-        : SKIPPED_NOTE_PAYOUT_UNAVAILABLE;
+        ? PAYOUT_SKIP_NOTE_WALLET_NOT_CONNECTED
+        : PAYOUT_SKIP_NOTE_PAYOUT_UNAVAILABLE;
     for (const w of snapshot) {
       const current = state[w.pubkey]?.status ?? "pending";
       if (current === "pending" || current === "claim_needed") {
@@ -172,8 +173,8 @@ export async function runGiveawayPayoutBatchWithNwc(
       success: false,
       error:
         exec.eligibilityErrorCode === "nwc_not_connected"
-          ? SKIPPED_NOTE_WALLET_NOT_CONNECTED
-          : SKIPPED_NOTE_PAYOUT_UNAVAILABLE,
+          ? PAYOUT_SKIP_NOTE_WALLET_NOT_CONNECTED
+          : PAYOUT_SKIP_NOTE_PAYOUT_UNAVAILABLE,
       code: exec.eligibilityErrorCode,
       runId: exec.runId,
     };
@@ -239,8 +240,8 @@ export async function runGiveawayPayoutBatchStepWithNwc(
   if (!exec.eligible) {
     const note =
       exec.eligibilityErrorCode === "nwc_not_connected"
-        ? SKIPPED_NOTE_WALLET_NOT_CONNECTED
-        : SKIPPED_NOTE_PAYOUT_UNAVAILABLE;
+        ? PAYOUT_SKIP_NOTE_WALLET_NOT_CONNECTED
+        : PAYOUT_SKIP_NOTE_PAYOUT_UNAVAILABLE;
     for (const w of snapshot) {
       const current = state[w.pubkey]?.status ?? "pending";
       if (current === "pending" || current === "claim_needed") {
@@ -278,8 +279,8 @@ export async function runGiveawayPayoutBatchStepWithNwc(
       success: false,
       error:
         exec.eligibilityErrorCode === "nwc_not_connected"
-          ? SKIPPED_NOTE_WALLET_NOT_CONNECTED
-          : SKIPPED_NOTE_PAYOUT_UNAVAILABLE,
+          ? PAYOUT_SKIP_NOTE_WALLET_NOT_CONNECTED
+          : PAYOUT_SKIP_NOTE_PAYOUT_UNAVAILABLE,
     };
   }
 
