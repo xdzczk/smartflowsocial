@@ -6,6 +6,10 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import type { InvoiceCheckoutKind } from "~/features/payments/types";
+import {
+  raceWithTimeout,
+  WEBLN_SEND_PAYMENT_TIMEOUT_MS,
+} from "~/lib/zap-flow.client";
 
 interface InvoiceModalProps {
   isOpen: boolean;
@@ -70,13 +74,17 @@ export function InvoiceModal({
       if (window.webln?.sendPayment) {
         try {
           await window.webln.enable?.();
-          await window.webln.sendPayment(invoice);
+          await raceWithTimeout(
+            window.webln.sendPayment(invoice),
+            WEBLN_SEND_PAYMENT_TIMEOUT_MS,
+            "webln_payment_timeout"
+          );
           setWalletActionMessage(
             "Payment request sent to your Lightning wallet."
           );
           return;
         } catch {
-          // Fall through to deep-link flow if WebLN isn't available or user cancels.
+          // Fall through to deep-link flow if WebLN isn't available, user cancels, or payment hangs.
         }
       }
 

@@ -54,7 +54,11 @@ export default function ZapButton({
       } else if (result.invoice) {
         onInvoiceCreated?.(result.invoice);
         setFallbackInvoice(result.invoice);
-        toast.success("Invoice generated. Pay to complete payout.");
+        toast.success(
+          result.weblnTimedOut
+            ? "Wallet payment timed out — pay with QR or copy below."
+            : "Invoice generated. Pay to complete payout."
+        );
       } else {
         toast.success("Opened in new tab  -  mark as zapped when done");
       }

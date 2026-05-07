@@ -18,6 +18,7 @@ import {
   zapRecipient,
   ZAP_FLOW_ERROR_NO_LUD16,
   ZAP_FLOW_ERROR_NO_WEBLN,
+  ZAP_FLOW_ERROR_WEBLN_TIMEOUT,
 } from "~/lib/zap-flow.client";
 
 import { useLookupSheetWide } from "./useLookupSheetWide";
@@ -105,6 +106,10 @@ export function ZapNoteDrawer({
       } else if (message === ZAP_FLOW_ERROR_NO_WEBLN) {
         setError(
           "Connect NWC in billing settings, or use a browser wallet with WebLN (or complete payment externally)."
+        );
+      } else if (message === ZAP_FLOW_ERROR_WEBLN_TIMEOUT) {
+        setError(
+          "Your wallet did not finish paying within the time limit. Try again, pay from another wallet, or copy the invoice from your wallet if shown."
         );
       } else {
         setError(message);
