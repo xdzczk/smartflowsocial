@@ -119,6 +119,7 @@ export {
   clearUserNWC,
   getUserNWC,
   getDecryptedUserNWC,
+  hasUsableNwc,
   touchUserNwcLastUsed,
 } from "./services/nwc.server";
 

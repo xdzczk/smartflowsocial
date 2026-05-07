@@ -66,6 +66,8 @@ export function GiveawayDetailBatchZapFlow({
   const batchPayoutFetcher = useFetcher<{
     success?: boolean;
     error?: string;
+    code?: string;
+    eligible?: boolean;
     done?: boolean;
     nextStep?: number | null;
     stepIndex?: number;
@@ -87,6 +89,7 @@ export function GiveawayDetailBatchZapFlow({
   const batchProgressSnapshot: BatchPayoutProgressSnapshot | null =
     batchPayoutFetcher.data &&
     batchPayoutFetcher.data.success === true &&
+    batchPayoutFetcher.data.eligible !== false &&
     batchPayoutFetcher.data.totals &&
     typeof batchPayoutFetcher.data.stepIndex === "number" &&
     typeof batchPayoutFetcher.data.totalSteps === "number"
@@ -136,11 +139,14 @@ export function GiveawayDetailBatchZapFlow({
     { paid: 0, failed: 0, needsReview: 0, skipped: 0, pending: 0 }
   );
 
-  const submitPayout = (pubkey: string, status: string) => {
+  const submitPayout = (pubkey: string, status: string, note?: string) => {
     const fd = new FormData();
     fd.set("intent", "updatePayout");
     fd.set("winnerPubkey", pubkey);
     fd.set("payoutStatus", status);
+    if (note && note.trim() !== "") {
+      fd.set("payoutNote", note.trim());
+    }
     payoutFetcher.submit(fd, { method: "post" });
   };
 
@@ -167,7 +173,7 @@ export function GiveawayDetailBatchZapFlow({
             title={
               nwcEnabled
                 ? "Pay all winners using your connected wallet"
-                : "Connect NWC in Settings to enable auto payouts"
+                : "Connect a wallet to pay winners automatically"
             }
           >
             {isBatchPayoutPending ? (
@@ -184,7 +190,8 @@ export function GiveawayDetailBatchZapFlow({
           </button>
           {!nwcEnabled ? (
             <span className="text-text-secondary text-xs">
-              Auto payout requires NWC. Manual zaps still work.
+              Connect a wallet to pay winners automatically. Manual zaps still
+              work.
             </span>
           ) : null}
         </div>
@@ -251,11 +258,16 @@ export function GiveawayDetailBatchZapFlow({
       <ul className="border-border divide-border divide-y rounded-lg border">
         {winners.map((w) => {
           const st = payoutState[w.pubkey]?.status ?? "pending";
+          const payoutNote = payoutState[w.pubkey]?.note?.trim();
           const phase = mapPayoutItemPhase(st);
           const canRetry = phase === "Failed" || phase === NEEDS_REVIEW_PHASE;
           const canMarkFailed =
             phase === "Pending" || phase === PAID_MANUALLY_PHASE;
-          const canMarkManual = phase === "Pending" || phase === "Failed";
+          const canMarkManual =
+            phase === "Pending" ||
+            phase === "Failed" ||
+            phase === NEEDS_REVIEW_PHASE ||
+            phase === "Skipped";
           const canUseWallet =
             phase === "Pending" || phase === NEEDS_REVIEW_PHASE;
           return (
@@ -278,6 +290,11 @@ export function GiveawayDetailBatchZapFlow({
                     </span>
                   ) : null}
                 </div>
+                {payoutNote ? (
+                  <p className="text-text-secondary mt-1.5 max-w-prose text-xs leading-snug">
+                    {payoutNote}
+                  </p>
+                ) : null}
               </div>
               <div className="flex shrink-0 flex-wrap items-center gap-2">
                 {canUseWallet ? (
@@ -287,6 +304,13 @@ export function GiveawayDetailBatchZapFlow({
                     size="sm"
                     onZapped={() => {
                       submitPayout(w.pubkey, "sent");
+                    }}
+                    onInvoiceCreated={() => {
+                      submitPayout(
+                        w.pubkey,
+                        "claim_needed",
+                        "Invoice generated; awaiting payment confirmation"
+                      );
                     }}
                   />
                 ) : null}

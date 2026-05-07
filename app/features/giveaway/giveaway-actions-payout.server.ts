@@ -14,6 +14,43 @@ import type { GiveawayPayoutEntryStatus } from "./giveaway-payout.server";
 import { updateGiveaway as updateGiveawayRow } from "./repositories/giveaway-actions-data.server";
 import type { GiveawayWinnerEntry } from "./types";
 
+const SKIPPED_NOTE_WALLET_NOT_CONNECTED = "Skipped — wallet not connected";
+const SKIPPED_NOTE_PAYOUT_UNAVAILABLE = "Skipped — payout unavailable";
+
+function syncPayoutStateFromLedgerItems(args: {
+  state: ReturnType<typeof normalizePayoutState>;
+  snapshot: GiveawayWinnerEntry[];
+  itemByPubkey: Map<string, { status: string; errorMessage: string | null }>;
+  nowIso: string;
+}) {
+  const { state, snapshot, itemByPubkey, nowIso } = args;
+  for (const w of snapshot) {
+    const item = itemByPubkey.get(w.pubkey);
+    if (!item) continue;
+    if (item.status === "paid") {
+      state[w.pubkey] = { status: "sent", updatedAt: nowIso };
+    } else if (item.status === "failed") {
+      state[w.pubkey] = {
+        status: "failed",
+        updatedAt: nowIso,
+        note: item.errorMessage ?? undefined,
+      };
+    } else if (item.status === "claim_needed") {
+      state[w.pubkey] = {
+        status: "claim_needed",
+        updatedAt: nowIso,
+        note: item.errorMessage ?? "Winner needs claim",
+      };
+    } else if (item.status === "skipped") {
+      state[w.pubkey] = {
+        status: "skipped",
+        updatedAt: nowIso,
+        note: item.errorMessage ?? undefined,
+      };
+    }
+  }
+}
+
 export async function setGiveawayWinnerPayoutStatus(
   userId: string,
   giveawayId: string,
@@ -52,7 +89,12 @@ export async function runGiveawayPayoutBatchWithNwc(
   userId: string,
   giveawayId: string,
   options?: { trigger?: "manual_trigger" | "autorun"; spendCapSats?: number }
-): Promise<{ success: boolean; error?: string; runId?: string | null }> {
+): Promise<{
+  success: boolean;
+  error?: string;
+  runId?: string | null;
+  code?: string;
+}> {
   const g = await getGiveawayById(giveawayId, userId);
   if (!g) return { success: false, error: ERROR_GIVEAWAY_NOT_FOUND };
   if (g.status !== "LOCKED") {
@@ -84,23 +126,29 @@ export async function runGiveawayPayoutBatchWithNwc(
 
   const state = normalizePayoutState(g.payoutState, snapshot);
   const now = new Date().toISOString();
-  for (const w of snapshot) {
-    const item = itemByPubkey.get(w.pubkey);
-    if (!item) continue;
-    if (item.status === "paid") {
-      state[w.pubkey] = { status: "sent", updatedAt: now };
-    } else if (item.status === "failed") {
-      state[w.pubkey] = {
-        status: "failed",
-        updatedAt: now,
-        note: item.errorMessage ?? undefined,
-      };
-    } else if (item.status === "claim_needed") {
-      state[w.pubkey] = {
-        status: "failed",
-        updatedAt: now,
-        note: item.errorMessage ?? "Winner needs claim",
-      };
+  syncPayoutStateFromLedgerItems({
+    state,
+    snapshot,
+    itemByPubkey: itemByPubkey as Map<
+      string,
+      { status: string; errorMessage: string | null }
+    >,
+    nowIso: now,
+  });
+  if (!exec.eligible) {
+    const note =
+      exec.eligibilityErrorCode === "nwc_not_connected"
+        ? SKIPPED_NOTE_WALLET_NOT_CONNECTED
+        : SKIPPED_NOTE_PAYOUT_UNAVAILABLE;
+    for (const w of snapshot) {
+      const current = state[w.pubkey]?.status ?? "pending";
+      if (current === "pending" || current === "claim_needed") {
+        state[w.pubkey] = {
+          status: "skipped",
+          updatedAt: now,
+          note,
+        };
+      }
     }
   }
 
@@ -118,6 +166,18 @@ export async function runGiveawayPayoutBatchWithNwc(
       }
     ),
   });
+
+  if (!exec.eligible) {
+    return {
+      success: false,
+      error:
+        exec.eligibilityErrorCode === "nwc_not_connected"
+          ? SKIPPED_NOTE_WALLET_NOT_CONNECTED
+          : SKIPPED_NOTE_PAYOUT_UNAVAILABLE,
+      code: exec.eligibilityErrorCode,
+      runId: exec.runId,
+    };
+  }
 
   return { success: true, runId: exec.runId };
 }
@@ -167,23 +227,29 @@ export async function runGiveawayPayoutBatchStepWithNwc(
 
   const state = normalizePayoutState(g.payoutState, snapshot);
   const now = new Date().toISOString();
-  for (const w of snapshot) {
-    const item = itemByPubkey.get(w.pubkey);
-    if (!item) continue;
-    if (item.status === "paid") {
-      state[w.pubkey] = { status: "sent", updatedAt: now };
-    } else if (item.status === "failed") {
-      state[w.pubkey] = {
-        status: "failed",
-        updatedAt: now,
-        note: item.errorMessage ?? undefined,
-      };
-    } else if (item.status === "claim_needed") {
-      state[w.pubkey] = {
-        status: "failed",
-        updatedAt: now,
-        note: item.errorMessage ?? "Winner needs claim",
-      };
+  syncPayoutStateFromLedgerItems({
+    state,
+    snapshot,
+    itemByPubkey: itemByPubkey as Map<
+      string,
+      { status: string; errorMessage: string | null }
+    >,
+    nowIso: now,
+  });
+  if (!exec.eligible) {
+    const note =
+      exec.eligibilityErrorCode === "nwc_not_connected"
+        ? SKIPPED_NOTE_WALLET_NOT_CONNECTED
+        : SKIPPED_NOTE_PAYOUT_UNAVAILABLE;
+    for (const w of snapshot) {
+      const current = state[w.pubkey]?.status ?? "pending";
+      if (current === "pending" || current === "claim_needed") {
+        state[w.pubkey] = {
+          status: "skipped",
+          updatedAt: now,
+          note,
+        };
+      }
     }
   }
 
@@ -206,6 +272,16 @@ export async function runGiveawayPayoutBatchStepWithNwc(
         }
       : {}),
   });
+
+  if (!exec.eligible) {
+    return {
+      success: false,
+      error:
+        exec.eligibilityErrorCode === "nwc_not_connected"
+          ? SKIPPED_NOTE_WALLET_NOT_CONNECTED
+          : SKIPPED_NOTE_PAYOUT_UNAVAILABLE,
+    };
+  }
 
   return { success: true, ...exec };
 }

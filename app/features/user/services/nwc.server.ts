@@ -110,6 +110,17 @@ export async function getDecryptedUserNWC(
   }
 }
 
+/**
+ * Returns true only when the user has a usable wallet connection:
+ * - NWC enabled
+ * - encrypted secret present
+ * - decryption succeeds to a valid-looking NWC string
+ */
+export async function hasUsableNwc(userId: string): Promise<boolean> {
+  const decrypted = await getDecryptedUserNWC(userId);
+  return Boolean(decrypted && validateNWCString(decrypted));
+}
+
 /** Record that the user's NWC wallet was used (e.g. after a successful zap). */
 export async function touchUserNwcLastUsed(userId: string): Promise<void> {
   await touchUserNwcLastUsedRow(userId);

@@ -34,6 +34,8 @@ export interface ZapRecipientOptions {
   relays?: string[];
   /** When set, adds an `e` tag so the zap request targets this note (NIP-57). */
   eventIdHex?: string;
+  /** When true, return invoice instead of throwing when no local wallet payment path exists. */
+  returnInvoiceOnNoWallet?: boolean;
 }
 
 /**
@@ -107,6 +109,8 @@ function npubToHex(npub: string): string {
 export interface ZapRecipientResult {
   /** True if payment completed (NWC or WebLN); false if fallback (e.g. opened in new tab). */
   paid: boolean;
+  /** BOLT11 invoice (when generated) for external/manual payment fallback. */
+  invoice?: string;
 }
 
 /**
@@ -168,7 +172,13 @@ export function buildZapRequestKind9734Tags(params: {
 export async function zapRecipient(
   options: ZapRecipientOptions
 ): Promise<ZapRecipientResult> {
-  const { npub, amountSats, relays = DEFAULT_RELAYS, eventIdHex } = options;
+  const {
+    npub,
+    amountSats,
+    relays = DEFAULT_RELAYS,
+    eventIdHex,
+    returnInvoiceOnNoWallet = false,
+  } = options;
 
   const lud16 = await fetchLud16(npub);
   if (!lud16) {
@@ -294,6 +304,9 @@ export async function zapRecipient(
   }
 
   if (!window.webln?.sendPayment) {
+    if (returnInvoiceOnNoWallet) {
+      return { paid: false, invoice: pr };
+    }
     throw new Error(ZAP_FLOW_ERROR_NO_WEBLN);
   }
 
@@ -303,6 +316,14 @@ export async function zapRecipient(
     throw new Error(ZAP_FLOW_ERROR_NO_WEBLN);
   }
 
-  await window.webln.sendPayment(pr);
-  return { paid: true };
+  try {
+    await window.webln.sendPayment(pr);
+    return { paid: true };
+  } catch {
+    if (returnInvoiceOnNoWallet) {
+      // Keep manual payout usable even without an in-browser wallet.
+      return { paid: false, invoice: pr };
+    }
+    throw new Error(ZAP_FLOW_ERROR_PAYMENT);
+  }
 }
