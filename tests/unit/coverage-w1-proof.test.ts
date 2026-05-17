@@ -29,7 +29,10 @@ vi.mock("html-to-image", () => ({
 }));
 
 describe("W1 proof coverage", () => {
-  const fakeElement = (): HTMLElement => Object.create(null) as HTMLElement;
+  const fakeElement = (): HTMLElement =>
+    ({
+      querySelector: () => null,
+    }) as unknown as HTMLElement;
   const basePayload: ProofCardPayload = {
     domain: "giveaway",
     cardType: "public-summary",
@@ -320,14 +323,15 @@ describe("W1 proof coverage", () => {
       const click = vi.fn();
       const anchor = { href: "", download: "", click };
       const classList = { add: vi.fn(), remove: vi.fn() };
-      const style = {
-        setProperty: vi.fn(),
-        removeProperty: vi.fn(),
+      const boxStyle = {
+        width: "",
+        height: "",
+        maxWidth: "",
+        aspectRatio: "",
       };
-      const cardRoot = Object.create(null) as HTMLElement;
+      const cardRoot = { style: boxStyle } as unknown as HTMLElement;
       const element = {
         classList,
-        style,
         querySelector: vi.fn((selector: string) =>
           selector === "[data-proof-card-root]" ? cardRoot : null
         ),
@@ -340,6 +344,10 @@ describe("W1 proof coverage", () => {
         createElement: vi.fn(() => anchor),
         documentElement: {},
       });
+      vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => {
+        cb(0);
+        return 0;
+      });
 
       await exportProofCardPng({
         element,
@@ -351,18 +359,15 @@ describe("W1 proof coverage", () => {
       expect(classList.remove).toHaveBeenCalledWith(
         PROOF_EXPORT_SNAPSHOT_CLASS
       );
-      expect(style.setProperty).toHaveBeenCalledWith(
-        "--proof-export-w",
-        "1080px"
-      );
-      expect(style.setProperty).toHaveBeenCalledWith(
-        "--proof-export-h",
-        "1080px"
-      );
-      expect(toPng).toHaveBeenCalledWith(
-        cardRoot,
-        expect.objectContaining({ width: 1080, height: 1080 })
-      );
+      expect(boxStyle.width).toBe("");
+      expect(toPng).toHaveBeenCalledOnce();
+      const [capturedRoot, toPngOptions] = vi.mocked(toPng).mock.calls[0] ?? [];
+      expect(capturedRoot).toBe(cardRoot);
+      expect(toPngOptions).toMatchObject({
+        pixelRatio: 1,
+        backgroundColor: "rgb(20, 20, 20)",
+      });
+      expect(toPngOptions).not.toHaveProperty("width");
       expect(click).toHaveBeenCalledTimes(1);
       expect(anchor.download).toBe("x.png");
       expect(anchor.href).toContain("data:image/png;base64");

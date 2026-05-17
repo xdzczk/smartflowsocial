@@ -348,22 +348,20 @@ export function ProofCardBody({
 
   if (ratio === "square") {
     return (
-      <div className="flex min-h-0 flex-1 flex-col justify-between gap-3">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
         {head}
         {stats.length > 0 ? <SupportLines items={stats} ratio={ratio} /> : null}
-        <FooterBlock payload={payload} ratio={ratio} />
+        <div className="mt-auto">
+          <FooterBlock payload={payload} ratio={ratio} />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col justify-between gap-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
       {head}
-      {stats.length > 0 ? (
-        <div className="min-h-0 flex-1">
-          <SupportLines items={stats} ratio={ratio} />
-        </div>
-      ) : null}
+      {stats.length > 0 ? <SupportLines items={stats} ratio={ratio} /> : null}
       <div className="border-border/50 mt-auto border-t pt-3">
         <FooterBlock payload={payload} ratio={ratio} />
       </div>

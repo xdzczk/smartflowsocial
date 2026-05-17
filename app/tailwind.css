@@ -200,8 +200,8 @@ body.has-btcpay-confirmation-bar {
    * Roles (do not overload in new code  -  use aliases below):
    *   --link / text-link / link-hover      → body links + trust/slate actions (NOT CTAs,
    *     selection, or focus  -  those stay brand-strong / --brand).
-   *   --brand / text-brand / border-brand  → legacy slate-blue accent; avoid for new
-   *     selected states and plain hyperlinks  -  prefer selection-* / --link.
+   *   --brand / text-brand / border-brand  → muted violet accent for legacy
+   *     borders, proof stripes, low-alpha tints, and non-CTA brand moments.
    *   --brand-strong                       → saturated action hue (matches primary Button).
    *   action-primary                       → primary CTA fill (alias of brand-strong).
    *   selection-fill / selection-border    → soft selected chips, tiles, segmented “on” states.
@@ -397,8 +397,8 @@ body.has-btcpay-confirmation-bar {
     --border-strong: 34 8% 72%;
     --input: 38 9% 80%;
 
-    /* ---------- Brand: strong = purple accent; --brand = slate for selection/tints ---------- */
-    --brand: 222 26% 42%;
+    /* ---------- Brand: muted violet accent; strong = saturated CTA / focus purple ---------- */
+    --brand: 262 36% 44%;
     /* Trust / hyperlinks: ~221° hue, lower S than --brand; hover = deeper + a touch more S */
     --link: 221 14% 43%;
     --link-hover: 221 22% 36%;
@@ -570,8 +570,8 @@ body.has-btcpay-confirmation-bar {
     --border-strong: 220 8% 30%;
     --input: 220 6% 22%;
 
-    /* ---------- Brand: slate for selection/tints; CTAs / focus = purple ---------- */
-    --brand: 218 15% 70%;
+    /* ---------- Brand: muted violet accent; CTAs / focus = brighter purple ---------- */
+    --brand: 262 28% 72%;
     --link: 221 10% 72%;
     --link-hover: 221 15% 82%;
     /* Matched S/L pull for dark mode (less neon on CTAs / ring / switches) */
@@ -711,13 +711,6 @@ body.has-btcpay-confirmation-bar {
       inset 0 1px 0 0 rgb(255 255 255 / 0.62);
   }
 
-  /* Pin card bounds to export dimensions (avoids empty canvas on flex wrappers). */
-  .proof-export-snapshot [data-proof-card-root] {
-    width: var(--proof-export-w) !important;
-    height: var(--proof-export-h) !important;
-    max-width: none !important;
-    aspect-ratio: auto !important;
-  }
 }
 
 /* TODO: Dashboard shell chrome could co-locate with layout when splitting global CSS. */

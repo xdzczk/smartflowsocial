@@ -17,7 +17,8 @@ export const PROOF_EXPORT_PX: Record<ProofRatio, { w: number; h: number }> = {
   landscape: { w: 1280, h: 720 },
 };
 
-export const PROOF_EXPORT_PIXEL_RATIO = 2;
+/** 1× keeps output dimensions equal to PROOF_EXPORT_PX (no extra upscale in capture). */
+export const PROOF_EXPORT_PIXEL_RATIO = 1;
 
 export function proofRatioLabel(r: ProofRatio): string {
   switch (r) {
