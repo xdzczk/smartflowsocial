@@ -62,7 +62,7 @@ function BulkUploadProcessingContent({
         </p>
         <div className="bg-surface-hover mt-2 h-2 w-64 max-w-full rounded-full">
           <div
-            className="bg-brand h-2 rounded-full transition-all duration-300"
+            className="bg-action-primary h-2 rounded-full transition-all duration-300"
             style={{
               width: `${(processingProgress.current / processingProgress.total) * 100}%`,
             }}

@@ -251,7 +251,7 @@ function BroadcastsIndexPage() {
       : 0;
 
   return (
-    <div className="w-full min-w-0 space-y-8">
+    <div className="w-full min-w-0 space-y-6">
       <PublishingPageHeader
         title="Broadcasts"
         subtitle="Send signed Nostr direct messages to selected audiences with compatibility-aware delivery."

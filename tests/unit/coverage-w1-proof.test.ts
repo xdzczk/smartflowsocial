@@ -1,3 +1,4 @@
+import { toPng } from "html-to-image";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 import { brandLineProofCaption } from "~/lib/brand";
@@ -7,6 +8,7 @@ import { buildProofCaption } from "~/lib/proof/build-proof-caption";
 import { buildProofSummary } from "~/lib/proof/build-proof-summary";
 import {
   exportProofCardPng,
+  PROOF_EXPORT_SNAPSHOT_CLASS,
   proofExportFilename,
   resolveProofPngBackground,
 } from "~/lib/proof/export-proof-card";
@@ -239,7 +241,8 @@ describe("W1 proof coverage", () => {
 
       expect(proofSubClass("portrait")).toContain("text-sm");
       expect(proofSubClass("square")).toContain("line-clamp-3");
-      expect(proofSubClass("landscape")).toContain("max-w-[20rem]");
+      expect(proofSubClass("landscape")).toContain("line-clamp-2");
+      expect(proofCardInnerPadClass("landscape")).toContain("px-6");
 
       expect(proofFooterTextClass("square")).toContain("text-[10px]");
       expect(proofFooterTextClass("landscape")).toContain("sm:text-[11px]");
@@ -263,25 +266,41 @@ describe("W1 proof coverage", () => {
       expect(resolveProofPngBackground(fakeElement())).toBe("rgb(1, 2, 3)");
     });
 
-    it("falls back to --card CSS variable when transparent", () => {
+    it("falls back to --surface CSS variable when transparent", () => {
       const getComputedStyle = vi
         .fn()
         .mockReturnValueOnce({ backgroundColor: "rgba(0, 0, 0, 0)" })
         .mockReturnValueOnce({
-          getPropertyValue: () => "210 10% 50%",
+          getPropertyValue: (name: string) =>
+            name === "--surface" ? "0 0% 100%" : "",
         });
       vi.stubGlobal("window", { getComputedStyle });
       vi.stubGlobal("document", { documentElement: {} });
-      expect(resolveProofPngBackground(fakeElement())).toBe("hsl(210 10% 50%)");
+      expect(resolveProofPngBackground(fakeElement())).toBe("hsl(0 0% 100%)");
     });
 
-    it("falls back to white when no element bg and no --card value", () => {
+    it("reads background from data-proof-card-surface descendant", () => {
+      const surface = Object.create(null) as HTMLElement;
+      const root = {
+        querySelector: vi.fn(() => surface),
+      } as unknown as HTMLElement;
+      const getComputedStyle = vi.fn(() => ({
+        backgroundColor: "rgb(250, 250, 250)",
+      }));
+      vi.stubGlobal("window", { getComputedStyle });
+      expect(resolveProofPngBackground(root)).toBe("rgb(250, 250, 250)");
+      expect(root.querySelector).toHaveBeenCalledWith(
+        "[data-proof-card-surface]"
+      );
+    });
+
+    it("falls back to white when no surface bg and no token values", () => {
+      const emptyTokens = { getPropertyValue: () => "" };
       const getComputedStyle = vi
         .fn()
         .mockReturnValueOnce({ backgroundColor: "transparent" })
-        .mockReturnValueOnce({
-          getPropertyValue: () => "",
-        });
+        .mockReturnValueOnce(emptyTokens)
+        .mockReturnValueOnce(emptyTokens);
       vi.stubGlobal("window", { getComputedStyle });
       vi.stubGlobal("document", { documentElement: {} });
       expect(resolveProofPngBackground(fakeElement())).toBe("#ffffff");
@@ -300,6 +319,19 @@ describe("W1 proof coverage", () => {
     it("exports png using html-to-image and clicks download anchor", async () => {
       const click = vi.fn();
       const anchor = { href: "", download: "", click };
+      const classList = { add: vi.fn(), remove: vi.fn() };
+      const style = {
+        setProperty: vi.fn(),
+        removeProperty: vi.fn(),
+      };
+      const cardRoot = Object.create(null) as HTMLElement;
+      const element = {
+        classList,
+        style,
+        querySelector: vi.fn((selector: string) =>
+          selector === "[data-proof-card-root]" ? cardRoot : null
+        ),
+      } as unknown as HTMLElement;
       const getComputedStyle = vi
         .fn()
         .mockReturnValueOnce({ backgroundColor: "rgb(20, 20, 20)" });
@@ -310,11 +342,27 @@ describe("W1 proof coverage", () => {
       });
 
       await exportProofCardPng({
-        element: fakeElement(),
+        element,
         ratio: "square",
         filename: "x.png",
       });
 
+      expect(classList.add).toHaveBeenCalledWith(PROOF_EXPORT_SNAPSHOT_CLASS);
+      expect(classList.remove).toHaveBeenCalledWith(
+        PROOF_EXPORT_SNAPSHOT_CLASS
+      );
+      expect(style.setProperty).toHaveBeenCalledWith(
+        "--proof-export-w",
+        "1080px"
+      );
+      expect(style.setProperty).toHaveBeenCalledWith(
+        "--proof-export-h",
+        "1080px"
+      );
+      expect(toPng).toHaveBeenCalledWith(
+        cardRoot,
+        expect.objectContaining({ width: 1080, height: 1080 })
+      );
       expect(click).toHaveBeenCalledTimes(1);
       expect(anchor.download).toBe("x.png");
       expect(anchor.href).toContain("data:image/png;base64");

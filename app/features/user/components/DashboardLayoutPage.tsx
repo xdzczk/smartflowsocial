@@ -61,6 +61,7 @@ import type { loader as dashboardLoader } from "~/routes/dashboard";
 
 const DESKTOP_SIDEBAR_OPEN_KEY = "dashboard-desktop-sidebar-open";
 const DASHBOARD_INDEX_PATH = "/dashboard";
+const DASHBOARD_BROADCASTS_PATH = "/dashboard/broadcasts";
 const SUBSCRIPTION_EXPIRED_BANNER_DISMISSED_KEY =
   "smartflowsocial:dismissed-subscription-expired-banner";
 const subscribeNoop = () => () => {};
@@ -96,9 +97,18 @@ function isCalendarPath(pathname: string): boolean {
   return pathname.startsWith("/dashboard/calendar");
 }
 
-/** Broadcasts section: keep the shell to the viewport and scroll `main` so the page footer does not sit in an extra document scroll / overscroll band. */
-function isBroadcastsSectionPath(pathname: string): boolean {
-  return pathname.startsWith("/dashboard/broadcasts");
+const BROADCASTS_SCROLLABLE_LIST_PATHS = new Set([
+  DASHBOARD_BROADCASTS_PATH,
+  `${DASHBOARD_BROADCASTS_PATH}/audiences`,
+  `${DASHBOARD_BROADCASTS_PATH}/suppression`,
+  `${DASHBOARD_BROADCASTS_PATH}/settings`,
+]);
+
+/** Broadcasts builder/detail: lock shell height and scroll `main` so sticky footers/rails work without double scroll. */
+function isBroadcastsViewportLockedPath(pathname: string): boolean {
+  if (!pathname.startsWith(DASHBOARD_BROADCASTS_PATH)) return false;
+  // List + settings surfaces share the same scroll shell as Giveaways / Contests.
+  return !BROADCASTS_SCROLLABLE_LIST_PATHS.has(pathname);
 }
 
 function isComposePath(pathname: string): boolean {
@@ -296,7 +306,9 @@ export function DashboardLayoutPage(): ReactNode {
   const isFreePlan = planType === "free";
   const isDashboardIndex = isDashboardIndexPath(location.pathname);
   const isCalendar = isCalendarPath(location.pathname);
-  const isBroadcastsSection = isBroadcastsSectionPath(location.pathname);
+  const isBroadcastsViewportLocked = isBroadcastsViewportLockedPath(
+    location.pathname
+  );
   const isSubscriptionExpired = isSubscriptionExpiredForUi(
     currentSubscription ?? null
   );
@@ -369,7 +381,7 @@ export function DashboardLayoutPage(): ReactNode {
         id="page-container"
         data-dashboard-shell
         className={`bg-canvas mx-auto flex w-full min-w-0 flex-col ${
-          isBroadcastsSection
+          isBroadcastsViewportLocked
             ? "h-dvh max-h-dvh min-h-0 overflow-hidden"
             : "min-h-dvh"
         } ${isCalendar ? "h-dvh overflow-x-visible" : ""} ${isDashboardIndex ? "lg:h-dvh lg:overflow-hidden" : ""} ${desktopSidebarOpen ? "lg:pl-64" : "lg:pl-12"}`}
@@ -389,7 +401,7 @@ export function DashboardLayoutPage(): ReactNode {
           id="page-content"
           className={`pt-header flex min-h-0 max-w-full min-w-0 flex-1 flex-col ${
             isCalendar ? "overflow-hidden" : ""
-          } ${isBroadcastsSection ? "overflow-y-auto overscroll-y-contain" : ""}`}
+          } ${isBroadcastsViewportLocked ? "overflow-y-auto overscroll-y-contain" : ""}`}
         >
           {referredBy != null ? (
             <ReferredByBanner
@@ -501,7 +513,7 @@ export function DashboardLayoutPage(): ReactNode {
           ) : null}
 
           <div
-            className={`flex w-full min-w-0 flex-1 flex-col ${isCalendar ? "min-h-0 min-w-0 pt-0 pb-0" : isDashboardIndex ? "pt-4.5 pb-6 md:pb-8 lg:min-h-0 lg:overflow-y-auto lg:pt-4 lg:pb-3" : `${isBroadcastsSection ? "min-h-0" : ""}pt-4.5 pb-24`} ${isCalendar || isDashboardIndex ? "" : DASHBOARD_MAIN_BAND_CLASS}`}
+            className={`flex w-full min-w-0 flex-1 flex-col ${isCalendar ? "min-h-0 min-w-0 pt-0 pb-0" : isDashboardIndex ? "pt-4.5 pb-6 md:pb-8 lg:min-h-0 lg:overflow-y-auto lg:pt-4 lg:pb-3" : `${isBroadcastsViewportLocked ? "min-h-0" : ""}pt-4.5 pb-24`} ${isCalendar || isDashboardIndex ? "" : DASHBOARD_MAIN_BAND_CLASS}`}
           >
             {showPendingComposeSkeleton ? (
               <div className="animate-in fade-in-0 duration-200">
@@ -530,7 +542,7 @@ export function DashboardLayoutPage(): ReactNode {
             ) : (
               <div
                 className={`animate-in fade-in-0 duration-200 ${
-                  isCalendar || isDashboardIndex || isBroadcastsSection
+                  isCalendar || isDashboardIndex || isBroadcastsViewportLocked
                     ? "flex min-h-0 flex-1 flex-col"
                     : ""
                 }`}

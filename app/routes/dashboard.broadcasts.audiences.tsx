@@ -263,7 +263,7 @@ function BroadcastAudiencesRouteLoaded({
     createAudienceType === "CUSTOM" && createSelectedPubkeys.length === 0;
 
   return (
-    <div className="w-full min-w-0 space-y-8">
+    <div className="w-full min-w-0 space-y-6">
       <PublishingPageHeader
         title="Audiences"
         subtitle="Save audience definitions to reuse in new broadcasts. Graph-based types (mutuals) resolve at send time; custom lists are filtered to followers at send time."

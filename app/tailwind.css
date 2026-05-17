@@ -200,12 +200,11 @@ body.has-btcpay-confirmation-bar {
    * Roles (do not overload in new code  -  use aliases below):
    *   --link / text-link / link-hover      → body links + trust/slate actions (NOT CTAs,
    *     selection, or focus  -  those stay brand-strong / --brand).
-   *   --brand / text-brand / border-brand  → selection chips, borders, tints (slate-blue);
-   *     avoid for plain hyperlinks  -  prefer --link.
+   *   --brand / text-brand / border-brand  → legacy slate-blue accent; avoid for new
+   *     selected states and plain hyperlinks  -  prefer selection-* / --link.
    *   --brand-strong                       → saturated action hue (matches primary Button).
    *   action-primary                       → primary CTA fill (alias of brand-strong).
-   *   selection-fill / selection-border    → filled chips, tiles, segmented “on” states
-   *     that today use bg-brand + border-brand (Phase B migrates call sites).
+   *   selection-fill / selection-border    → soft selected chips, tiles, segmented “on” states.
    *   focus-ring / focus-border            → keyboard + input focus color only.
    *   brand-wash / selection-wash          → alpha tints; replace ad-hoc bg-brand/5|10|12.
    *   brand-action                         → marketing hero CTA (alias of brand-strong).
@@ -224,11 +223,11 @@ body.has-btcpay-confirmation-bar {
   --color-link: hsl(var(--link));
   --color-link-hover: hsl(var(--link-hover));
 
-  /* Selected chip / tile / segmented control (fills often used bg-brand today). */
-  --color-selection-fill: hsl(var(--brand));
+  /* Selected chip / tile / segmented control: soft premium selected surface. */
+  --color-selection-fill: hsl(var(--surface-selected));
   --color-selection-fill-strong: hsl(var(--brand-strong));
-  --color-selection-border: hsl(var(--brand));
-  --color-selection-foreground: hsl(var(--brand-on));
+  --color-selection-border: hsl(var(--surface-selected-foreground));
+  --color-selection-foreground: hsl(var(--surface-selected-foreground));
 
   /* Input / keyboard focus border color (ring recipe still uses --focus-ring). */
   --color-focus-border: hsl(var(--focus-ring));
@@ -684,6 +683,40 @@ body.has-btcpay-confirmation-bar {
       0 2px 9px hsl(220 12% 3% / 0.14);
     --chrome-shell-shadow-footer:
       0 -5px 26px hsl(220 14% 3% / 0.2), 0 -2px 9px hsl(220 12% 3% / 0.13);
+  }
+
+  /*
+   * Proof card PNG export: html-to-image keeps dark-mode ink on a light canvas.
+   * Snapshot restores light receipt tokens for shareable exports.
+   */
+  .dark .proof-export-snapshot {
+    --bg-surface-2: 0 0% 100%;
+    --bg-surface-3: 42 10% 97%;
+    --surface: var(--bg-surface-2);
+    --surface-hover: var(--bg-surface-3);
+    --text: 38 14% 10%;
+    --text-secondary: 38 8% 34%;
+    --text-tertiary: 38 5% 46%;
+    --border: 36 9% 84%;
+    --border-subtle: 38 10% 90%;
+    --link: 221 14% 43%;
+    --brand: 222 26% 42%;
+    --brand-strong: 258 62% 55%;
+    --success: 142 70% 36%;
+    --success-text: 142 72% 20%;
+    --warning: 38 92% 45%;
+    --warning-text: 32 92% 22%;
+    --elevation-2:
+      0 12px 32px hsl(32 20% 16% / 0.095), 0 2px 10px hsl(30 14% 12% / 0.07),
+      inset 0 1px 0 0 rgb(255 255 255 / 0.62);
+  }
+
+  /* Pin card bounds to export dimensions (avoids empty canvas on flex wrappers). */
+  .proof-export-snapshot [data-proof-card-root] {
+    width: var(--proof-export-w) !important;
+    height: var(--proof-export-h) !important;
+    max-width: none !important;
+    aspect-ratio: auto !important;
   }
 }
 

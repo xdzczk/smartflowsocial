@@ -43,7 +43,7 @@ export function BatchPayoutStatusBanner({
       aria-live="polite"
       aria-busy
       className={cn(
-        "border-border bg-brand/5 relative overflow-hidden rounded-lg border",
+        "border-border bg-selection-wash relative overflow-hidden rounded-lg border",
         className
       )}
     >
@@ -51,7 +51,7 @@ export function BatchPayoutStatusBanner({
         className="bg-surface-hover pointer-events-none absolute inset-x-0 top-0 h-1 overflow-hidden"
         aria-hidden
       >
-        <div className="bg-brand/45 h-full w-full animate-pulse" />
+        <div className="bg-action-primary/45 h-full w-full animate-pulse" />
       </div>
       <div className="flex items-start gap-3 p-3 pt-4">
         <Loader2
@@ -75,7 +75,7 @@ export function BatchPayoutStatusBanner({
               </p>
               <div className="bg-surface-hover h-2 overflow-hidden rounded-full">
                 <div
-                  className="bg-brand h-full transition-[width] duration-300 ease-out"
+                  className="bg-action-primary h-full transition-[width] duration-300 ease-out"
                   style={{ width: `${pct}%` }}
                 />
               </div>

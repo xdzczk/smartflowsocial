@@ -240,7 +240,7 @@ export default function AdminOverviewPage() {
                       <div
                         key={row.state}
                         title={`${row.state}: ${row.count}`}
-                        className="bg-selection-fill/70 h-full first:rounded-l-full last:rounded-r-full"
+                        className="bg-action-primary/70 h-full first:rounded-l-full last:rounded-r-full"
                         style={{
                           width: `${(row.count / stateTotal) * 100}%`,
                           opacity: 0.35 + (row.count / stateTotal) * 0.65,
@@ -265,7 +265,7 @@ export default function AdminOverviewPage() {
                 {d.publishing.dailyPublishesShort.map((day) => (
                   <div
                     key={day.day}
-                    className="bg-selection-fill/80 hover:bg-selection-fill min-w-[6px] flex-1 rounded-t transition-all"
+                    className="bg-action-primary/80 hover:bg-action-primary min-w-[6px] flex-1 rounded-t transition-all"
                     style={{
                       height: `${(day.count / maxDaily) * 100}%`,
                       minHeight: day.count > 0 ? "4px" : "0",

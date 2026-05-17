@@ -6,7 +6,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 
 export function BroadcastAudiencesPageSkeleton() {
   return (
-    <div className="w-full min-w-0 animate-pulse space-y-8" aria-busy="true">
+    <div className="w-full min-w-0 animate-pulse space-y-6" aria-busy="true">
       <div>
         <Skeleton.Text variant="h1" w="w-32" />
         <Skeleton.Text variant="body" className="mt-2" w="max-w-2xl" />

@@ -240,7 +240,7 @@ function SettingsMediaPageInner() {
             <div>
               <div className="bg-surface-hover mb-1 h-2 w-full overflow-hidden rounded-full">
                 <div
-                  className="bg-brand h-full rounded-full transition-all"
+                  className="bg-action-primary h-full rounded-full transition-all"
                   style={{ width: `${usagePercent}%` }}
                 />
               </div>

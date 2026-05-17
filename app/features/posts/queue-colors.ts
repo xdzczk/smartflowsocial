@@ -225,7 +225,7 @@ export const getSelectedQueueStyle = (
       );
 
   if (isSelected) {
-    return `${colors.bg} ${colors.text} ${colors.border} border-2 ring-2 ring-brand font-medium`;
+    return `${colors.bg} ${colors.text} ${colors.border} border-2 ring-2 ring-selection-border font-medium`;
   }
   return `${colors.bg} ${colors.text} ${colors.hover} ${colors.border} border opacity-70 hover:opacity-100 hover:shadow-1`;
 };
@@ -244,7 +244,7 @@ export const getDynamicQueueStyle = (
   }
   const baseStyle = "transition-all duration-200";
   if (isSelected) {
-    return `${baseStyle} border-2 ring-2 ring-brand font-medium`;
+    return `${baseStyle} border-2 ring-2 ring-selection-border font-medium`;
   }
   return `${baseStyle} border opacity-70 hover:opacity-100 hover:shadow-1`;
 };

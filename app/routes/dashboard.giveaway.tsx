@@ -1,6 +1,10 @@
 import { NavLink, Outlet } from "@remix-run/react";
 
 import { PageContent } from "~/components/layout/PageContent";
+import {
+  campaignSectionLayoutClassNames,
+  campaignSectionSubNavClassNames,
+} from "~/features/campaign-ui";
 
 const subNav = [
   { to: "/dashboard/giveaway", end: true, label: "All giveaways" },
@@ -14,10 +18,10 @@ const subNav = [
  */
 export default function GiveawayLayout() {
   return (
-    <PageContent fluid className="space-y-6">
+    <PageContent fluid className={campaignSectionLayoutClassNames}>
       <nav
         aria-label="Giveaway sections"
-        className="border-border flex flex-wrap gap-1 border-b pb-2"
+        className={campaignSectionSubNavClassNames}
       >
         {subNav.map((item) => (
           <NavLink
@@ -28,7 +32,7 @@ export default function GiveawayLayout() {
               [
                 "focus-ring motion-fast rounded-md px-3 py-2 text-sm font-medium",
                 isActive
-                  ? "bg-selection-fill text-selection-foreground shadow-1 hover:bg-selection-fill/90"
+                  ? "bg-selection-fill text-selection-foreground shadow-1 hover:bg-selection-fill/80"
                   : "text-text-secondary hover:bg-surface-hover hover:text-text",
               ].join(" ")
             }

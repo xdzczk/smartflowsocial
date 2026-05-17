@@ -89,7 +89,7 @@ export function RemoteSignerSessionList({
               className={cn(
                 "focus-ring hover:bg-surface-hover/50 motion-fast w-full rounded-md border px-3 py-2 text-left text-sm",
                 isSelected
-                  ? "border-brand bg-brand/5"
+                  ? "border-selection-border bg-surface-selected"
                   : "border-transparent bg-transparent"
               )}
             >

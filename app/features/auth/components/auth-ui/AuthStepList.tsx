@@ -33,7 +33,7 @@ function StepIcon({ status }: { status: AuthStepStatus }) {
       );
     case "active":
       return (
-        <span className="bg-brand/15 text-brand flex size-7 shrink-0 items-center justify-center rounded-full">
+        <span className="bg-surface-selected text-surface-selected-foreground flex size-7 shrink-0 items-center justify-center rounded-full">
           <Loader2
             className={cn(SMALL_ICON_SIZE_CLASS, "animate-spin")}
             aria-hidden

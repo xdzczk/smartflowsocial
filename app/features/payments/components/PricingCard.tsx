@@ -158,7 +158,7 @@ export function PricingCard({
     ? "border-border bg-surface-hover/20 relative flex h-full flex-col rounded-xl border p-4 pt-6 shadow-1 sm:p-5 sm:pt-6"
     : `border-border relative flex h-full flex-col rounded-xl border bg-surface p-4 pt-6 shadow-2 sm:p-5 sm:pt-6 ${
         plan.isPopular
-          ? "border-brand/35 ring-brand/25 shadow-2 ring-2"
+          ? "border-selection-border/35 ring-selection-border/25 shadow-2 ring-2"
           : "hover:border-border/90 hover:shadow-2"
       }`;
 

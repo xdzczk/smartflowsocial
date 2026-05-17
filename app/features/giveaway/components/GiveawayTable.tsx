@@ -185,7 +185,7 @@ export function GiveawayTable({
                         }
                       />
                       {post.repost ? (
-                        <div className="bg-brand absolute -top-1 -right-1 rounded-full p-1">
+                        <div className="bg-action-primary absolute -top-1 -right-1 rounded-full p-1">
                           <Share2
                             className={`${SMALL_ICON_SIZE_CLASS} text-brand-on`}
                             strokeWidth={INLINE_ICON_STROKE}
@@ -209,7 +209,7 @@ export function GiveawayTable({
                         TEXT
                       </div>
                       {post.repost ? (
-                        <div className="bg-brand absolute -top-1 -right-1 rounded-full p-1">
+                        <div className="bg-action-primary absolute -top-1 -right-1 rounded-full p-1">
                           <Share2
                             className={`${SMALL_ICON_SIZE_CLASS} text-brand-on`}
                             strokeWidth={INLINE_ICON_STROKE}

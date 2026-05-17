@@ -424,7 +424,7 @@ function BroadcastDetailRouteLoaded({
         <h2 className="font-medium">Progress</h2>
         <div className="bg-surface-hover mt-3 h-2 overflow-hidden rounded-full">
           <div
-            className="bg-selection-fill h-full transition-all"
+            className="bg-action-primary h-full transition-all"
             style={{ width: `${String(progressPct)}%` }}
           />
         </div>
