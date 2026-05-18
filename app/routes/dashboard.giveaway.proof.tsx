@@ -69,7 +69,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
           else unresolvedCount += 1;
         }
         const satsPlanned = budgetSatsFromGiveawayRow(g);
-        const satsPaid = totalSatsPaidFromState(snapshot, payoutState);
+        const satsPaid = totalSatsPaidFromState(snapshot, payoutState, {
+          engagementConfig: g.engagementConfig,
+          winnerCount: g.winnerCount,
+          plannedPayoutSats: g.plannedPayoutSats,
+        });
         const meta = g.lastPreviewMeta as { eligiblePoolSize?: number } | null;
         const completedAtLabel = new Intl.DateTimeFormat(undefined, {
           dateStyle: "medium",

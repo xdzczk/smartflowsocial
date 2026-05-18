@@ -11,6 +11,7 @@ import {
   computeFinalizationFeeSats,
   getFinalizationFeeRateBps,
 } from "./giveaway-finalization-fee.shared";
+import { computeGiveawayPlannedPayoutSats } from "./giveaway-payout.server";
 import type { GiveawayWinnerEntry } from "./types";
 
 export {
@@ -92,6 +93,7 @@ export function quoteGiveawayFinalization(input: {
     winnerSnapshot: unknown;
     engagementConfig: unknown;
     winnerCount: number;
+    plannedPayoutSats?: number | null;
     selectionMode: string;
     scopeType: string;
     scopeReference: unknown;
@@ -101,12 +103,12 @@ export function quoteGiveawayFinalization(input: {
   };
   planType: PlanType;
 }): GiveawayFinalizationQuote {
-  const snapshot =
-    (input.giveaway.winnerSnapshot as GiveawayWinnerEntry[] | null) ?? [];
-  const plannedPayoutSats = snapshot.reduce(
-    (acc, w) => acc + (w.satsPerWinner ?? 0),
-    0
-  );
+  const plannedPayoutSats = computeGiveawayPlannedPayoutSats({
+    winnerSnapshot: input.giveaway.winnerSnapshot,
+    engagementConfig: input.giveaway.engagementConfig,
+    winnerCount: input.giveaway.winnerCount,
+    plannedPayoutSats: input.giveaway.plannedPayoutSats,
+  });
   const feeRateBps = getFinalizationFeeRateBps(input.planType);
   const { feeSats, waivedByPlan } = computeFinalizationFeeSats(
     plannedPayoutSats,

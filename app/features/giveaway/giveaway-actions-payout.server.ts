@@ -13,7 +13,10 @@ import type { Prisma } from "./data/giveaway-prisma-types.server";
 import { getGiveawayById } from "./giveaway-actions-crud.server";
 import { ERROR_GIVEAWAY_NOT_FOUND } from "./giveaway-actions-shared.server";
 import { appendGiveawayActivityLog } from "./giveaway-activity-log.server";
-import { normalizePayoutState } from "./giveaway-payout.server";
+import {
+  normalizePayoutState,
+  resolveWinnerSatsPerWinner,
+} from "./giveaway-payout.server";
 import type { GiveawayPayoutEntryStatus } from "./giveaway-payout.server";
 import { updateGiveaway as updateGiveawayRow } from "./repositories/giveaway-actions-data.server";
 import type { GiveawayWinnerEntry } from "./types";
@@ -117,7 +120,11 @@ export async function runGiveawayPayoutBatchWithNwc(
     spendCapSats: options?.spendCapSats ?? null,
     winners: snapshot.map((w) => ({
       winnerPubkeyHex: w.pubkey,
-      amountSats: Math.max(0, Math.floor(w.satsPerWinner ?? 0)),
+      amountSats: resolveWinnerSatsPerWinner(w, {
+        engagementConfig: g.engagementConfig,
+        winnerCount: g.winnerCount,
+        plannedPayoutSats: g.plannedPayoutSats,
+      }),
       winnerNpub: w.npub,
     })),
   });
@@ -216,7 +223,11 @@ export async function runGiveawayPayoutBatchStepWithNwc(
       spendCapSats: options?.spendCapSats ?? null,
       winners: snapshot.map((w) => ({
         winnerPubkeyHex: w.pubkey,
-        amountSats: Math.max(0, Math.floor(w.satsPerWinner ?? 0)),
+        amountSats: resolveWinnerSatsPerWinner(w, {
+          engagementConfig: g.engagementConfig,
+          winnerCount: g.winnerCount,
+          plannedPayoutSats: g.plannedPayoutSats,
+        }),
         winnerNpub: w.npub,
       })),
     },
