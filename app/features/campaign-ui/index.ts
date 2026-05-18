@@ -20,6 +20,8 @@ export type {
 
 export {
   campaignFieldClassNames,
+  campaignSectionLayoutClassNames,
+  campaignSectionSubNavClassNames,
   campaignSelectClassNames,
 } from "./campaign-field-classes";
 export {

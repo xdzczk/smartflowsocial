@@ -1,3 +1,5 @@
+import type { ShouldRevalidateFunctionArgs } from "@remix-run/react";
+import { toPng } from "html-to-image";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 import { brandLineProofCaption } from "~/lib/brand";
@@ -7,9 +9,16 @@ import { buildProofCaption } from "~/lib/proof/build-proof-caption";
 import { buildProofSummary } from "~/lib/proof/build-proof-summary";
 import {
   exportProofCardPng,
+  measureProofCardRoot,
+  PROOF_EXPORT_SNAPSHOT_CLASS,
   proofExportFilename,
+  resolveProofExportCapture,
+  resolveProofExportScale,
   resolveProofPngBackground,
+  triggerProofPngDownload,
 } from "~/lib/proof/export-proof-card";
+import { proofStudioShouldRevalidate } from "~/lib/proof/proof-studio-should-revalidate";
+import { proofPreviewExportFallbackPx } from "~/lib/proof/ratios";
 import {
   proofCardAspectOuterClass,
   proofCardInnerPadClass,
@@ -27,7 +36,10 @@ vi.mock("html-to-image", () => ({
 }));
 
 describe("W1 proof coverage", () => {
-  const fakeElement = (): HTMLElement => Object.create(null) as HTMLElement;
+  const fakeElement = (): HTMLElement =>
+    ({
+      querySelector: () => null,
+    }) as unknown as HTMLElement;
   const basePayload: ProofCardPayload = {
     domain: "giveaway",
     cardType: "public-summary",
@@ -239,7 +251,8 @@ describe("W1 proof coverage", () => {
 
       expect(proofSubClass("portrait")).toContain("text-sm");
       expect(proofSubClass("square")).toContain("line-clamp-3");
-      expect(proofSubClass("landscape")).toContain("max-w-[20rem]");
+      expect(proofSubClass("landscape")).toContain("line-clamp-2");
+      expect(proofCardInnerPadClass("landscape")).toContain("px-6");
 
       expect(proofFooterTextClass("square")).toContain("text-[10px]");
       expect(proofFooterTextClass("landscape")).toContain("sm:text-[11px]");
@@ -263,28 +276,93 @@ describe("W1 proof coverage", () => {
       expect(resolveProofPngBackground(fakeElement())).toBe("rgb(1, 2, 3)");
     });
 
-    it("falls back to --card CSS variable when transparent", () => {
+    it("falls back to --surface CSS variable when transparent", () => {
       const getComputedStyle = vi
         .fn()
         .mockReturnValueOnce({ backgroundColor: "rgba(0, 0, 0, 0)" })
         .mockReturnValueOnce({
-          getPropertyValue: () => "210 10% 50%",
+          getPropertyValue: (name: string) =>
+            name === "--surface" ? "0 0% 100%" : "",
         });
       vi.stubGlobal("window", { getComputedStyle });
       vi.stubGlobal("document", { documentElement: {} });
-      expect(resolveProofPngBackground(fakeElement())).toBe("hsl(210 10% 50%)");
+      expect(resolveProofPngBackground(fakeElement())).toBe("hsl(0 0% 100%)");
     });
 
-    it("falls back to white when no element bg and no --card value", () => {
+    it("reads background from the card surface element", () => {
+      const surface = fakeElement();
+      const getComputedStyle = vi.fn(() => ({
+        backgroundColor: "rgb(250, 250, 250)",
+      }));
+      vi.stubGlobal("window", { getComputedStyle });
+      expect(resolveProofPngBackground(surface)).toBe("rgb(250, 250, 250)");
+      expect(getComputedStyle).toHaveBeenCalledWith(surface);
+    });
+
+    it("falls back to white when no surface bg and no token values", () => {
+      const emptyTokens = { getPropertyValue: () => "" };
       const getComputedStyle = vi
         .fn()
         .mockReturnValueOnce({ backgroundColor: "transparent" })
-        .mockReturnValueOnce({
-          getPropertyValue: () => "",
-        });
+        .mockReturnValueOnce(emptyTokens)
+        .mockReturnValueOnce(emptyTokens);
       vi.stubGlobal("window", { getComputedStyle });
       vi.stubGlobal("document", { documentElement: {} });
       expect(resolveProofPngBackground(fakeElement())).toBe("#ffffff");
+    });
+
+    it("measures card root from bounding rect", () => {
+      const cardRoot = {
+        getBoundingClientRect: () => ({ width: 372.4, height: 465.1 }),
+      } as unknown as HTMLElement;
+      expect(measureProofCardRoot(cardRoot, "portrait")).toEqual({
+        w: 372,
+        h: 465,
+      });
+    });
+
+    it("falls back to preview max size when card rect is zero", () => {
+      const cardRoot = {
+        getBoundingClientRect: () => ({ width: 0, height: 0 }),
+      } as unknown as HTMLElement;
+      expect(measureProofCardRoot(cardRoot, "portrait")).toEqual(
+        proofPreviewExportFallbackPx("portrait")
+      );
+      expect(proofPreviewExportFallbackPx("landscape")).toEqual({
+        w: 720,
+        h: 405,
+      });
+    });
+
+    it("upscales narrow previews to design max dimensions", () => {
+      expect(
+        resolveProofExportScale({
+          source: { w: 280, h: 350 },
+          target: proofPreviewExportFallbackPx("portrait"),
+        })
+      ).toBeCloseTo(380 / 280, 5);
+      expect(
+        resolveProofExportCapture(
+          {
+            getBoundingClientRect: () => ({ width: 280, height: 280 }),
+          } as unknown as HTMLElement,
+          "square"
+        )
+      ).toEqual({
+        source: { w: 280, h: 280 },
+        exportW: 380,
+        exportH: 380,
+        scale: 380 / 280,
+      });
+    });
+
+    it("does not downscale when preview already at design max", () => {
+      expect(
+        resolveProofExportScale({
+          source: { w: 380, h: 475 },
+          target: proofPreviewExportFallbackPx("portrait"),
+        })
+      ).toBe(1);
     });
 
     it("formats proof export filenames", () => {
@@ -297,27 +375,225 @@ describe("W1 proof coverage", () => {
       ).toBe("contest-public-summary-2026-05-20.png");
     });
 
-    it("exports png using html-to-image and clicks download anchor", async () => {
+    it("exports png at design preview dimensions without cache busting", async () => {
       const click = vi.fn();
-      const anchor = { href: "", download: "", click };
+      const anchor = {
+        href: "",
+        download: "",
+        rel: "",
+        style: { display: "" },
+        click,
+      };
+      const classList = { add: vi.fn(), remove: vi.fn() };
+      const cardRootClassList = { add: vi.fn(), remove: vi.fn() };
+      const tokenStyle = new Map<string, string>();
+      const surfaceStyle = {
+        backgroundColor: "",
+        backgroundImage: "",
+      };
+      const cardSurface = {
+        style: surfaceStyle,
+      } as unknown as HTMLElement;
+      const cardRoot = {
+        classList: cardRootClassList,
+        getBoundingClientRect: () => ({ width: 300, height: 300 }),
+        style: {
+          getPropertyValue: vi.fn((name: string) => tokenStyle.get(name) ?? ""),
+          setProperty: vi.fn((name: string, value: string) => {
+            tokenStyle.set(name, value);
+          }),
+          removeProperty: vi.fn((name: string) => {
+            tokenStyle.delete(name);
+          }),
+        },
+      } as unknown as HTMLElement;
+      const element = {
+        classList,
+        querySelector: vi.fn((selector: string) =>
+          selector === "[data-proof-card-root]"
+            ? cardRoot
+            : selector === "[data-proof-card-surface]"
+              ? cardSurface
+              : null
+        ),
+      } as unknown as HTMLElement;
       const getComputedStyle = vi
         .fn()
-        .mockReturnValueOnce({ backgroundColor: "rgb(20, 20, 20)" });
+        .mockImplementation((node: HTMLElement) => {
+          if (node === cardRoot) {
+            return {
+              getPropertyValue: (name: string) =>
+                name === "--text"
+                  ? "220 10% 96%"
+                  : name === "--surface"
+                    ? "220 7% 14.2%"
+                    : "",
+            };
+          }
+          if (node === cardSurface) {
+            return {
+              backgroundColor: "rgb(31, 32, 36)",
+              backgroundImage: "linear-gradient(rgb(31, 32, 36), transparent)",
+            };
+          }
+          return { backgroundColor: "rgb(20, 20, 20)" };
+        });
       vi.stubGlobal("window", { getComputedStyle });
+      let downloadLink: typeof anchor & { remove: ReturnType<typeof vi.fn> };
+      const appendChild = vi.fn();
       vi.stubGlobal("document", {
-        createElement: vi.fn(() => anchor),
+        body: { appendChild },
+        createElement: vi.fn((tag: string) => {
+          if (tag === "a") {
+            downloadLink = {
+              ...anchor,
+              remove: vi.fn(),
+            };
+            return downloadLink;
+          }
+          throw new Error(`unexpected tag ${tag}`);
+        }),
         documentElement: {},
+      });
+      vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => {
+        cb(0);
+        return 0;
+      });
+      vi.mocked(toPng).mockImplementationOnce(async () => {
+        expect(surfaceStyle.backgroundColor).toBe("rgb(31, 32, 36)");
+        expect(surfaceStyle.backgroundImage).toBe("none");
+        return "data:image/png;base64,fake";
       });
 
       await exportProofCardPng({
-        element: fakeElement(),
+        element,
         ratio: "square",
         filename: "x.png",
       });
 
+      expect(classList.add).toHaveBeenCalledWith(PROOF_EXPORT_SNAPSHOT_CLASS);
+      expect(cardRootClassList.add).toHaveBeenCalledWith(
+        PROOF_EXPORT_SNAPSHOT_CLASS
+      );
+      expect(classList.remove).toHaveBeenCalledWith(
+        PROOF_EXPORT_SNAPSHOT_CLASS
+      );
+      expect(cardRootClassList.remove).toHaveBeenCalledWith(
+        PROOF_EXPORT_SNAPSHOT_CLASS
+      );
+      expect(cardRoot.style.setProperty).toHaveBeenCalledWith(
+        "--text",
+        "220 10% 96%"
+      );
+      expect(cardRoot.style.setProperty).toHaveBeenCalledWith(
+        "--surface",
+        "220 7% 14.2%"
+      );
+      expect(cardRoot.style.removeProperty).toHaveBeenCalledWith("--text");
+      expect(surfaceStyle.backgroundColor).toBe("");
+      expect(surfaceStyle.backgroundImage).toBe("");
+      expect(toPng).toHaveBeenCalledOnce();
+      const [capturedRoot, toPngOptions] = vi.mocked(toPng).mock.calls[0] ?? [];
+      expect(capturedRoot).toBe(cardRoot);
+      expect(toPngOptions).toMatchObject({
+        width: 380,
+        height: 380,
+        cacheBust: false,
+        pixelRatio: 1,
+        style: {
+          width: "300px",
+          height: "300px",
+          maxWidth: "none",
+          aspectRatio: "auto",
+          transform: `scale(${380 / 300})`,
+          transformOrigin: "top left",
+        },
+      });
+      expect(appendChild).toHaveBeenCalledTimes(1);
       expect(click).toHaveBeenCalledTimes(1);
-      expect(anchor.download).toBe("x.png");
-      expect(anchor.href).toContain("data:image/png;base64");
+      expect(downloadLink!.remove).toHaveBeenCalledTimes(1);
+      expect(downloadLink!.download).toBe("x.png");
+      expect(downloadLink!.href).toContain("data:image/png;base64");
+    });
+
+    it("triggerProofPngDownload appends anchor to body for mobile Safari", () => {
+      const click = vi.fn();
+      const remove = vi.fn();
+      const link = {
+        href: "",
+        download: "",
+        rel: "",
+        style: { display: "" },
+        click,
+        remove,
+      };
+      const appendChild = vi.fn();
+      vi.stubGlobal("document", {
+        body: { appendChild },
+        createElement: vi.fn(() => link),
+      });
+      triggerProofPngDownload("data:image/png;base64,x", "proof.png");
+      expect(appendChild).toHaveBeenCalledWith(link);
+      expect(click).toHaveBeenCalledTimes(1);
+      expect(remove).toHaveBeenCalledTimes(1);
+      expect(link.download).toBe("proof.png");
+    });
+  });
+
+  describe("proofStudioShouldRevalidate", () => {
+    function proofRevalidateArgs(
+      overrides: Partial<ShouldRevalidateFunctionArgs> &
+        Pick<
+          ShouldRevalidateFunctionArgs,
+          "currentUrl" | "nextUrl" | "defaultShouldRevalidate"
+        >
+    ): ShouldRevalidateFunctionArgs {
+      return {
+        currentParams: {},
+        nextParams: {},
+        ...overrides,
+      };
+    }
+
+    it("skips revalidation on same-url focus (e.g. after mobile export)", () => {
+      const url = new URL("https://app.test/dashboard/giveaway/proof");
+      expect(
+        proofStudioShouldRevalidate(
+          proofRevalidateArgs({
+            currentUrl: url,
+            nextUrl: url,
+            defaultShouldRevalidate: true,
+          })
+        )
+      ).toBe(false);
+    });
+
+    it("revalidates after form submissions", () => {
+      const url = new URL("https://app.test/dashboard/giveaway/proof");
+      expect(
+        proofStudioShouldRevalidate(
+          proofRevalidateArgs({
+            formAction: "/dashboard/giveaway/proof",
+            currentUrl: url,
+            nextUrl: url,
+            defaultShouldRevalidate: false,
+          })
+        )
+      ).toBe(true);
+    });
+
+    it("revalidates when navigating to a different proof URL", () => {
+      const current = new URL("https://app.test/dashboard/giveaway/proof?id=a");
+      const next = new URL("https://app.test/dashboard/giveaway/proof?id=b");
+      expect(
+        proofStudioShouldRevalidate(
+          proofRevalidateArgs({
+            currentUrl: current,
+            nextUrl: next,
+            defaultShouldRevalidate: true,
+          })
+        )
+      ).toBe(true);
     });
   });
 });

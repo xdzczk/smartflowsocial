@@ -1,12 +1,9 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
-import { defer, json } from "@remix-run/node";
-import { Await, Link, useLoaderData } from "@remix-run/react";
-import { Suspense } from "react";
+import { json } from "@remix-run/node";
+import { Link, useLoaderData } from "@remix-run/react";
 
-import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
 import { requireUserId } from "~/features/auth";
 import type { GiveawayWinnerEntry } from "~/features/giveaway";
-import { GiveawayProofPageSkeleton } from "~/features/giveaway";
 import { listGiveawaysByUser } from "~/features/giveaway/giveaway-actions.server";
 import {
   formatScopeSummaryLabel,
@@ -21,7 +18,8 @@ import {
 import { requireAnySubscription } from "~/features/payments";
 import { GiveawayProofStudio } from "~/features/proof/giveaway/GiveawayProofStudio";
 import type { GiveawayProofStudioDto } from "~/lib/proof/adapters/giveaway";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
+import { proofStudioShouldRevalidate } from "~/lib/proof/proof-studio-should-revalidate";
+export { proofStudioShouldRevalidate as shouldRevalidate };
 
 function giveawayProofTitle(
   name: string | null | undefined,
@@ -69,7 +67,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
           else unresolvedCount += 1;
         }
         const satsPlanned = budgetSatsFromGiveawayRow(g);
-        const satsPaid = totalSatsPaidFromState(snapshot, payoutState);
+        const satsPaid = totalSatsPaidFromState(snapshot, payoutState, {
+          engagementConfig: g.engagementConfig,
+          winnerCount: g.winnerCount,
+          plannedPayoutSats: g.plannedPayoutSats,
+        });
         const meta = g.lastPreviewMeta as { eligiblePoolSize?: number } | null;
         const completedAtLabel = new Intl.DateTimeFormat(undefined, {
           dateStyle: "medium",
@@ -99,38 +101,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   })();
 
-  if (isRemixResourceRequest(request)) {
-    return json({ giveaways: await giveawaysPromise });
-  }
-
-  return defer({ giveaways: giveawaysPromise });
+  const giveaways = await giveawaysPromise;
+  return json({ giveaways });
 }
 
 export default function GiveawayProofPage() {
   const { giveaways } = useLoaderData<typeof loader>();
 
   return (
-    <Suspense fallback={<GiveawayProofPageSkeleton />}>
-      <Await
-        resolve={giveaways}
-        errorElement={
-          <DeferredRouteAwaitError retryTo="/dashboard/giveaway/proof" />
-        }
-      >
-        {(loadedGiveaways) => (
-          <div className="space-y-6">
-            <GiveawayProofStudio giveaways={loadedGiveaways} />
-            <p className="text-text-secondary text-sm">
-              <Link
-                to="/dashboard/giveaway"
-                className="text-link hover:text-link-hover hover:underline"
-              >
-                ← All giveaways
-              </Link>
-            </p>
-          </div>
-        )}
-      </Await>
-    </Suspense>
+    <div className="space-y-6">
+      <GiveawayProofStudio giveaways={giveaways} />
+      <p className="text-text-secondary text-sm">
+        <Link
+          to="/dashboard/giveaway"
+          className="text-link hover:text-link-hover hover:underline"
+        >
+          ← All giveaways
+        </Link>
+      </p>
+    </div>
   );
 }

@@ -220,7 +220,7 @@ export function GiveawayDetailBatchZapFlow({
             </div>
             <div className="bg-surface-hover h-2 overflow-hidden rounded-full">
               <div
-                className="bg-brand h-full transition-all"
+                className="bg-action-primary h-full transition-all"
                 style={{
                   width: `${payoutProgress.totalWinners > 0 ? (100 * payoutProgress.settledCount) / payoutProgress.totalWinners : 0}%`,
                 }}

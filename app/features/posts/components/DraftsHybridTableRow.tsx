@@ -102,7 +102,7 @@ export function DraftsHybridTableRow({
               }
             />
             {isRepost ? (
-              <div className="bg-brand absolute -top-0.5 -right-0.5 rounded-full p-0.5">
+              <div className="bg-action-primary absolute -top-0.5 -right-0.5 rounded-full p-0.5">
                 <Repeat
                   className={`${SMALL_ICON_SIZE_CLASS} text-brand-on`}
                   strokeWidth={2}
@@ -134,7 +134,7 @@ export function DraftsHybridTableRow({
           {postThumbnailBadge}
         </div>
         {isRepost ? (
-          <div className="bg-brand absolute -top-0.5 -right-0.5 rounded-full p-0.5">
+          <div className="bg-action-primary absolute -top-0.5 -right-0.5 rounded-full p-0.5">
             <Repeat
               className={`${SMALL_ICON_SIZE_CLASS} text-brand-on`}
               strokeWidth={2}

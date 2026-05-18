@@ -125,6 +125,28 @@ export interface SimpleUnifiedEngagementConfig {
   _simpleUnified: { satsPerWinner: number };
 }
 
+function parseNonNegativeSats(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
+    return Math.floor(value);
+  }
+  if (typeof value === "string" && /^\d+$/.test(value.trim())) {
+    return Math.max(0, parseInt(value.trim(), 10));
+  }
+  return null;
+}
+
+/** Sats per winner from `_simpleUnified` config, or null when not configured. */
+export function simpleUnifiedSatsPerWinner(config: unknown): number | null {
+  if (!config || typeof config !== "object" || Array.isArray(config)) {
+    return null;
+  }
+  const su = (config as Record<string, unknown>)["_simpleUnified"];
+  if (!su || typeof su !== "object" || Array.isArray(su)) return null;
+  return parseNonNegativeSats(
+    (su as { satsPerWinner?: unknown }).satsPerWinner
+  );
+}
+
 export function isSimpleUnifiedEngagementConfig(
   config: unknown
 ): config is SimpleUnifiedEngagementConfig {
@@ -134,8 +156,10 @@ export function isSimpleUnifiedEngagementConfig(
   const c = config as Record<string, unknown>;
   const su = c["_simpleUnified"];
   if (!su || typeof su !== "object" || Array.isArray(su)) return false;
-  const sats = (su as { satsPerWinner?: unknown }).satsPerWinner;
-  return typeof sats === "number" && sats >= 0;
+  const sats = parseNonNegativeSats(
+    (su as { satsPerWinner?: unknown }).satsPerWinner
+  );
+  return sats != null;
 }
 
 /**

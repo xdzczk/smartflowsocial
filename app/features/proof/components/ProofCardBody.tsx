@@ -30,13 +30,13 @@ function SupportLines({
 
   if (landscapePair) {
     return (
-      <ul className="flex flex-col gap-3">
+      <ul className="grid grid-cols-2 gap-x-4 gap-y-2.5">
         {items.map((s) => (
           <li key={`${s.label}-${s.value}`} className="min-w-0">
             <p className={labelCls}>{s.label}</p>
             <p
               className={cn(
-                "mt-0.5 text-lg font-semibold tabular-nums",
+                "mt-0.5 text-sm leading-snug font-semibold [overflow-wrap:anywhere] tabular-nums",
                 s.emphasis && "text-link"
               )}
             >
@@ -102,7 +102,7 @@ function FooterBlock({
     <div
       className={cn(
         "space-y-0.5",
-        ratio === "landscape" && "border-border/40 mt-3 border-t pt-3"
+        ratio === "landscape" && "border-border/40 mt-2 border-t pt-2"
       )}
     >
       {lines.map((line) => (
@@ -114,7 +114,14 @@ function FooterBlock({
   );
 }
 
-function CampaignBrandingFoot({ domainLabel }: { domainLabel: string | null }) {
+function CampaignBrandingFoot({
+  domainLabel,
+  ratio,
+}: {
+  domainLabel: string | null;
+  ratio: ProofRatio;
+}) {
+  if (ratio === "landscape") return null;
   return domainLabel ? (
     <p className="text-text-secondary mt-2 text-[10px] font-medium tracking-wider uppercase">
       {BRAND_NAME} · {domainLabel}
@@ -123,6 +130,151 @@ function CampaignBrandingFoot({ domainLabel }: { domainLabel: string | null }) {
     <p className="text-text-secondary mt-2 text-[10px] font-medium tracking-wider uppercase">
       {BRAND_NAME}
     </p>
+  );
+}
+
+function resolveCampaignDomainLabel(
+  payload: ProofCardPayload,
+  showBranding: boolean
+): string | null {
+  if (!showBranding || payload.branding?.showDomainLabel === false) {
+    return null;
+  }
+  if (payload.domain === "giveaway") return "Giveaway";
+  if (payload.domain === "contest") return "Contest";
+  return null;
+}
+
+function proofTitleHeadingClass(ratio: ProofRatio): string {
+  return cn(
+    "text-text mt-1 leading-tight font-semibold tracking-tight",
+    ratio === "portrait" && "text-xl sm:text-2xl",
+    ratio === "square" && "text-lg sm:text-xl",
+    ratio === "landscape" && "text-lg sm:text-xl",
+    "line-clamp-2 [overflow-wrap:anywhere]"
+  );
+}
+
+function proofHeroMetricTopMargin(
+  ratio: ProofRatio,
+  metricFirst: boolean
+): string {
+  if (metricFirst) {
+    return ratio === "landscape" ? "mt-1.5" : "mt-2";
+  }
+  return ratio === "landscape" ? "mt-2" : "mt-3";
+}
+
+function ProofCardStatusBadge({
+  badge,
+  ratio,
+}: {
+  badge: NonNullable<ProofCardPayload["statusBadge"]>;
+  ratio: ProofRatio;
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-block rounded-full px-2 py-0.5 text-[10px] font-medium",
+        ratio === "landscape" ? "mb-1.5" : "mb-2",
+        statusBadgeClass(badge.tone)
+      )}
+    >
+      {badge.label}
+    </span>
+  );
+}
+
+function ProofCardHeroMetric({
+  payload,
+  ratio,
+  heroClass,
+  subClass,
+}: {
+  payload: ProofCardPayload;
+  ratio: ProofRatio;
+  heroClass: string;
+  subClass: string;
+}) {
+  if (payload.heroValue == null) return null;
+  return (
+    <>
+      <p
+        className={cn(
+          heroClass,
+          proofHeroMetricTopMargin(ratio, payload.metricFirst === true)
+        )}
+      >
+        {payload.heroValue}
+      </p>
+      {payload.heroLabel ? (
+        <p className={subClass}>{payload.heroLabel}</p>
+      ) : null}
+    </>
+  );
+}
+
+function ProofCardMetricFirstBody({
+  payload,
+  ratio,
+  subClass,
+  heroClass,
+}: {
+  payload: ProofCardPayload;
+  ratio: ProofRatio;
+  subClass: string;
+  heroClass: string;
+}) {
+  return (
+    <>
+      <ProofCardHeroMetric
+        payload={payload}
+        ratio={ratio}
+        heroClass={heroClass}
+        subClass={subClass}
+      />
+      {payload.title.trim().length > 0 ? (
+        <div
+          className={cn(
+            "text-text leading-snug font-semibold",
+            "line-clamp-2 [overflow-wrap:anywhere]",
+            ratio === "landscape" ? "mt-2 text-sm" : "mt-3 text-base sm:text-lg"
+          )}
+        >
+          {payload.title}
+        </div>
+      ) : null}
+      {payload.subtitle && ratio !== "landscape" ? (
+        <p className={cn(subClass, "mt-1")}>{payload.subtitle}</p>
+      ) : null}
+    </>
+  );
+}
+
+function ProofCardTitleFirstBody({
+  payload,
+  ratio,
+  subClass,
+  heroClass,
+}: {
+  payload: ProofCardPayload;
+  ratio: ProofRatio;
+  subClass: string;
+  heroClass: string;
+}) {
+  return (
+    <>
+      <h2 className={proofTitleHeadingClass(ratio)}>{payload.title}</h2>
+      <ProofCardHeroMetric
+        payload={payload}
+        ratio={ratio}
+        heroClass={heroClass}
+        subClass={subClass}
+      />
+      {payload.heroValue == null && payload.subtitle ? (
+        <p className={subClass}>{payload.subtitle}</p>
+      ) : null}
+    </>
   );
 }
 
@@ -143,83 +295,25 @@ function ProofCardHead({
 
   const showBranding =
     variant === "campaign" && payload.branding?.showLogo !== false;
-  const domainLabel =
-    showBranding && payload.branding?.showDomainLabel !== false
-      ? payload.domain === "giveaway"
-        ? "Giveaway"
-        : payload.domain === "contest"
-          ? "Contest"
-          : null
-      : null;
-
-  const titleBlock = (
-    <h2
-      className={cn(
-        "text-text mt-1 leading-tight font-semibold tracking-tight",
-        ratio === "portrait" && "text-xl sm:text-2xl",
-        ratio === "square" && "text-lg sm:text-xl",
-        ratio === "landscape" && "text-xl sm:text-2xl",
-        "line-clamp-2 [overflow-wrap:anywhere]"
-      )}
-    >
-      {payload.title}
-    </h2>
-  );
-
-  const metricBlock =
-    payload.heroValue != null ? (
-      <>
-        <p className={cn(heroClass, payload.metricFirst ? "mt-2" : "mt-3")}>
-          {payload.heroValue}
-        </p>
-        {payload.heroLabel ? (
-          <p className={subClass}>{payload.heroLabel}</p>
-        ) : null}
-      </>
-    ) : null;
+  const domainLabel = resolveCampaignDomainLabel(payload, showBranding);
+  const bodyProps = { payload, ratio, subClass, heroClass };
 
   return (
     <div>
       {payload.statusBadge ? (
-        <span
-          className={cn(
-            "mb-2 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium",
-            statusBadgeClass(payload.statusBadge.tone)
-          )}
-        >
-          {payload.statusBadge.label}
-        </span>
+        <ProofCardStatusBadge badge={payload.statusBadge} ratio={ratio} />
       ) : null}
       {payload.eyebrow ? (
         <p className={eyebrowClass}>{payload.eyebrow}</p>
       ) : null}
       {payload.metricFirst ? (
-        <>
-          {metricBlock}
-          {payload.title.trim().length > 0 ? (
-            <div
-              className={cn(
-                "text-text mt-3 text-base leading-snug font-semibold",
-                "line-clamp-2 [overflow-wrap:anywhere] sm:text-lg"
-              )}
-            >
-              {payload.title}
-            </div>
-          ) : null}
-          {payload.subtitle ? (
-            <p className={cn(subClass, "mt-1")}>{payload.subtitle}</p>
-          ) : null}
-        </>
+        <ProofCardMetricFirstBody {...bodyProps} />
       ) : (
-        <>
-          {titleBlock}
-          {metricBlock}
-          {payload.heroValue == null && payload.subtitle ? (
-            <p className={subClass}>{payload.subtitle}</p>
-          ) : null}
-        </>
+        <ProofCardTitleFirstBody {...bodyProps} />
       )}
-      {showBranding ? <CampaignBrandingFoot domainLabel={domainLabel} /> : null}
+      {showBranding ? (
+        <CampaignBrandingFoot domainLabel={domainLabel} ratio={ratio} />
+      ) : null}
     </div>
   );
 }
@@ -240,9 +334,9 @@ export function ProofCardBody({
 
   if (ratio === "landscape") {
     return (
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
-        <div className="flex flex-col justify-center">{head}</div>
-        <div className="border-border/50 flex flex-col justify-center sm:border-l sm:pl-6">
+      <div className="grid h-full min-h-0 flex-1 grid-cols-2 items-center gap-6">
+        <div className="min-h-0 min-w-0">{head}</div>
+        <div className="border-border/50 flex min-h-0 min-w-0 flex-col justify-center gap-3 border-l pl-6">
           {stats.length > 0 ? (
             <SupportLines items={stats} ratio={ratio} landscapePair />
           ) : null}
@@ -254,22 +348,20 @@ export function ProofCardBody({
 
   if (ratio === "square") {
     return (
-      <div className="flex min-h-0 flex-1 flex-col justify-between gap-3">
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
         {head}
         {stats.length > 0 ? <SupportLines items={stats} ratio={ratio} /> : null}
-        <FooterBlock payload={payload} ratio={ratio} />
+        <div className="mt-auto">
+          <FooterBlock payload={payload} ratio={ratio} />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col justify-between gap-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
       {head}
-      {stats.length > 0 ? (
-        <div className="min-h-0 flex-1">
-          <SupportLines items={stats} ratio={ratio} />
-        </div>
-      ) : null}
+      {stats.length > 0 ? <SupportLines items={stats} ratio={ratio} /> : null}
       <div className="border-border/50 mt-auto border-t pt-3">
         <FooterBlock payload={payload} ratio={ratio} />
       </div>

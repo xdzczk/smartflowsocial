@@ -368,7 +368,7 @@ export default function GiveawayPage({
                         <>
                           <div className="bg-surface-hover mb-1 h-1.5 w-24 overflow-hidden rounded-full">
                             <div
-                              className="bg-brand h-full"
+                              className="bg-action-primary h-full"
                               style={{
                                 width: `${(100 * g.payoutSettled) / g.payoutTotal}%`,
                               }}

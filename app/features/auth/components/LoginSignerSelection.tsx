@@ -55,7 +55,7 @@ export function LoginSignerSelection({
             className={cn(
               "bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 shadow-2 hover:shadow-3 h-auto w-full py-3 text-base font-semibold transition-all",
               highlighted === "nip07" &&
-                "ring-brand/50 ring-offset-canvas ring-2 ring-offset-2"
+                "ring-selection-border/50 ring-offset-canvas ring-2 ring-offset-2"
             )}
             onClick={onNip07}
             onMouseEnter={() => setHighlighted("nip07")}
@@ -115,7 +115,7 @@ export function LoginSignerSelection({
             className={cn(
               "border-border bg-surface hover:bg-surface-hover hover:text-text shadow-2 hover:shadow-2 dark:shadow-2 h-auto w-full py-3 text-base font-semibold transition-all",
               highlighted === "nip46" &&
-                "ring-brand/40 ring-offset-canvas ring-2 ring-offset-2"
+                "ring-selection-border/40 ring-offset-canvas ring-2 ring-offset-2"
             )}
             onClick={onNip46}
             onMouseEnter={() => setHighlighted("nip46")}

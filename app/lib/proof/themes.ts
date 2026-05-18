@@ -33,6 +33,8 @@ export function proofCardShellSurfaceClass(
 
 export function proofCardInnerPadClass(ratio: ProofRatio): string {
   if (ratio === "portrait") return "flex min-h-0 flex-1 flex-col p-5 sm:p-6";
+  if (ratio === "landscape")
+    return "flex h-full min-h-0 flex-1 flex-col px-6 py-5";
   return "flex min-h-0 flex-1 flex-col p-4 sm:p-5";
 }
 
@@ -52,7 +54,7 @@ export function proofHeroClass(
     ratio === "portrait" &&
       (heroReliability ? "text-5xl sm:text-6xl" : "text-5xl sm:text-[3.25rem]"),
     ratio === "square" && "text-4xl sm:text-5xl",
-    ratio === "landscape" && "text-4xl sm:text-5xl"
+    ratio === "landscape" && "text-3xl sm:text-4xl"
   );
 }
 
@@ -61,7 +63,7 @@ export function proofSubClass(ratio: ProofRatio): string {
     "leading-snug text-text-secondary",
     ratio === "portrait" && "mt-2 text-sm sm:text-base",
     ratio === "square" && "mt-1.5 line-clamp-3 text-xs sm:text-sm",
-    ratio === "landscape" && "mt-2 max-w-[20rem] text-sm"
+    ratio === "landscape" && "mt-1 line-clamp-2 text-xs sm:text-sm"
   );
 }
 

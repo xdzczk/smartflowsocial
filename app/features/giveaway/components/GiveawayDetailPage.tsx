@@ -337,7 +337,11 @@ export function GiveawayDetailPage({
     ? (giveaway.excludedPubkeys as string[])
     : [];
 
-  const totalBudgetSats = budgetFromSnapshot(winners);
+  const totalBudgetSats = budgetFromSnapshot(winners, {
+    engagementConfig: giveaway.engagementConfig,
+    winnerCount: giveaway.winnerCount,
+    plannedPayoutSats: giveaway.plannedPayoutSats,
+  });
   const unresolvedCount = winners.reduce((acc, w) => {
     const st = giveaway.payoutState?.[w.pubkey]?.status ?? "pending";
     return isPayoutItemSettled(st) ? acc : acc + 1;
@@ -1154,13 +1158,7 @@ export function GiveawayDetailPage({
               </p>
             )}
             <div className="text-text-secondary mt-2 space-y-0.5">
-              <p>
-                Planned payout:{" "}
-                {(
-                  giveaway.plannedPayoutSats ?? totalBudgetSats
-                ).toLocaleString()}{" "}
-                sats
-              </p>
+              <p>Planned payout: {totalBudgetSats.toLocaleString()} sats</p>
               <p>
                 Finalization fee:{" "}
                 {(giveaway.finalizationFeeSats ?? 0).toLocaleString()} sats
@@ -1232,8 +1230,7 @@ export function GiveawayDetailPage({
             <p className="text-text-secondary mt-1 text-sm">
               {giveaway.scopeSummaryLabel ?? giveaway.scopeType} ·{" "}
               {winners.length} winner{winners.length !== 1 ? "s" : ""} ·{" "}
-              {(giveaway.plannedPayoutSats ?? totalBudgetSats).toLocaleString()}{" "}
-              sats planned ·{" "}
+              {totalBudgetSats.toLocaleString()} sats planned ·{" "}
               {(giveaway.finalizationFeeSats ?? 0).toLocaleString()} sats
               finalization fee
               {giveaway.planAtFinalization

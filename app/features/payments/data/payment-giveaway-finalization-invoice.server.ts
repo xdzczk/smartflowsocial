@@ -66,6 +66,7 @@ export async function createGiveawayFinalizationInvoice(params: {
       winnerSnapshot: g.winnerSnapshot,
       engagementConfig: g.engagementConfig,
       winnerCount: g.winnerCount,
+      plannedPayoutSats: g.plannedPayoutSats,
       selectionMode: g.selectionMode,
       scopeType: g.scopeType,
       scopeReference: g.scopeReference,

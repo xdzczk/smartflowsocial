@@ -186,7 +186,7 @@ export function LoginAwaitingProfileSelection({
           </div>
           <div className="bg-surface-hover h-2 w-full overflow-hidden rounded-full">
             <div
-              className="bg-brand h-full transition-all duration-300"
+              className="bg-action-primary h-full transition-all duration-300"
               style={{
                 width: `${Math.min(
                   100,

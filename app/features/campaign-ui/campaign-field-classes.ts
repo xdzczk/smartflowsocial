@@ -15,3 +15,9 @@ export const campaignSelectClassNames = cn(
   campaignFieldClassNames,
   "block py-1.5"
 );
+
+/** Giveaways / Contests / Broadcasts layout shell (sub-nav + outlet). */
+export const campaignSectionLayoutClassNames = "space-y-6";
+
+export const campaignSectionSubNavClassNames =
+  "border-border flex flex-wrap gap-1 border-b pb-2";

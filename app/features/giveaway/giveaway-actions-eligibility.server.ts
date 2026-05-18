@@ -21,6 +21,7 @@ import {
 import { fetchGiveawayParticipants } from "./giveaway.server";
 import {
   isSimpleUnifiedEngagementConfig,
+  simpleUnifiedSatsPerWinner,
   scopeIsFollowGraphAccountPool,
   type GiveawayEngagementConfig,
   type GiveawayEngagementType,
@@ -183,7 +184,18 @@ export function runSelectionForGiveaway(
 ): GiveawayWinnerEntry[] {
   const scope = scopeFromGiveaway(g);
   if (scope.type === "FOLLOWERS" || scope.type === "FOLLOWING") {
-    return runGiveawayAccountPoolSelection(relatedEvents, g.winnerCount);
+    const winners = runGiveawayAccountPoolSelection(
+      relatedEvents,
+      g.winnerCount
+    );
+    const unifiedSats = simpleUnifiedSatsPerWinner(g.engagementConfig);
+    if (unifiedSats != null && unifiedSats > 0) {
+      return winners.map((w) => ({
+        ...w,
+        satsPerWinner: unifiedSats,
+      }));
+    }
+    return winners;
   }
 
   const engagementConfig =
@@ -196,7 +208,7 @@ export function runSelectionForGiveaway(
   const weights = g.engagementWeights as Record<string, number> | undefined;
 
   if (isSimpleUnifiedEngagementConfig(g.engagementConfig)) {
-    const sats = g.engagementConfig._simpleUnified.satsPerWinner;
+    const sats = simpleUnifiedSatsPerWinner(g.engagementConfig) ?? 0;
     const winners = runGiveawaySelection({
       relatedEvents,
       engagementTypes: types,

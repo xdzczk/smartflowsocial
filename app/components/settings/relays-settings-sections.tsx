@@ -197,7 +197,7 @@ export function RelaySourceSection({
           className={cn(
             "motion-fast flex flex-col rounded-lg border p-4 text-left",
             tabValue === "profile"
-              ? "border-brand bg-brand/5 ring-brand ring-offset-canvas ring-2 ring-offset-2"
+              ? "border-selection-border bg-surface-selected ring-selection-border ring-offset-canvas ring-2 ring-offset-2"
               : "border-border/80 hover:bg-surface-hover/40"
           )}
         >
@@ -219,7 +219,7 @@ export function RelaySourceSection({
           className={cn(
             "motion-fast flex flex-col rounded-lg border p-4 text-left",
             tabValue === "app"
-              ? "border-brand bg-brand/5 ring-brand ring-offset-canvas ring-2 ring-offset-2"
+              ? "border-selection-border bg-surface-selected ring-selection-border ring-offset-canvas ring-2 ring-offset-2"
               : "border-border/80 hover:bg-surface-hover/40"
           )}
         >

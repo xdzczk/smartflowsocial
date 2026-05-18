@@ -16,8 +16,13 @@ export function ProofCardShell({
   children: ReactNode;
 }) {
   return (
-    <div className={proofCardAspectOuterClass(ratio)}>
-      <div className={proofCardShellSurfaceClass(variant)}>{children}</div>
+    <div data-proof-card-root className={proofCardAspectOuterClass(ratio)}>
+      <div
+        data-proof-card-surface
+        className={proofCardShellSurfaceClass(variant)}
+      >
+        {children}
+      </div>
     </div>
   );
 }

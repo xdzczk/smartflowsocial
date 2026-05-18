@@ -1,10 +1,24 @@
+import { computeGiveawayPlannedPayoutSats } from "~/features/giveaway/giveaway-payout.server";
 import type { GiveawayWinnerEntry } from "~/features/giveaway/types";
 
 export const PAID_VIA_WALLET_PHASE = "Paid via wallet";
 export const PAID_MANUALLY_PHASE = "Paid manually";
 export const NEEDS_REVIEW_PHASE = "Needs review";
 
-export function budgetFromSnapshot(snap: GiveawayWinnerEntry[]): number {
+export function budgetFromSnapshot(
+  snap: GiveawayWinnerEntry[],
+  context?: {
+    engagementConfig: unknown;
+    winnerCount?: number;
+    plannedPayoutSats?: number | null;
+  }
+): number {
+  if (context) {
+    return computeGiveawayPlannedPayoutSats({
+      winnerSnapshot: snap,
+      ...context,
+    });
+  }
   return snap.reduce((a, w) => a + (w.satsPerWinner ?? 0), 0);
 }
 

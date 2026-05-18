@@ -1,14 +1,11 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
-import { defer, json } from "@remix-run/node";
-import { Await, Link, useLoaderData } from "@remix-run/react";
-import { Suspense } from "react";
+import { json } from "@remix-run/node";
+import { Link, useLoaderData } from "@remix-run/react";
 
-import { DeferredRouteAwaitError } from "~/components/deferred-route/DeferredRouteAwaitError";
 import { requireUserId } from "~/features/auth";
 import {
   formatContestStatusLabel,
   listContestsFiltered,
-  ContestProofPageSkeleton,
 } from "~/features/contest";
 import { summarizeContestProofSettlement } from "~/features/contest/contest-proof-settlement.server";
 import type { Contest } from "~/features/contest/data/contest-prisma-types.server";
@@ -17,7 +14,8 @@ import { requireAnySubscription } from "~/features/payments";
 import { ContestProofStudio } from "~/features/proof/contest/ContestProofStudio";
 import { featureFlags } from "~/lib/feature-flags.server";
 import type { ContestProofStudioDto } from "~/lib/proof/adapters/contest";
-import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
+import { proofStudioShouldRevalidate } from "~/lib/proof/proof-studio-should-revalidate";
+export { proofStudioShouldRevalidate as shouldRevalidate };
 
 function contestProofTitle(
   name: string | null | undefined,
@@ -93,40 +91,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   })();
 
-  if (isRemixResourceRequest(request)) {
-    return json({ contests: await contestsPromise });
-  }
-
-  return defer<{ contests: Promise<ContestProofStudioDto[]> }>({
-    contests: contestsPromise,
-  });
+  const contests = await contestsPromise;
+  return json({ contests });
 }
 
 export default function ContestProofPage() {
   const { contests } = useLoaderData<typeof loader>();
 
   return (
-    <Suspense fallback={<ContestProofPageSkeleton />}>
-      <Await
-        resolve={contests}
-        errorElement={
-          <DeferredRouteAwaitError retryTo="/dashboard/contests/proof" />
-        }
-      >
-        {(loadedContests) => (
-          <div className="space-y-6">
-            <ContestProofStudio contests={loadedContests} />
-            <p className="text-text-secondary text-sm">
-              <Link
-                to="/dashboard/contests"
-                className="text-link hover:text-link-hover hover:underline"
-              >
-                ← All contests
-              </Link>
-            </p>
-          </div>
-        )}
-      </Await>
-    </Suspense>
+    <div className="space-y-6">
+      <ContestProofStudio contests={contests} />
+      <p className="text-text-secondary text-sm">
+        <Link
+          to="/dashboard/contests"
+          className="text-link hover:text-link-hover hover:underline"
+        >
+          ← All contests
+        </Link>
+      </p>
+    </div>
   );
 }

@@ -43,7 +43,7 @@ export function CampaignPayoutOverviewShell({
         </div>
         <div className="bg-surface-hover h-2 overflow-hidden rounded-full">
           <div
-            className="bg-brand h-full transition-[width]"
+            className="bg-action-primary h-full transition-[width]"
             style={{ width: `${pct}%` }}
           />
         </div>

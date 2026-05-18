@@ -10,7 +10,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 
 export function BroadcastIndexPageSkeleton() {
   return (
-    <div className="w-full min-w-0 animate-pulse space-y-8" aria-busy="true">
+    <div className="w-full min-w-0 animate-pulse space-y-6" aria-busy="true">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
           <Skeleton.Text variant="h1" w="w-40" />

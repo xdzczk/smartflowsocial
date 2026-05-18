@@ -62,12 +62,12 @@ export function PaymentMethodSelector({
             className={cn(
               "focus-ring border-border motion-fast relative flex flex-1 flex-col items-start rounded-lg border px-4 py-3 text-left text-sm disabled:opacity-50",
               selected
-                ? "border-brand bg-brand/10 ring-brand/35 shadow-1 ring-2"
+                ? "border-selection-border bg-surface-selected ring-selection-border/35 shadow-1 ring-2"
                 : "bg-surface hover:bg-surface-hover/40"
             )}
           >
             {isRecommendedMethod(id) ? (
-              <span className="bg-brand/15 text-link mb-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
+              <span className="bg-selection-wash text-selection-foreground mb-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
                 Recommended
               </span>
             ) : null}
@@ -75,7 +75,9 @@ export function PaymentMethodSelector({
               <Icon
                 className={cn(
                   "h-5 w-5 shrink-0",
-                  selected ? "text-brand" : "text-text-secondary"
+                  selected
+                    ? "text-surface-selected-foreground"
+                    : "text-text-secondary"
                 )}
               />
               {c.label}

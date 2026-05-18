@@ -39,4 +39,28 @@ describe("budgetSatsFromGiveawayRow", () => {
       })
     ).toBe(500);
   });
+
+  it("uses engagement config when snapshot winners lack satsPerWinner", () => {
+    expect(
+      budgetSatsFromGiveawayRow({
+        winnerSnapshot: [
+          { pubkey: "a", npub: "n", qualifyingActions: [] },
+          { pubkey: "b", npub: "n", qualifyingActions: [] },
+        ],
+        engagementConfig: { _simpleUnified: { satsPerWinner: 21 } },
+        winnerCount: 2,
+      })
+    ).toBe(42);
+  });
+
+  it("uses row plannedPayoutSats when snapshot winners lack sats", () => {
+    expect(
+      budgetSatsFromGiveawayRow({
+        winnerSnapshot: [{ pubkey: "a", npub: "n", qualifyingActions: [] }],
+        engagementConfig: null,
+        winnerCount: 5,
+        plannedPayoutSats: 105,
+      })
+    ).toBe(105);
+  });
 });

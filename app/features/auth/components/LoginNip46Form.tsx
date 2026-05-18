@@ -55,13 +55,13 @@ export function LoginNip46Form({
           <TabsList className="border-border bg-surface-hover/80 h-auto w-full flex-wrap gap-1 p-1">
             <TabsTrigger
               value="bunker"
-              className="data-[state=active]:bg-brand data-[state=active]:text-brand-on flex-1 px-3 py-2 text-sm"
+              className="data-[state=active]:bg-surface-selected data-[state=active]:text-surface-selected-foreground flex-1 px-3 py-2 text-sm"
             >
               Paste bunker input
             </TabsTrigger>
             <TabsTrigger
               value="nostrconnect"
-              className="data-[state=active]:bg-brand data-[state=active]:text-brand-on flex-1 px-3 py-2 text-sm"
+              className="data-[state=active]:bg-surface-selected data-[state=active]:text-surface-selected-foreground flex-1 px-3 py-2 text-sm"
             >
               Generate nostrconnect URI
             </TabsTrigger>

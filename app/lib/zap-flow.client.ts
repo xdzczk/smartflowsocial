@@ -39,17 +39,17 @@ export async function raceWithTimeout<T>(
   ms: number,
   timeoutError: string
 ): Promise<T> {
-  let timeoutId: ReturnType<typeof window.setTimeout> | undefined;
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
   try {
     const timeoutPromise = new Promise<never>((_, reject) => {
-      timeoutId = window.setTimeout(() => {
+      timeoutId = setTimeout(() => {
         reject(new Error(timeoutError));
       }, ms);
     });
     return await Promise.race([promise, timeoutPromise]);
   } finally {
     if (timeoutId !== undefined) {
-      window.clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
     }
   }
 }

@@ -14,13 +14,18 @@ export { buildProofCaption } from "./build-proof-caption";
 export { buildProofSummary } from "./build-proof-summary";
 export {
   exportProofCardPng,
+  measureProofCardRoot,
   proofExportFilename,
+  resolveProofExportCapture,
+  resolveProofExportScale,
   resolveProofPngBackground,
+  triggerProofPngDownload,
 } from "./export-proof-card";
+export { proofStudioShouldRevalidate } from "./proof-studio-should-revalidate";
 export {
   PROOF_EXPORT_PIXEL_RATIO,
-  PROOF_EXPORT_PX,
   PROOF_RATIO_PREVIEW,
+  proofPreviewExportFallbackPx,
   proofRatioLabel,
 } from "./ratios";
 export {

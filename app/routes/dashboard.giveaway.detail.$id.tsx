@@ -35,7 +35,7 @@ import { getWinnerProfiles } from "~/features/giveaway/giveaway-loader.server";
 import {
   countPayoutCompleted,
   normalizePayoutState,
-  totalSatsBudgetFromSnapshot,
+  computeGiveawayPlannedPayoutSats,
   totalSatsPaidFromState,
 } from "~/features/giveaway/giveaway-payout.server";
 import { createGiveawayPreset } from "~/features/giveaway/giveaway-presets.server";
@@ -123,10 +123,20 @@ async function loadGiveawayDetailData({ request, params }: LoaderFunctionArgs) {
             payoutSnapshot.map((w) => w.pubkey)
           ),
           totalWinners: payoutSnapshot.length,
-          budgetSats: totalSatsBudgetFromSnapshot(payoutSnapshot),
+          budgetSats: computeGiveawayPlannedPayoutSats({
+            winnerSnapshot: payoutSnapshot,
+            engagementConfig: giveaway.engagementConfig,
+            winnerCount: giveaway.winnerCount,
+            plannedPayoutSats: giveaway.plannedPayoutSats,
+          }),
           settledSats: totalSatsPaidFromState(
             payoutSnapshot,
-            payoutStateNormalized
+            payoutStateNormalized,
+            {
+              engagementConfig: giveaway.engagementConfig,
+              winnerCount: giveaway.winnerCount,
+              plannedPayoutSats: giveaway.plannedPayoutSats,
+            }
           ),
         }
       : null;
@@ -138,6 +148,7 @@ async function loadGiveawayDetailData({ request, params }: LoaderFunctionArgs) {
             winnerSnapshot: giveaway.winnerSnapshot,
             engagementConfig: giveaway.engagementConfig,
             winnerCount: giveaway.winnerCount,
+            plannedPayoutSats: giveaway.plannedPayoutSats,
             selectionMode: giveaway.selectionMode,
             scopeType: giveaway.scopeType,
             scopeReference: giveaway.scopeReference,
@@ -161,7 +172,12 @@ async function loadGiveawayDetailData({ request, params }: LoaderFunctionArgs) {
           winnerCount: payoutSnapshot.length || giveaway.winnerCount,
           plannedPayoutSats:
             giveaway.plannedPayoutSats ??
-            totalSatsBudgetFromSnapshot(payoutSnapshot),
+            computeGiveawayPlannedPayoutSats({
+              winnerSnapshot: payoutSnapshot,
+              engagementConfig: giveaway.engagementConfig,
+              winnerCount: giveaway.winnerCount,
+              plannedPayoutSats: giveaway.plannedPayoutSats,
+            }),
           finalizationFeeSats: giveaway.finalizationFeeSats ?? 0,
           planAtFinalization: giveaway.planAtFinalization ?? null,
           completedAtLabel: completedAtFormatted,
@@ -179,7 +195,12 @@ async function loadGiveawayDetailData({ request, params }: LoaderFunctionArgs) {
           winnerCount: payoutSnapshot.length || giveaway.winnerCount,
           budgetSats:
             giveaway.plannedPayoutSats ??
-            totalSatsBudgetFromSnapshot(payoutSnapshot),
+            computeGiveawayPlannedPayoutSats({
+              winnerSnapshot: payoutSnapshot,
+              engagementConfig: giveaway.engagementConfig,
+              winnerCount: giveaway.winnerCount,
+              plannedPayoutSats: giveaway.plannedPayoutSats,
+            }),
           completedAtLabel: completedAtFormatted,
         }).join("\n")
       : null;

@@ -19,7 +19,7 @@ export function PayoutProgressCard({
   const pct = totalSteps > 0 ? Math.round((100 * processed) / totalSteps) : 0;
 
   return (
-    <div className="border-border bg-brand/5 space-y-2 rounded-lg border p-3">
+    <div className="border-border bg-selection-wash space-y-2 rounded-lg border p-3">
       <p className="text-sm font-semibold">
         {active ? "Payout in progress" : "Payout summary"}
       </p>
@@ -37,7 +37,10 @@ export function PayoutProgressCard({
             <span>{pct}%</span>
           </div>
           <div className="bg-surface-hover h-2 overflow-hidden rounded-full">
-            <div className="bg-brand h-full" style={{ width: `${pct}%` }} />
+            <div
+              className="bg-action-primary h-full"
+              style={{ width: `${pct}%` }}
+            />
           </div>
           <p className="text-text-secondary text-xs">
             Ledger: {progress?.totals.paid ?? 0} {payoutCopy.paidViaWallet} ·{" "}
