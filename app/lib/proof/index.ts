@@ -16,12 +16,12 @@ export {
   exportProofCardPng,
   measureProofCardRoot,
   proofExportFilename,
-  resolveProofExportScale,
   resolveProofPngBackground,
+  triggerProofPngDownload,
 } from "./export-proof-card";
+export { proofStudioShouldRevalidate } from "./proof-studio-should-revalidate";
 export {
   PROOF_EXPORT_PIXEL_RATIO,
-  PROOF_EXPORT_PX,
   PROOF_RATIO_PREVIEW,
   proofPreviewExportFallbackPx,
   proofRatioLabel,

@@ -11,13 +11,11 @@ import {
   measureProofCardRoot,
   PROOF_EXPORT_SNAPSHOT_CLASS,
   proofExportFilename,
-  resolveProofExportScale,
   resolveProofPngBackground,
+  triggerProofPngDownload,
 } from "~/lib/proof/export-proof-card";
-import {
-  PROOF_EXPORT_PX,
-  proofPreviewExportFallbackPx,
-} from "~/lib/proof/ratios";
+import { proofStudioShouldRevalidate } from "~/lib/proof/proof-studio-should-revalidate";
+import { proofPreviewExportFallbackPx } from "~/lib/proof/ratios";
 import {
   proofCardAspectOuterClass,
   proofCardInnerPadClass,
@@ -288,19 +286,14 @@ describe("W1 proof coverage", () => {
       expect(resolveProofPngBackground(fakeElement())).toBe("hsl(0 0% 100%)");
     });
 
-    it("reads background from data-proof-card-surface descendant", () => {
-      const surface = Object.create(null) as HTMLElement;
-      const root = {
-        querySelector: vi.fn(() => surface),
-      } as unknown as HTMLElement;
+    it("reads background from the card surface element", () => {
+      const surface = fakeElement();
       const getComputedStyle = vi.fn(() => ({
         backgroundColor: "rgb(250, 250, 250)",
       }));
       vi.stubGlobal("window", { getComputedStyle });
-      expect(resolveProofPngBackground(root)).toBe("rgb(250, 250, 250)");
-      expect(root.querySelector).toHaveBeenCalledWith(
-        "[data-proof-card-surface]"
-      );
+      expect(resolveProofPngBackground(surface)).toBe("rgb(250, 250, 250)");
+      expect(getComputedStyle).toHaveBeenCalledWith(surface);
     });
 
     it("falls back to white when no surface bg and no token values", () => {
@@ -348,18 +341,15 @@ describe("W1 proof coverage", () => {
       ).toBe("contest-public-summary-2026-05-20.png");
     });
 
-    it("resolves export scale without changing card proportions", () => {
-      expect(
-        resolveProofExportScale({
-          source: { w: 360, h: 360 },
-          target: PROOF_EXPORT_PX.square,
-        })
-      ).toBe(3);
-    });
-
-    it("exports png using html-to-image and clicks download anchor", async () => {
+    it("exports png at preview size without cache busting", async () => {
       const click = vi.fn();
-      const anchor = { href: "", download: "", click };
+      const anchor = {
+        href: "",
+        download: "",
+        rel: "",
+        style: { display: "" },
+        click,
+      };
       const classList = { add: vi.fn(), remove: vi.fn() };
       const cardRootClassList = { add: vi.fn(), remove: vi.fn() };
       const tokenStyle = new Map<string, string>();
@@ -415,9 +405,18 @@ describe("W1 proof coverage", () => {
           return { backgroundColor: "rgb(20, 20, 20)" };
         });
       vi.stubGlobal("window", { getComputedStyle });
+      let downloadLink: typeof anchor & { remove: ReturnType<typeof vi.fn> };
+      const appendChild = vi.fn();
       vi.stubGlobal("document", {
+        body: { appendChild },
         createElement: vi.fn((tag: string) => {
-          if (tag === "a") return anchor;
+          if (tag === "a") {
+            downloadLink = {
+              ...anchor,
+              remove: vi.fn(),
+            };
+            return downloadLink;
+          }
           throw new Error(`unexpected tag ${tag}`);
         }),
         documentElement: {},
@@ -463,20 +462,82 @@ describe("W1 proof coverage", () => {
       const [capturedRoot, toPngOptions] = vi.mocked(toPng).mock.calls[0] ?? [];
       expect(capturedRoot).toBe(cardRoot);
       expect(toPngOptions).toMatchObject({
-        width: 1080,
-        height: 1080,
+        cacheBust: false,
         pixelRatio: 1,
         style: {
           width: "360px",
           height: "360px",
           maxWidth: "none",
-          transform: "scale(3)",
-          transformOrigin: "top left",
+          aspectRatio: "auto",
         },
       });
+      expect(appendChild).toHaveBeenCalledTimes(1);
       expect(click).toHaveBeenCalledTimes(1);
-      expect(anchor.download).toBe("x.png");
-      expect(anchor.href).toContain("data:image/png;base64");
+      expect(downloadLink!.remove).toHaveBeenCalledTimes(1);
+      expect(downloadLink!.download).toBe("x.png");
+      expect(downloadLink!.href).toContain("data:image/png;base64");
+    });
+
+    it("triggerProofPngDownload appends anchor to body for mobile Safari", () => {
+      const click = vi.fn();
+      const remove = vi.fn();
+      const link = {
+        href: "",
+        download: "",
+        rel: "",
+        style: { display: "" },
+        click,
+        remove,
+      };
+      const appendChild = vi.fn();
+      vi.stubGlobal("document", {
+        body: { appendChild },
+        createElement: vi.fn(() => link),
+      });
+      triggerProofPngDownload("data:image/png;base64,x", "proof.png");
+      expect(appendChild).toHaveBeenCalledWith(link);
+      expect(click).toHaveBeenCalledTimes(1);
+      expect(remove).toHaveBeenCalledTimes(1);
+      expect(link.download).toBe("proof.png");
+    });
+  });
+
+  describe("proofStudioShouldRevalidate", () => {
+    it("skips revalidation on same-url focus (e.g. after mobile export)", () => {
+      const url = new URL("https://app.test/dashboard/giveaway/proof");
+      expect(
+        proofStudioShouldRevalidate({
+          formAction: undefined,
+          currentUrl: url,
+          nextUrl: url,
+          defaultShouldRevalidate: true,
+        })
+      ).toBe(false);
+    });
+
+    it("revalidates after form submissions", () => {
+      const url = new URL("https://app.test/dashboard/giveaway/proof");
+      expect(
+        proofStudioShouldRevalidate({
+          formAction: "/dashboard/giveaway/proof",
+          currentUrl: url,
+          nextUrl: url,
+          defaultShouldRevalidate: false,
+        })
+      ).toBe(true);
+    });
+
+    it("revalidates when navigating to a different proof URL", () => {
+      const current = new URL("https://app.test/dashboard/giveaway/proof?id=a");
+      const next = new URL("https://app.test/dashboard/giveaway/proof?id=b");
+      expect(
+        proofStudioShouldRevalidate({
+          formAction: undefined,
+          currentUrl: current,
+          nextUrl: next,
+          defaultShouldRevalidate: true,
+        })
+      ).toBe(true);
     });
   });
 });

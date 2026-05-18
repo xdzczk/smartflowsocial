@@ -2,7 +2,6 @@ import { toPng } from "html-to-image";
 
 import {
   PROOF_EXPORT_PIXEL_RATIO,
-  PROOF_EXPORT_PX,
   proofPreviewExportFallbackPx,
 } from "./ratios";
 import type { ProofRatio } from "./types";
@@ -12,6 +11,7 @@ export const PROOF_EXPORT_SNAPSHOT_CLASS = "proof-export-snapshot";
 
 const PROOF_CARD_ROOT_SELECTOR = "[data-proof-card-root]";
 const PROOF_CARD_SURFACE_SELECTOR = "[data-proof-card-surface]";
+
 const PROOF_CARD_SURFACE_PAINT_KEYS = [
   "backgroundColor",
   "backgroundImage",
@@ -42,14 +42,20 @@ type SavedExportThemeTokens = Array<[ExportThemeTokenName, string]>;
 type SurfacePaintKey = (typeof PROOF_CARD_SURFACE_PAINT_KEYS)[number];
 type SavedSurfacePaint = Array<[SurfacePaintKey, string]>;
 
+function querySelectorWithin(
+  root: HTMLElement,
+  selector: string
+): HTMLElement | null {
+  if (typeof root.querySelector !== "function") return null;
+  return root.querySelector<HTMLElement>(selector);
+}
+
 function findProofCardRoot(el: HTMLElement): HTMLElement {
-  const root = el.querySelector<HTMLElement>(PROOF_CARD_ROOT_SELECTOR);
-  return root ?? el;
+  return querySelectorWithin(el, PROOF_CARD_ROOT_SELECTOR) ?? el;
 }
 
 function findProofCardSurface(el: HTMLElement): HTMLElement {
-  const surface = el.querySelector<HTMLElement>(PROOF_CARD_SURFACE_SELECTOR);
-  return surface ?? el;
+  return querySelectorWithin(el, PROOF_CARD_SURFACE_SELECTOR) ?? el;
 }
 
 function pinCurrentProofExportThemeTokens(
@@ -75,27 +81,43 @@ function restoreProofExportThemeTokens(
   }
 }
 
-function pinProofCardSurfacePaint(el: HTMLElement): SavedSurfacePaint {
+export function resolveProofPngBackground(surface: HTMLElement): string {
+  const bg = window.getComputedStyle(surface).backgroundColor;
+  if (
+    bg &&
+    bg !== "transparent" &&
+    bg !== "rgba(0, 0, 0, 0)" &&
+    !/^rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*0\s*\)$/.test(bg)
+  ) {
+    return bg;
+  }
+  const surfaceRaw = window
+    .getComputedStyle(surface)
+    .getPropertyValue("--surface")
+    .trim();
+  if (surfaceRaw) return `hsl(${surfaceRaw})`;
+  return "#ffffff";
+}
+
+function pinProofCardSurfacePaint(surface: HTMLElement): SavedSurfacePaint {
   const saved: SavedSurfacePaint = PROOF_CARD_SURFACE_PAINT_KEYS.map((key) => [
     key,
-    el.style[key],
+    surface.style[key],
   ]);
 
-  // Keep the canvas transparent, but flatten the rounded card surface itself.
-  // html-to-image can preserve transparent gradient layers without the underlying
-  // Tailwind bg color, which makes the whole card look see-through in PNG viewers.
-  el.style.backgroundColor = resolveProofPngBackground(el);
-  el.style.backgroundImage = "none";
+  // Keep the PNG canvas transparent, but flatten the rounded card surface itself.
+  surface.style.backgroundColor = resolveProofPngBackground(surface);
+  surface.style.backgroundImage = "none";
 
   return saved;
 }
 
 function restoreProofCardSurfacePaint(
-  el: HTMLElement,
+  surface: HTMLElement,
   saved: SavedSurfacePaint
 ): void {
   for (const [key, value] of saved) {
-    el.style[key] = value;
+    surface.style[key] = value;
   }
 }
 
@@ -118,28 +140,18 @@ async function waitForExportLayout(): Promise<void> {
   });
 }
 
-export function resolveProofPngBackground(el: HTMLElement): string {
-  const target = findProofCardSurface(el);
-  const bg = window.getComputedStyle(target).backgroundColor;
-  if (
-    bg &&
-    bg !== "transparent" &&
-    bg !== "rgba(0, 0, 0, 0)" &&
-    !/^rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*0\s*\)$/.test(bg)
-  ) {
-    return bg;
-  }
-  const surfaceRaw = window
-    .getComputedStyle(target)
-    .getPropertyValue("--surface")
-    .trim();
-  if (surfaceRaw) return `hsl(${surfaceRaw})`;
-  const cardRaw = window
-    .getComputedStyle(document.documentElement)
-    .getPropertyValue("--card")
-    .trim();
-  if (cardRaw) return `hsl(${cardRaw})`;
-  return "#ffffff";
+export function triggerProofPngDownload(
+  dataUrl: string,
+  filename: string
+): void {
+  const link = document.createElement("a");
+  link.href = dataUrl;
+  link.download = filename;
+  link.rel = "noopener";
+  link.style.display = "none";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
 
 export function proofExportFilename(input: {
@@ -152,16 +164,6 @@ export function proofExportFilename(input: {
   return `${input.domain}-${type}-${d}.png`;
 }
 
-export function resolveProofExportScale(input: {
-  source: { w: number; h: number };
-  target: { w: number; h: number };
-}): number {
-  return Math.min(
-    input.target.w / input.source.w,
-    input.target.h / input.source.h
-  );
-}
-
 export async function exportProofCardPng(input: {
   element: HTMLElement;
   ratio: ProofRatio;
@@ -170,9 +172,7 @@ export async function exportProofCardPng(input: {
   const { element } = input;
   const cardRoot = findProofCardRoot(element);
   const cardSurface = findProofCardSurface(element);
-  const source = measureProofCardRoot(cardRoot, input.ratio);
-  const target = PROOF_EXPORT_PX[input.ratio];
-  const scale = resolveProofExportScale({ source, target });
+  const { w, h } = measureProofCardRoot(cardRoot, input.ratio);
 
   element.classList.add(PROOF_EXPORT_SNAPSHOT_CLASS);
   cardRoot.classList.add(PROOF_EXPORT_SNAPSHOT_CLASS);
@@ -181,22 +181,16 @@ export async function exportProofCardPng(input: {
   try {
     await waitForExportLayout();
     const dataUrl = await toPng(cardRoot, {
-      width: target.w,
-      height: target.h,
       pixelRatio: PROOF_EXPORT_PIXEL_RATIO,
-      cacheBust: true,
+      cacheBust: false,
       style: {
-        width: `${source.w}px`,
-        height: `${source.h}px`,
+        width: `${w}px`,
+        height: `${h}px`,
         maxWidth: "none",
-        transform: `scale(${scale})`,
-        transformOrigin: "top left",
+        aspectRatio: "auto",
       },
     });
-    const a = document.createElement("a");
-    a.href = dataUrl;
-    a.download = input.filename;
-    a.click();
+    triggerProofPngDownload(dataUrl, input.filename);
   } finally {
     restoreProofCardSurfacePaint(cardSurface, savedSurfacePaint);
     restoreProofExportThemeTokens(cardRoot, savedThemeTokens);

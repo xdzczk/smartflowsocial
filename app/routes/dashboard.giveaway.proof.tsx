@@ -21,7 +21,10 @@ import {
 import { requireAnySubscription } from "~/features/payments";
 import { GiveawayProofStudio } from "~/features/proof/giveaway/GiveawayProofStudio";
 import type { GiveawayProofStudioDto } from "~/lib/proof/adapters/giveaway";
+import { proofStudioShouldRevalidate } from "~/lib/proof/proof-studio-should-revalidate";
 import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
+
+export { proofStudioShouldRevalidate as shouldRevalidate };
 
 function giveawayProofTitle(
   name: string | null | undefined,

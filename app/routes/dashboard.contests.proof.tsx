@@ -17,7 +17,10 @@ import { requireAnySubscription } from "~/features/payments";
 import { ContestProofStudio } from "~/features/proof/contest/ContestProofStudio";
 import { featureFlags } from "~/lib/feature-flags.server";
 import type { ContestProofStudioDto } from "~/lib/proof/adapters/contest";
+import { proofStudioShouldRevalidate } from "~/lib/proof/proof-studio-should-revalidate";
 import { isRemixResourceRequest } from "~/lib/remix/is-remix-resource-request";
+
+export { proofStudioShouldRevalidate as shouldRevalidate };
 
 function contestProofTitle(
   name: string | null | undefined,
