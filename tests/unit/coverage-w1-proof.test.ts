@@ -362,9 +362,19 @@ describe("W1 proof coverage", () => {
       const anchor = { href: "", download: "", click };
       const classList = { add: vi.fn(), remove: vi.fn() };
       const cardRootClassList = { add: vi.fn(), remove: vi.fn() };
+      const tokenStyle = new Map<string, string>();
       const cardRoot = {
         classList: cardRootClassList,
         getBoundingClientRect: () => ({ width: 360, height: 360 }),
+        style: {
+          getPropertyValue: vi.fn((name: string) => tokenStyle.get(name) ?? ""),
+          setProperty: vi.fn((name: string, value: string) => {
+            tokenStyle.set(name, value);
+          }),
+          removeProperty: vi.fn((name: string) => {
+            tokenStyle.delete(name);
+          }),
+        },
       } as unknown as HTMLElement;
       const element = {
         classList,
@@ -404,6 +414,15 @@ describe("W1 proof coverage", () => {
       expect(cardRootClassList.remove).toHaveBeenCalledWith(
         PROOF_EXPORT_SNAPSHOT_CLASS
       );
+      expect(cardRoot.style.setProperty).toHaveBeenCalledWith(
+        "--color-text",
+        "hsl(var(--text))"
+      );
+      expect(cardRoot.style.setProperty).toHaveBeenCalledWith(
+        "--text",
+        "38 14% 10%"
+      );
+      expect(cardRoot.style.removeProperty).toHaveBeenCalledWith("--text");
       expect(toPng).toHaveBeenCalledOnce();
       const [capturedRoot, toPngOptions] = vi.mocked(toPng).mock.calls[0] ?? [];
       expect(capturedRoot).toBe(cardRoot);
