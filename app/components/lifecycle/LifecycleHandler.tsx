@@ -20,6 +20,10 @@ import {
 } from "~/features/auth/signer";
 import { getAndClearCorrelationContext } from "~/lib/correlation-id.client";
 import { getLocaleTimeAndDateFormat } from "~/lib/locale-defaults.client";
+import {
+  isProofExportInFlight,
+  isProofStudioPath,
+} from "~/lib/proof/proof-export-guard.client";
 import { useOptionalUser } from "~/lib/remix-utils";
 import { triggerForegroundSync } from "~/lib/sync-manager.client";
 
@@ -59,6 +63,9 @@ export function LifecycleHandler() {
 
   const runRevalidate = useCallback(() => {
     if (!canRevalidateNow()) {
+      return;
+    }
+    if (isProofExportInFlight() || isProofStudioPath(location.pathname)) {
       return;
     }
     if (isInfiniteArchivePath(location.pathname)) {

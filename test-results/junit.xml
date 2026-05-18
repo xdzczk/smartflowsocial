@@ -1,47 +1,51 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="21" failures="0" errors="0" time="0.015767083">
-    <testsuite name="tests/unit/coverage-w1-proof.test.ts" timestamp="2026-05-18T14:30:11.996Z" hostname="Ivans-MacBook-Pro.local" tests="21" failures="0" errors="0" skipped="0" time="0.015767083">
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofSummary &gt; builds metric-first summaries and trims empty lines" time="0.000585291">
+<testsuites name="vitest tests" tests="23" failures="0" errors="0" time="0.014736583">
+    <testsuite name="tests/unit/coverage-w1-proof.test.ts" timestamp="2026-05-18T14:44:57.924Z" hostname="Ivans-MacBook-Pro.local" tests="23" failures="0" errors="0" skipped="0" time="0.014736583">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofSummary &gt; builds metric-first summaries and trims empty lines" time="0.000564917">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofSummary &gt; falls back to title/subtitle when hero is absent" time="0.000100209">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofSummary &gt; falls back to title/subtitle when hero is absent" time="0.000099958">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofCaption &gt; creates giveaway public-summary caption" time="0.008043583">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofCaption &gt; creates giveaway public-summary caption" time="0.007802084">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofCaption &gt; creates contest public-summary caption" time="0.000134417">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofCaption &gt; creates contest public-summary caption" time="0.000110917">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofCaption &gt; creates admin caption with newline brand line" time="0.000089042">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofCaption &gt; creates admin caption with newline brand line" time="0.000076416">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofCaption &gt; uses generic fallback caption path" time="0.000061083">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofCaption &gt; uses generic fallback caption path" time="0.000047584">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; contest/giveaway adapters &gt; builds all contest payload card types" time="0.0003115">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; contest/giveaway adapters &gt; builds all contest payload card types" time="0.000261541">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; contest/giveaway adapters &gt; builds all giveaway payload card types" time="0.000237584">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; contest/giveaway adapters &gt; builds all giveaway payload card types" time="0.000182917">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; themes &gt; covers class builders for all ratio/tone branches" time="0.002950708">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; themes &gt; covers class builders for all ratio/tone branches" time="0.002692708">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; uses element background when non-transparent" time="0.000237459">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; uses element background when non-transparent" time="0.000210667">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; falls back to --surface CSS variable when transparent" time="0.000093917">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; falls back to --surface CSS variable when transparent" time="0.000073416">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; reads background from the card surface element" time="0.000540916">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; reads background from the card surface element" time="0.000516">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; falls back to white when no surface bg and no token values" time="0.000060333">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; falls back to white when no surface bg and no token values" time="0.000050708">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; measures card root from bounding rect" time="0.000104292">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; measures card root from bounding rect" time="0.000081291">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; falls back to preview max size when card rect is zero" time="0.000079375">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; falls back to preview max size when card rect is zero" time="0.000068667">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; formats proof export filenames" time="0.000072667">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; upscales narrow previews to design max dimensions" time="0.00010475">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; exports png at preview size without cache busting" time="0.000999834">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; does not downscale when preview already at design max" time="0.000029542">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; triggerProofPngDownload appends anchor to body for mobile Safari" time="0.000181542">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; formats proof export filenames" time="0.000053167">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; proofStudioShouldRevalidate &gt; skips revalidation on same-url focus (e.g. after mobile export)" time="0.000064333">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; exports png at design preview dimensions without cache busting" time="0.000861667">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; proofStudioShouldRevalidate &gt; revalidates after form submissions" time="0.000031458">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; triggerProofPngDownload appends anchor to body for mobile Safari" time="0.000110083">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; proofStudioShouldRevalidate &gt; revalidates when navigating to a different proof URL" time="0.000058625">
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; proofStudioShouldRevalidate &gt; skips revalidation on same-url focus (e.g. after mobile export)" time="0.000052">
+        </testcase>
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; proofStudioShouldRevalidate &gt; revalidates after form submissions" time="0.00002825">
+        </testcase>
+        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; proofStudioShouldRevalidate &gt; revalidates when navigating to a different proof URL" time="0.00004225">
         </testcase>
     </testsuite>
 </testsuites>

@@ -1,5 +1,6 @@
 import { toPng } from "html-to-image";
 
+import { beginProofExport } from "./proof-export-guard.client";
 import {
   PROOF_EXPORT_PIXEL_RATIO,
   proofPreviewExportFallbackPx,
@@ -121,7 +122,7 @@ function restoreProofCardSurfacePaint(
   }
 }
 
-/** Capture size matches on-screen preview (not upscaled). */
+/** Measured layout size of the card root in the preview. */
 export function measureProofCardRoot(
   cardRoot: HTMLElement,
   ratio: ProofRatio
@@ -131,6 +132,40 @@ export function measureProofCardRoot(
   const h = Math.round(rect.height);
   if (w > 0 && h > 0) return { w, h };
   return proofPreviewExportFallbackPx(ratio);
+}
+
+/**
+ * Scale up to design preview max (380px portrait/square, 720px landscape) when the
+ * on-screen card is narrower (e.g. mobile column). Never downscales.
+ */
+export function resolveProofExportScale(input: {
+  source: { w: number; h: number };
+  target: { w: number; h: number };
+}): number {
+  const { source, target } = input;
+  if (source.w <= 0 || source.h <= 0) return 1;
+  const scale = Math.min(target.w / source.w, target.h / source.h);
+  return scale > 1 ? scale : 1;
+}
+
+export function resolveProofExportCapture(
+  cardRoot: HTMLElement,
+  ratio: ProofRatio
+): {
+  source: { w: number; h: number };
+  exportW: number;
+  exportH: number;
+  scale: number;
+} {
+  const source = measureProofCardRoot(cardRoot, ratio);
+  const target = proofPreviewExportFallbackPx(ratio);
+  const scale = resolveProofExportScale({ source, target });
+  return {
+    source,
+    exportW: Math.round(source.w * scale),
+    exportH: Math.round(source.h * scale),
+    scale,
+  };
 }
 
 /** Let layout settle before capture (e.g. after snapshot class toggled). */
@@ -169,10 +204,14 @@ export async function exportProofCardPng(input: {
   ratio: ProofRatio;
   filename: string;
 }): Promise<void> {
+  const endProofExport = beginProofExport();
   const { element } = input;
   const cardRoot = findProofCardRoot(element);
   const cardSurface = findProofCardSurface(element);
-  const { w, h } = measureProofCardRoot(cardRoot, input.ratio);
+  const { source, exportW, exportH, scale } = resolveProofExportCapture(
+    cardRoot,
+    input.ratio
+  );
 
   element.classList.add(PROOF_EXPORT_SNAPSHOT_CLASS);
   cardRoot.classList.add(PROOF_EXPORT_SNAPSHOT_CLASS);
@@ -181,13 +220,21 @@ export async function exportProofCardPng(input: {
   try {
     await waitForExportLayout();
     const dataUrl = await toPng(cardRoot, {
+      width: exportW,
+      height: exportH,
       pixelRatio: PROOF_EXPORT_PIXEL_RATIO,
       cacheBust: false,
       style: {
-        width: `${w}px`,
-        height: `${h}px`,
+        width: `${source.w}px`,
+        height: `${source.h}px`,
         maxWidth: "none",
         aspectRatio: "auto",
+        ...(scale > 1
+          ? {
+              transform: `scale(${scale})`,
+              transformOrigin: "top left",
+            }
+          : {}),
       },
     });
     triggerProofPngDownload(dataUrl, input.filename);
@@ -196,5 +243,6 @@ export async function exportProofCardPng(input: {
     restoreProofExportThemeTokens(cardRoot, savedThemeTokens);
     cardRoot.classList.remove(PROOF_EXPORT_SNAPSHOT_CLASS);
     element.classList.remove(PROOF_EXPORT_SNAPSHOT_CLASS);
+    endProofExport();
   }
 }

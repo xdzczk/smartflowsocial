@@ -16,6 +16,8 @@ export {
   exportProofCardPng,
   measureProofCardRoot,
   proofExportFilename,
+  resolveProofExportCapture,
+  resolveProofExportScale,
   resolveProofPngBackground,
   triggerProofPngDownload,
 } from "./export-proof-card";

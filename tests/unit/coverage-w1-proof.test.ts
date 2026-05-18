@@ -1,3 +1,4 @@
+import type { ShouldRevalidateFunctionArgs } from "@remix-run/react";
 import { toPng } from "html-to-image";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
@@ -11,6 +12,8 @@ import {
   measureProofCardRoot,
   PROOF_EXPORT_SNAPSHOT_CLASS,
   proofExportFilename,
+  resolveProofExportCapture,
+  resolveProofExportScale,
   resolveProofPngBackground,
   triggerProofPngDownload,
 } from "~/lib/proof/export-proof-card";
@@ -331,6 +334,37 @@ describe("W1 proof coverage", () => {
       });
     });
 
+    it("upscales narrow previews to design max dimensions", () => {
+      expect(
+        resolveProofExportScale({
+          source: { w: 280, h: 350 },
+          target: proofPreviewExportFallbackPx("portrait"),
+        })
+      ).toBeCloseTo(380 / 280, 5);
+      expect(
+        resolveProofExportCapture(
+          {
+            getBoundingClientRect: () => ({ width: 280, height: 280 }),
+          } as unknown as HTMLElement,
+          "square"
+        )
+      ).toEqual({
+        source: { w: 280, h: 280 },
+        exportW: 380,
+        exportH: 380,
+        scale: 380 / 280,
+      });
+    });
+
+    it("does not downscale when preview already at design max", () => {
+      expect(
+        resolveProofExportScale({
+          source: { w: 380, h: 475 },
+          target: proofPreviewExportFallbackPx("portrait"),
+        })
+      ).toBe(1);
+    });
+
     it("formats proof export filenames", () => {
       expect(
         proofExportFilename({
@@ -341,7 +375,7 @@ describe("W1 proof coverage", () => {
       ).toBe("contest-public-summary-2026-05-20.png");
     });
 
-    it("exports png at preview size without cache busting", async () => {
+    it("exports png at design preview dimensions without cache busting", async () => {
       const click = vi.fn();
       const anchor = {
         href: "",
@@ -362,7 +396,7 @@ describe("W1 proof coverage", () => {
       } as unknown as HTMLElement;
       const cardRoot = {
         classList: cardRootClassList,
-        getBoundingClientRect: () => ({ width: 360, height: 360 }),
+        getBoundingClientRect: () => ({ width: 300, height: 300 }),
         style: {
           getPropertyValue: vi.fn((name: string) => tokenStyle.get(name) ?? ""),
           setProperty: vi.fn((name: string, value: string) => {
@@ -462,13 +496,17 @@ describe("W1 proof coverage", () => {
       const [capturedRoot, toPngOptions] = vi.mocked(toPng).mock.calls[0] ?? [];
       expect(capturedRoot).toBe(cardRoot);
       expect(toPngOptions).toMatchObject({
+        width: 380,
+        height: 380,
         cacheBust: false,
         pixelRatio: 1,
         style: {
-          width: "360px",
-          height: "360px",
+          width: "300px",
+          height: "300px",
           maxWidth: "none",
           aspectRatio: "auto",
+          transform: `scale(${380 / 300})`,
+          transformOrigin: "top left",
         },
       });
       expect(appendChild).toHaveBeenCalledTimes(1);
@@ -503,27 +541,44 @@ describe("W1 proof coverage", () => {
   });
 
   describe("proofStudioShouldRevalidate", () => {
+    function proofRevalidateArgs(
+      overrides: Partial<ShouldRevalidateFunctionArgs> &
+        Pick<
+          ShouldRevalidateFunctionArgs,
+          "currentUrl" | "nextUrl" | "defaultShouldRevalidate"
+        >
+    ): ShouldRevalidateFunctionArgs {
+      return {
+        currentParams: {},
+        nextParams: {},
+        ...overrides,
+      };
+    }
+
     it("skips revalidation on same-url focus (e.g. after mobile export)", () => {
       const url = new URL("https://app.test/dashboard/giveaway/proof");
       expect(
-        proofStudioShouldRevalidate({
-          formAction: undefined,
-          currentUrl: url,
-          nextUrl: url,
-          defaultShouldRevalidate: true,
-        })
+        proofStudioShouldRevalidate(
+          proofRevalidateArgs({
+            currentUrl: url,
+            nextUrl: url,
+            defaultShouldRevalidate: true,
+          })
+        )
       ).toBe(false);
     });
 
     it("revalidates after form submissions", () => {
       const url = new URL("https://app.test/dashboard/giveaway/proof");
       expect(
-        proofStudioShouldRevalidate({
-          formAction: "/dashboard/giveaway/proof",
-          currentUrl: url,
-          nextUrl: url,
-          defaultShouldRevalidate: false,
-        })
+        proofStudioShouldRevalidate(
+          proofRevalidateArgs({
+            formAction: "/dashboard/giveaway/proof",
+            currentUrl: url,
+            nextUrl: url,
+            defaultShouldRevalidate: false,
+          })
+        )
       ).toBe(true);
     });
 
@@ -531,12 +586,13 @@ describe("W1 proof coverage", () => {
       const current = new URL("https://app.test/dashboard/giveaway/proof?id=a");
       const next = new URL("https://app.test/dashboard/giveaway/proof?id=b");
       expect(
-        proofStudioShouldRevalidate({
-          formAction: undefined,
-          currentUrl: current,
-          nextUrl: next,
-          defaultShouldRevalidate: true,
-        })
+        proofStudioShouldRevalidate(
+          proofRevalidateArgs({
+            currentUrl: current,
+            nextUrl: next,
+            defaultShouldRevalidate: true,
+          })
+        )
       ).toBe(true);
     });
   });
