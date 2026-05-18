@@ -153,7 +153,6 @@ export async function exportProofCardPng(input: {
       height: target.h,
       pixelRatio: PROOF_EXPORT_PIXEL_RATIO,
       cacheBust: true,
-      backgroundColor: resolveProofPngBackground(element),
       style: {
         width: `${source.w}px`,
         height: `${source.h}px`,

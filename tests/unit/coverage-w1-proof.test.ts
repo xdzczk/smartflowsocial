@@ -442,7 +442,6 @@ describe("W1 proof coverage", () => {
         width: 1080,
         height: 1080,
         pixelRatio: 1,
-        backgroundColor: "rgb(20, 20, 20)",
         style: {
           width: "360px",
           height: "360px",
