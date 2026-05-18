@@ -8,10 +8,12 @@ import { buildProofCaption } from "~/lib/proof/build-proof-caption";
 import { buildProofSummary } from "~/lib/proof/build-proof-summary";
 import {
   exportProofCardPng,
+  measureProofCardRoot,
   PROOF_EXPORT_SNAPSHOT_CLASS,
   proofExportFilename,
   resolveProofPngBackground,
 } from "~/lib/proof/export-proof-card";
+import { proofPreviewExportFallbackPx } from "~/lib/proof/ratios";
 import {
   proofCardAspectOuterClass,
   proofCardInnerPadClass,
@@ -309,6 +311,29 @@ describe("W1 proof coverage", () => {
       expect(resolveProofPngBackground(fakeElement())).toBe("#ffffff");
     });
 
+    it("measures card root from bounding rect", () => {
+      const cardRoot = {
+        getBoundingClientRect: () => ({ width: 372.4, height: 465.1 }),
+      } as unknown as HTMLElement;
+      expect(measureProofCardRoot(cardRoot, "portrait")).toEqual({
+        w: 372,
+        h: 465,
+      });
+    });
+
+    it("falls back to preview max size when card rect is zero", () => {
+      const cardRoot = {
+        getBoundingClientRect: () => ({ width: 0, height: 0 }),
+      } as unknown as HTMLElement;
+      expect(measureProofCardRoot(cardRoot, "portrait")).toEqual(
+        proofPreviewExportFallbackPx("portrait")
+      );
+      expect(proofPreviewExportFallbackPx("landscape")).toEqual({
+        w: 720,
+        h: 405,
+      });
+    });
+
     it("formats proof export filenames", () => {
       expect(
         proofExportFilename({
@@ -323,13 +348,9 @@ describe("W1 proof coverage", () => {
       const click = vi.fn();
       const anchor = { href: "", download: "", click };
       const classList = { add: vi.fn(), remove: vi.fn() };
-      const boxStyle = {
-        width: "",
-        height: "",
-        maxWidth: "",
-        aspectRatio: "",
-      };
-      const cardRoot = { style: boxStyle } as unknown as HTMLElement;
+      const cardRoot = {
+        getBoundingClientRect: () => ({ width: 360, height: 360 }),
+      } as unknown as HTMLElement;
       const element = {
         classList,
         querySelector: vi.fn((selector: string) =>
@@ -359,7 +380,6 @@ describe("W1 proof coverage", () => {
       expect(classList.remove).toHaveBeenCalledWith(
         PROOF_EXPORT_SNAPSHOT_CLASS
       );
-      expect(boxStyle.width).toBe("");
       expect(toPng).toHaveBeenCalledOnce();
       const [capturedRoot, toPngOptions] = vi.mocked(toPng).mock.calls[0] ?? [];
       expect(capturedRoot).toBe(cardRoot);

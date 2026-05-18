@@ -14,13 +14,14 @@ export { buildProofCaption } from "./build-proof-caption";
 export { buildProofSummary } from "./build-proof-summary";
 export {
   exportProofCardPng,
+  measureProofCardRoot,
   proofExportFilename,
   resolveProofPngBackground,
 } from "./export-proof-card";
 export {
   PROOF_EXPORT_PIXEL_RATIO,
-  PROOF_EXPORT_PX,
   PROOF_RATIO_PREVIEW,
+  proofPreviewExportFallbackPx,
   proofRatioLabel,
 } from "./ratios";
 export {

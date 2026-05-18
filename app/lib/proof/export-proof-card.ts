@@ -1,6 +1,9 @@
 import { toPng } from "html-to-image";
 
-import { PROOF_EXPORT_PIXEL_RATIO, PROOF_EXPORT_PX } from "./ratios";
+import {
+  PROOF_EXPORT_PIXEL_RATIO,
+  proofPreviewExportFallbackPx,
+} from "./ratios";
 import type { ProofRatio } from "./types";
 
 /** Applied on the export root during capture so PNGs use light receipt colors in dark mode. */
@@ -8,10 +11,6 @@ export const PROOF_EXPORT_SNAPSHOT_CLASS = "proof-export-snapshot";
 
 const PROOF_CARD_ROOT_SELECTOR = "[data-proof-card-root]";
 const PROOF_CARD_SURFACE_SELECTOR = "[data-proof-card-surface]";
-
-const BOX_STYLE_KEYS = ["width", "height", "maxWidth", "aspectRatio"] as const;
-
-type BoxStyleKey = (typeof BOX_STYLE_KEYS)[number];
 
 function findProofCardRoot(el: HTMLElement): HTMLElement {
   const root = el.querySelector<HTMLElement>(PROOF_CARD_ROOT_SELECTOR);
@@ -23,29 +22,19 @@ function findProofCardSurface(el: HTMLElement): HTMLElement {
   return surface ?? el;
 }
 
-function readInlineBoxStyle(el: HTMLElement): Record<BoxStyleKey, string> {
-  return Object.fromEntries(
-    BOX_STYLE_KEYS.map((key) => [key, el.style[key]])
-  ) as Record<BoxStyleKey, string>;
+/** Capture size matches on-screen preview (not upscaled). */
+export function measureProofCardRoot(
+  cardRoot: HTMLElement,
+  ratio: ProofRatio
+): { w: number; h: number } {
+  const rect = cardRoot.getBoundingClientRect();
+  const w = Math.round(rect.width);
+  const h = Math.round(rect.height);
+  if (w > 0 && h > 0) return { w, h };
+  return proofPreviewExportFallbackPx(ratio);
 }
 
-function applyExportBox(el: HTMLElement, w: number, h: number): void {
-  el.style.width = `${w}px`;
-  el.style.height = `${h}px`;
-  el.style.maxWidth = "none";
-  el.style.aspectRatio = "auto";
-}
-
-function restoreInlineBoxStyle(
-  el: HTMLElement,
-  saved: Record<BoxStyleKey, string>
-): void {
-  for (const key of BOX_STYLE_KEYS) {
-    el.style[key] = saved[key];
-  }
-}
-
-/** Let layout settle after resizing the card for export. */
+/** Let layout settle before capture (e.g. after snapshot class toggled). */
 async function waitForExportLayout(): Promise<void> {
   await new Promise<void>((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
@@ -91,13 +80,10 @@ export async function exportProofCardPng(input: {
   ratio: ProofRatio;
   filename: string;
 }): Promise<void> {
-  const { w, h } = PROOF_EXPORT_PX[input.ratio];
   const { element } = input;
   const cardRoot = findProofCardRoot(element);
-  const savedBox = readInlineBoxStyle(cardRoot);
 
   element.classList.add(PROOF_EXPORT_SNAPSHOT_CLASS);
-  applyExportBox(cardRoot, w, h);
   try {
     await waitForExportLayout();
     const dataUrl = await toPng(cardRoot, {
@@ -110,7 +96,6 @@ export async function exportProofCardPng(input: {
     a.download = input.filename;
     a.click();
   } finally {
-    restoreInlineBoxStyle(cardRoot, savedBox);
     element.classList.remove(PROOF_EXPORT_SNAPSHOT_CLASS);
   }
 }
