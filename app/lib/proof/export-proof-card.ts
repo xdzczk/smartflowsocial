@@ -75,6 +75,32 @@ export function proofExportFilename(input: {
   return `${input.domain}-${type}-${d}.png`;
 }
 
+/** Downscale a supersampled capture to the preview's pixel dimensions. */
+export async function downscalePngDataUrl(
+  dataUrl: string,
+  width: number,
+  height: number
+): Promise<string> {
+  const img = new Image();
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error("Failed to load proof export image"));
+    img.src = dataUrl;
+  });
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    throw new Error("Failed to create proof export canvas");
+  }
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(img, 0, 0, width, height);
+  return canvas.toDataURL("image/png");
+}
+
 export async function exportProofCardPng(input: {
   element: HTMLElement;
   ratio: ProofRatio;
@@ -87,13 +113,16 @@ export async function exportProofCardPng(input: {
   element.classList.add(PROOF_EXPORT_SNAPSHOT_CLASS);
   try {
     await waitForExportLayout();
-    const dataUrl = await toPng(cardRoot, {
+    const supersample = resolveProofExportPixelRatio();
+    const captured = await toPng(cardRoot, {
       width: w,
       height: h,
-      pixelRatio: resolveProofExportPixelRatio(),
+      pixelRatio: supersample,
       cacheBust: true,
       backgroundColor: resolveProofPngBackground(element),
     });
+    const dataUrl =
+      supersample > 1 ? await downscalePngDataUrl(captured, w, h) : captured;
     const a = document.createElement("a");
     a.href = dataUrl;
     a.download = input.filename;

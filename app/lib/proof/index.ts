@@ -13,6 +13,7 @@ export {
 export { buildProofCaption } from "./build-proof-caption";
 export { buildProofSummary } from "./build-proof-summary";
 export {
+  downscalePngDataUrl,
   exportProofCardPng,
   measureProofCardRoot,
   proofExportFilename,

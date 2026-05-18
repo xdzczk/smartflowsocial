@@ -29,10 +29,13 @@ export function proofPreviewExportFallbackPx(ratio: ProofRatio): {
   }
 }
 
-/** Minimum export density so PNGs stay sharp when shared (layout still matches preview). */
+/**
+ * Capture supersampling factor (html-to-image `pixelRatio`).
+ * Final PNG dimensions still match the preview via downscale after capture.
+ */
 export const PROOF_EXPORT_PIXEL_RATIO = 2;
 
-/** Retina-aware export density (2×–3×); layout size comes from {@link measureProofCardRoot}. */
+/** Retina-aware supersample factor (2×–3×) used only during capture. */
 export function resolveProofExportPixelRatio(): number {
   if (typeof window === "undefined") return PROOF_EXPORT_PIXEL_RATIO;
   const dpr = window.devicePixelRatio;
