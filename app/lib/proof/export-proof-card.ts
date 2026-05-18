@@ -12,6 +12,10 @@ export const PROOF_EXPORT_SNAPSHOT_CLASS = "proof-export-snapshot";
 
 const PROOF_CARD_ROOT_SELECTOR = "[data-proof-card-root]";
 const PROOF_CARD_SURFACE_SELECTOR = "[data-proof-card-surface]";
+const PROOF_CARD_SURFACE_PAINT_KEYS = [
+  "backgroundColor",
+  "backgroundImage",
+] as const;
 
 const PROOF_EXPORT_THEME_TOKENS = [
   "--bg-surface-2",
@@ -35,6 +39,8 @@ const PROOF_EXPORT_THEME_TOKENS = [
 
 type ExportThemeTokenName = (typeof PROOF_EXPORT_THEME_TOKENS)[number];
 type SavedExportThemeTokens = Array<[ExportThemeTokenName, string]>;
+type SurfacePaintKey = (typeof PROOF_CARD_SURFACE_PAINT_KEYS)[number];
+type SavedSurfacePaint = Array<[SurfacePaintKey, string]>;
 
 function findProofCardRoot(el: HTMLElement): HTMLElement {
   const root = el.querySelector<HTMLElement>(PROOF_CARD_ROOT_SELECTOR);
@@ -66,6 +72,35 @@ function restoreProofExportThemeTokens(
   for (const [name, value] of saved) {
     if (value) el.style.setProperty(name, value);
     else el.style.removeProperty(name);
+  }
+}
+
+function pinProofCardSurfacePaint(el: HTMLElement): SavedSurfacePaint {
+  const computed = window.getComputedStyle(el);
+  const saved: SavedSurfacePaint = PROOF_CARD_SURFACE_PAINT_KEYS.map((key) => [
+    key,
+    el.style[key],
+  ]);
+
+  const bg = computed.backgroundColor;
+  if (bg && bg !== "transparent" && bg !== "rgba(0, 0, 0, 0)") {
+    el.style.backgroundColor = bg;
+  }
+
+  const bgImage = computed.backgroundImage;
+  if (bgImage && bgImage !== "none") {
+    el.style.backgroundImage = bgImage;
+  }
+
+  return saved;
+}
+
+function restoreProofCardSurfacePaint(
+  el: HTMLElement,
+  saved: SavedSurfacePaint
+): void {
+  for (const [key, value] of saved) {
+    el.style[key] = value;
   }
 }
 
@@ -139,6 +174,7 @@ export async function exportProofCardPng(input: {
 }): Promise<void> {
   const { element } = input;
   const cardRoot = findProofCardRoot(element);
+  const cardSurface = findProofCardSurface(element);
   const source = measureProofCardRoot(cardRoot, input.ratio);
   const target = PROOF_EXPORT_PX[input.ratio];
   const scale = resolveProofExportScale({ source, target });
@@ -146,6 +182,7 @@ export async function exportProofCardPng(input: {
   element.classList.add(PROOF_EXPORT_SNAPSHOT_CLASS);
   cardRoot.classList.add(PROOF_EXPORT_SNAPSHOT_CLASS);
   const savedThemeTokens = pinCurrentProofExportThemeTokens(cardRoot);
+  const savedSurfacePaint = pinProofCardSurfacePaint(cardSurface);
   try {
     await waitForExportLayout();
     const dataUrl = await toPng(cardRoot, {
@@ -166,6 +203,7 @@ export async function exportProofCardPng(input: {
     a.download = input.filename;
     a.click();
   } finally {
+    restoreProofCardSurfacePaint(cardSurface, savedSurfacePaint);
     restoreProofExportThemeTokens(cardRoot, savedThemeTokens);
     cardRoot.classList.remove(PROOF_EXPORT_SNAPSHOT_CLASS);
     element.classList.remove(PROOF_EXPORT_SNAPSHOT_CLASS);

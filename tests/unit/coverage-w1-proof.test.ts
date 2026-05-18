@@ -363,6 +363,13 @@ describe("W1 proof coverage", () => {
       const classList = { add: vi.fn(), remove: vi.fn() };
       const cardRootClassList = { add: vi.fn(), remove: vi.fn() };
       const tokenStyle = new Map<string, string>();
+      const surfaceStyle = {
+        backgroundColor: "",
+        backgroundImage: "",
+      };
+      const cardSurface = {
+        style: surfaceStyle,
+      } as unknown as HTMLElement;
       const cardRoot = {
         classList: cardRootClassList,
         getBoundingClientRect: () => ({ width: 360, height: 360 }),
@@ -379,7 +386,11 @@ describe("W1 proof coverage", () => {
       const element = {
         classList,
         querySelector: vi.fn((selector: string) =>
-          selector === "[data-proof-card-root]" ? cardRoot : null
+          selector === "[data-proof-card-root]"
+            ? cardRoot
+            : selector === "[data-proof-card-surface]"
+              ? cardSurface
+              : null
         ),
       } as unknown as HTMLElement;
       const getComputedStyle = vi
@@ -395,6 +406,12 @@ describe("W1 proof coverage", () => {
                     : "",
             };
           }
+          if (node === cardSurface) {
+            return {
+              backgroundColor: "rgb(31, 32, 36)",
+              backgroundImage: "linear-gradient(rgb(31, 32, 36), transparent)",
+            };
+          }
           return { backgroundColor: "rgb(20, 20, 20)" };
         });
       vi.stubGlobal("window", { getComputedStyle });
@@ -408,6 +425,13 @@ describe("W1 proof coverage", () => {
       vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => {
         cb(0);
         return 0;
+      });
+      vi.mocked(toPng).mockImplementationOnce(async () => {
+        expect(surfaceStyle.backgroundColor).toBe("rgb(31, 32, 36)");
+        expect(surfaceStyle.backgroundImage).toBe(
+          "linear-gradient(rgb(31, 32, 36), transparent)"
+        );
+        return "data:image/png;base64,fake";
       });
 
       await exportProofCardPng({
@@ -435,6 +459,8 @@ describe("W1 proof coverage", () => {
         "220 7% 14.2%"
       );
       expect(cardRoot.style.removeProperty).toHaveBeenCalledWith("--text");
+      expect(surfaceStyle.backgroundColor).toBe("");
+      expect(surfaceStyle.backgroundImage).toBe("");
       expect(toPng).toHaveBeenCalledOnce();
       const [capturedRoot, toPngOptions] = vi.mocked(toPng).mock.calls[0] ?? [];
       expect(capturedRoot).toBe(cardRoot);
