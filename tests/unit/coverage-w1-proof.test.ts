@@ -7,14 +7,17 @@ import { buildGiveawayProofPayload } from "~/lib/proof/adapters/giveaway";
 import { buildProofCaption } from "~/lib/proof/build-proof-caption";
 import { buildProofSummary } from "~/lib/proof/build-proof-summary";
 import {
-  downscalePngDataUrl,
   exportProofCardPng,
   measureProofCardRoot,
   PROOF_EXPORT_SNAPSHOT_CLASS,
   proofExportFilename,
+  resolveProofExportScale,
   resolveProofPngBackground,
 } from "~/lib/proof/export-proof-card";
-import { proofPreviewExportFallbackPx } from "~/lib/proof/ratios";
+import {
+  PROOF_EXPORT_PX,
+  proofPreviewExportFallbackPx,
+} from "~/lib/proof/ratios";
 import {
   proofCardAspectOuterClass,
   proofCardInnerPadClass,
@@ -345,70 +348,19 @@ describe("W1 proof coverage", () => {
       ).toBe("contest-public-summary-2026-05-20.png");
     });
 
-    it("downscales supersampled capture to preview pixel dimensions", async () => {
-      const drawImage = vi.fn();
-      const downscaledUrl = "data:image/png;base64,downscaled";
-      const canvas = {
-        width: 0,
-        height: 0,
-        getContext: vi.fn(() => ({
-          imageSmoothingEnabled: true,
-          imageSmoothingQuality: "high",
-          drawImage,
-        })),
-        toDataURL: vi.fn(() => downscaledUrl),
-      };
-      class MockImage {
-        width = 720;
-        height = 720;
-        onload: (() => void) | null = null;
-        onerror: (() => void) | null = null;
-        set src(_value: string) {
-          queueMicrotask(() => this.onload?.());
-        }
-      }
-      vi.stubGlobal("Image", MockImage);
-      vi.stubGlobal("document", {
-        createElement: vi.fn((tag: string) => {
-          if (tag === "canvas") return canvas;
-          throw new Error(`unexpected tag ${tag}`);
-        }),
-      });
-
-      await expect(
-        downscalePngDataUrl("data:image/png;base64,capture", 360, 360)
-      ).resolves.toBe(downscaledUrl);
-
-      expect(canvas.width).toBe(360);
-      expect(canvas.height).toBe(360);
-      expect(drawImage).toHaveBeenCalled();
+    it("resolves export scale without changing card proportions", () => {
+      expect(
+        resolveProofExportScale({
+          source: { w: 360, h: 360 },
+          target: PROOF_EXPORT_PX.square,
+        })
+      ).toBe(3);
     });
 
     it("exports png using html-to-image and clicks download anchor", async () => {
       const click = vi.fn();
       const anchor = { href: "", download: "", click };
       const classList = { add: vi.fn(), remove: vi.fn() };
-      const downscaledUrl = "data:image/png;base64,downscaled";
-      const drawImage = vi.fn();
-      const canvas = {
-        width: 0,
-        height: 0,
-        getContext: vi.fn(() => ({
-          imageSmoothingEnabled: true,
-          imageSmoothingQuality: "high",
-          drawImage,
-        })),
-        toDataURL: vi.fn(() => downscaledUrl),
-      };
-      class MockImage {
-        width = 720;
-        height = 720;
-        onload: (() => void) | null = null;
-        onerror: (() => void) | null = null;
-        set src(_value: string) {
-          queueMicrotask(() => this.onload?.());
-        }
-      }
       const cardRoot = {
         getBoundingClientRect: () => ({ width: 360, height: 360 }),
       } as unknown as HTMLElement;
@@ -422,11 +374,9 @@ describe("W1 proof coverage", () => {
         .fn()
         .mockReturnValueOnce({ backgroundColor: "rgb(20, 20, 20)" });
       vi.stubGlobal("window", { getComputedStyle });
-      vi.stubGlobal("Image", MockImage);
       vi.stubGlobal("document", {
         createElement: vi.fn((tag: string) => {
           if (tag === "a") return anchor;
-          if (tag === "canvas") return canvas;
           throw new Error(`unexpected tag ${tag}`);
         }),
         documentElement: {},
@@ -450,16 +400,21 @@ describe("W1 proof coverage", () => {
       const [capturedRoot, toPngOptions] = vi.mocked(toPng).mock.calls[0] ?? [];
       expect(capturedRoot).toBe(cardRoot);
       expect(toPngOptions).toMatchObject({
-        width: 360,
-        height: 360,
-        pixelRatio: 2,
+        width: 1080,
+        height: 1080,
+        pixelRatio: 1,
         backgroundColor: "rgb(20, 20, 20)",
+        style: {
+          width: "360px",
+          height: "360px",
+          maxWidth: "none",
+          transform: "scale(3)",
+          transformOrigin: "top left",
+        },
       });
-      expect(canvas.width).toBe(360);
-      expect(canvas.height).toBe(360);
       expect(click).toHaveBeenCalledTimes(1);
       expect(anchor.download).toBe("x.png");
-      expect(anchor.href).toBe(downscaledUrl);
+      expect(anchor.href).toContain("data:image/png;base64");
     });
   });
 });

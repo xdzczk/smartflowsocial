@@ -13,18 +13,18 @@ export {
 export { buildProofCaption } from "./build-proof-caption";
 export { buildProofSummary } from "./build-proof-summary";
 export {
-  downscalePngDataUrl,
   exportProofCardPng,
   measureProofCardRoot,
   proofExportFilename,
+  resolveProofExportScale,
   resolveProofPngBackground,
 } from "./export-proof-card";
 export {
   PROOF_EXPORT_PIXEL_RATIO,
+  PROOF_EXPORT_PX,
   PROOF_RATIO_PREVIEW,
   proofPreviewExportFallbackPx,
   proofRatioLabel,
-  resolveProofExportPixelRatio,
 } from "./ratios";
 export {
   proofCardAspectOuterClass,

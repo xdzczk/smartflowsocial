@@ -10,6 +10,13 @@ export const PROOF_RATIO_PREVIEW: Record<
   landscape: { aspectClass: "aspect-video", maxPreviewPx: 720 },
 };
 
+/** Share-ready PNG dimensions. These match the card ratios without changing preview layout. */
+export const PROOF_EXPORT_PX: Record<ProofRatio, { w: number; h: number }> = {
+  portrait: { w: 1080, h: 1350 },
+  square: { w: 1080, h: 1080 },
+  landscape: { w: 1600, h: 900 },
+};
+
 /**
  * Fallback when the card is not measurable (hidden / zero layout).
  * Matches `proofCardAspectOuterClass` max widths and aspect ratios.
@@ -29,19 +36,8 @@ export function proofPreviewExportFallbackPx(ratio: ProofRatio): {
   }
 }
 
-/**
- * Capture supersampling factor (html-to-image `pixelRatio`).
- * Final PNG dimensions still match the preview via downscale after capture.
- */
-export const PROOF_EXPORT_PIXEL_RATIO = 2;
-
-/** Retina-aware supersample factor (2×–3×) used only during capture. */
-export function resolveProofExportPixelRatio(): number {
-  if (typeof window === "undefined") return PROOF_EXPORT_PIXEL_RATIO;
-  const dpr = window.devicePixelRatio;
-  if (!Number.isFinite(dpr) || dpr <= 0) return PROOF_EXPORT_PIXEL_RATIO;
-  return Math.min(3, Math.max(PROOF_EXPORT_PIXEL_RATIO, dpr));
-}
+/** Export dimensions are already high-res, so avoid an extra pixel multiplier. */
+export const PROOF_EXPORT_PIXEL_RATIO = 1;
 
 export function proofRatioLabel(r: ProofRatio): string {
   switch (r) {

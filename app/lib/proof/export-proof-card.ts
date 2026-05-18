@@ -1,8 +1,9 @@
 import { toPng } from "html-to-image";
 
 import {
+  PROOF_EXPORT_PIXEL_RATIO,
+  PROOF_EXPORT_PX,
   proofPreviewExportFallbackPx,
-  resolveProofExportPixelRatio,
 } from "./ratios";
 import type { ProofRatio } from "./types";
 
@@ -75,30 +76,14 @@ export function proofExportFilename(input: {
   return `${input.domain}-${type}-${d}.png`;
 }
 
-/** Downscale a supersampled capture to the preview's pixel dimensions. */
-export async function downscalePngDataUrl(
-  dataUrl: string,
-  width: number,
-  height: number
-): Promise<string> {
-  const img = new Image();
-  await new Promise<void>((resolve, reject) => {
-    img.onload = () => resolve();
-    img.onerror = () => reject(new Error("Failed to load proof export image"));
-    img.src = dataUrl;
-  });
-
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    throw new Error("Failed to create proof export canvas");
-  }
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(img, 0, 0, width, height);
-  return canvas.toDataURL("image/png");
+export function resolveProofExportScale(input: {
+  source: { w: number; h: number };
+  target: { w: number; h: number };
+}): number {
+  return Math.min(
+    input.target.w / input.source.w,
+    input.target.h / input.source.h
+  );
 }
 
 export async function exportProofCardPng(input: {
@@ -108,21 +93,27 @@ export async function exportProofCardPng(input: {
 }): Promise<void> {
   const { element } = input;
   const cardRoot = findProofCardRoot(element);
-  const { w, h } = measureProofCardRoot(cardRoot, input.ratio);
+  const source = measureProofCardRoot(cardRoot, input.ratio);
+  const target = PROOF_EXPORT_PX[input.ratio];
+  const scale = resolveProofExportScale({ source, target });
 
   element.classList.add(PROOF_EXPORT_SNAPSHOT_CLASS);
   try {
     await waitForExportLayout();
-    const supersample = resolveProofExportPixelRatio();
-    const captured = await toPng(cardRoot, {
-      width: w,
-      height: h,
-      pixelRatio: supersample,
+    const dataUrl = await toPng(cardRoot, {
+      width: target.w,
+      height: target.h,
+      pixelRatio: PROOF_EXPORT_PIXEL_RATIO,
       cacheBust: true,
       backgroundColor: resolveProofPngBackground(element),
+      style: {
+        width: `${source.w}px`,
+        height: `${source.h}px`,
+        maxWidth: "none",
+        transform: `scale(${scale})`,
+        transformOrigin: "top left",
+      },
     });
-    const dataUrl =
-      supersample > 1 ? await downscalePngDataUrl(captured, w, h) : captured;
     const a = document.createElement("a");
     a.href = dataUrl;
     a.download = input.filename;
