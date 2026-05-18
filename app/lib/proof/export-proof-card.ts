@@ -98,6 +98,7 @@ export async function exportProofCardPng(input: {
   const scale = resolveProofExportScale({ source, target });
 
   element.classList.add(PROOF_EXPORT_SNAPSHOT_CLASS);
+  cardRoot.classList.add(PROOF_EXPORT_SNAPSHOT_CLASS);
   try {
     await waitForExportLayout();
     const dataUrl = await toPng(cardRoot, {
@@ -119,6 +120,7 @@ export async function exportProofCardPng(input: {
     a.download = input.filename;
     a.click();
   } finally {
+    cardRoot.classList.remove(PROOF_EXPORT_SNAPSHOT_CLASS);
     element.classList.remove(PROOF_EXPORT_SNAPSHOT_CLASS);
   }
 }

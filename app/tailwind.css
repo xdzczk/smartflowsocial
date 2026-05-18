@@ -689,7 +689,7 @@ body.has-btcpay-confirmation-bar {
    * Proof card PNG export: html-to-image keeps dark-mode ink on a light canvas.
    * Snapshot restores light receipt tokens for shareable exports.
    */
-  .dark .proof-export-snapshot {
+  .proof-export-snapshot {
     --bg-surface-2: 0 0% 100%;
     --bg-surface-3: 42 10% 97%;
     --surface: var(--bg-surface-2);

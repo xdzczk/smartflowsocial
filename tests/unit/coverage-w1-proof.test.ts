@@ -361,7 +361,9 @@ describe("W1 proof coverage", () => {
       const click = vi.fn();
       const anchor = { href: "", download: "", click };
       const classList = { add: vi.fn(), remove: vi.fn() };
+      const cardRootClassList = { add: vi.fn(), remove: vi.fn() };
       const cardRoot = {
+        classList: cardRootClassList,
         getBoundingClientRect: () => ({ width: 360, height: 360 }),
       } as unknown as HTMLElement;
       const element = {
@@ -393,7 +395,13 @@ describe("W1 proof coverage", () => {
       });
 
       expect(classList.add).toHaveBeenCalledWith(PROOF_EXPORT_SNAPSHOT_CLASS);
+      expect(cardRootClassList.add).toHaveBeenCalledWith(
+        PROOF_EXPORT_SNAPSHOT_CLASS
+      );
       expect(classList.remove).toHaveBeenCalledWith(
+        PROOF_EXPORT_SNAPSHOT_CLASS
+      );
+      expect(cardRootClassList.remove).toHaveBeenCalledWith(
         PROOF_EXPORT_SNAPSHOT_CLASS
       );
       expect(toPng).toHaveBeenCalledOnce();
