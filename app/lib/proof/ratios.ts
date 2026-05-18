@@ -29,8 +29,16 @@ export function proofPreviewExportFallbackPx(ratio: ProofRatio): {
   }
 }
 
-/** 1× — PNG pixel dimensions match the card as shown in the UI. */
-export const PROOF_EXPORT_PIXEL_RATIO = 1;
+/** Minimum export density so PNGs stay sharp when shared (layout still matches preview). */
+export const PROOF_EXPORT_PIXEL_RATIO = 2;
+
+/** Retina-aware export density (2×–3×); layout size comes from {@link measureProofCardRoot}. */
+export function resolveProofExportPixelRatio(): number {
+  if (typeof window === "undefined") return PROOF_EXPORT_PIXEL_RATIO;
+  const dpr = window.devicePixelRatio;
+  if (!Number.isFinite(dpr) || dpr <= 0) return PROOF_EXPORT_PIXEL_RATIO;
+  return Math.min(3, Math.max(PROOF_EXPORT_PIXEL_RATIO, dpr));
+}
 
 export function proofRatioLabel(r: ProofRatio): string {
   switch (r) {

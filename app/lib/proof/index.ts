@@ -23,6 +23,7 @@ export {
   PROOF_RATIO_PREVIEW,
   proofPreviewExportFallbackPx,
   proofRatioLabel,
+  resolveProofExportPixelRatio,
 } from "./ratios";
 export {
   proofCardAspectOuterClass,

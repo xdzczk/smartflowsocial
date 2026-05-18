@@ -384,10 +384,11 @@ describe("W1 proof coverage", () => {
       const [capturedRoot, toPngOptions] = vi.mocked(toPng).mock.calls[0] ?? [];
       expect(capturedRoot).toBe(cardRoot);
       expect(toPngOptions).toMatchObject({
-        pixelRatio: 1,
+        width: 360,
+        height: 360,
+        pixelRatio: 2,
         backgroundColor: "rgb(20, 20, 20)",
       });
-      expect(toPngOptions).not.toHaveProperty("width");
       expect(click).toHaveBeenCalledTimes(1);
       expect(anchor.download).toBe("x.png");
       expect(anchor.href).toContain("data:image/png;base64");

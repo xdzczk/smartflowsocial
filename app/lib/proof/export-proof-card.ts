@@ -1,8 +1,8 @@
 import { toPng } from "html-to-image";
 
 import {
-  PROOF_EXPORT_PIXEL_RATIO,
   proofPreviewExportFallbackPx,
+  resolveProofExportPixelRatio,
 } from "./ratios";
 import type { ProofRatio } from "./types";
 
@@ -82,12 +82,15 @@ export async function exportProofCardPng(input: {
 }): Promise<void> {
   const { element } = input;
   const cardRoot = findProofCardRoot(element);
+  const { w, h } = measureProofCardRoot(cardRoot, input.ratio);
 
   element.classList.add(PROOF_EXPORT_SNAPSHOT_CLASS);
   try {
     await waitForExportLayout();
     const dataUrl = await toPng(cardRoot, {
-      pixelRatio: PROOF_EXPORT_PIXEL_RATIO,
+      width: w,
+      height: h,
+      pixelRatio: resolveProofExportPixelRatio(),
       cacheBust: true,
       backgroundColor: resolveProofPngBackground(element),
     });
