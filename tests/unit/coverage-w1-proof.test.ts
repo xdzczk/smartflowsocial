@@ -428,9 +428,7 @@ describe("W1 proof coverage", () => {
       });
       vi.mocked(toPng).mockImplementationOnce(async () => {
         expect(surfaceStyle.backgroundColor).toBe("rgb(31, 32, 36)");
-        expect(surfaceStyle.backgroundImage).toBe(
-          "linear-gradient(rgb(31, 32, 36), transparent)"
-        );
+        expect(surfaceStyle.backgroundImage).toBe("none");
         return "data:image/png;base64,fake";
       });
 

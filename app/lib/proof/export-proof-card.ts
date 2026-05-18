@@ -76,21 +76,16 @@ function restoreProofExportThemeTokens(
 }
 
 function pinProofCardSurfacePaint(el: HTMLElement): SavedSurfacePaint {
-  const computed = window.getComputedStyle(el);
   const saved: SavedSurfacePaint = PROOF_CARD_SURFACE_PAINT_KEYS.map((key) => [
     key,
     el.style[key],
   ]);
 
-  const bg = computed.backgroundColor;
-  if (bg && bg !== "transparent" && bg !== "rgba(0, 0, 0, 0)") {
-    el.style.backgroundColor = bg;
-  }
-
-  const bgImage = computed.backgroundImage;
-  if (bgImage && bgImage !== "none") {
-    el.style.backgroundImage = bgImage;
-  }
+  // Keep the canvas transparent, but flatten the rounded card surface itself.
+  // html-to-image can preserve transparent gradient layers without the underlying
+  // Tailwind bg color, which makes the whole card look see-through in PNG viewers.
+  el.style.backgroundColor = resolveProofPngBackground(el);
+  el.style.backgroundImage = "none";
 
   return saved;
 }
