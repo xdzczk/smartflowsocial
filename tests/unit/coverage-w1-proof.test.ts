@@ -384,7 +384,19 @@ describe("W1 proof coverage", () => {
       } as unknown as HTMLElement;
       const getComputedStyle = vi
         .fn()
-        .mockReturnValueOnce({ backgroundColor: "rgb(20, 20, 20)" });
+        .mockImplementation((node: HTMLElement) => {
+          if (node === cardRoot) {
+            return {
+              getPropertyValue: (name: string) =>
+                name === "--text"
+                  ? "220 10% 96%"
+                  : name === "--surface"
+                    ? "220 7% 14.2%"
+                    : "",
+            };
+          }
+          return { backgroundColor: "rgb(20, 20, 20)" };
+        });
       vi.stubGlobal("window", { getComputedStyle });
       vi.stubGlobal("document", {
         createElement: vi.fn((tag: string) => {
@@ -415,12 +427,12 @@ describe("W1 proof coverage", () => {
         PROOF_EXPORT_SNAPSHOT_CLASS
       );
       expect(cardRoot.style.setProperty).toHaveBeenCalledWith(
-        "--color-text",
-        "hsl(var(--text))"
+        "--text",
+        "220 10% 96%"
       );
       expect(cardRoot.style.setProperty).toHaveBeenCalledWith(
-        "--text",
-        "38 14% 10%"
+        "--surface",
+        "220 7% 14.2%"
       );
       expect(cardRoot.style.removeProperty).toHaveBeenCalledWith("--text");
       expect(toPng).toHaveBeenCalledOnce();

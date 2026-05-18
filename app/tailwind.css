@@ -685,32 +685,6 @@ body.has-btcpay-confirmation-bar {
       0 -5px 26px hsl(220 14% 3% / 0.2), 0 -2px 9px hsl(220 12% 3% / 0.13);
   }
 
-  /*
-   * Proof card PNG export: html-to-image keeps dark-mode ink on a light canvas.
-   * Snapshot restores light receipt tokens for shareable exports.
-   */
-  .proof-export-snapshot {
-    --bg-surface-2: 0 0% 100%;
-    --bg-surface-3: 42 10% 97%;
-    --surface: var(--bg-surface-2);
-    --surface-hover: var(--bg-surface-3);
-    --text: 38 14% 10%;
-    --text-secondary: 38 8% 34%;
-    --text-tertiary: 38 5% 46%;
-    --border: 36 9% 84%;
-    --border-subtle: 38 10% 90%;
-    --link: 221 14% 43%;
-    --brand: 222 26% 42%;
-    --brand-strong: 258 62% 55%;
-    --success: 142 70% 36%;
-    --success-text: 142 72% 20%;
-    --warning: 38 92% 45%;
-    --warning-text: 32 92% 22%;
-    --elevation-2:
-      0 12px 32px hsl(32 20% 16% / 0.095), 0 2px 10px hsl(30 14% 12% / 0.07),
-      inset 0 1px 0 0 rgb(255 255 255 / 0.62);
-  }
-
 }
 
 /* TODO: Dashboard shell chrome could co-locate with layout when splitting global CSS. */
