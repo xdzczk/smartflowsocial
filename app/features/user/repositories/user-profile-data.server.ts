@@ -97,6 +97,6 @@ export function upsertUserByNpub(
   return prisma.user.upsert({
     where: { npub },
     update: { nostrProfile },
-    create: { npub, nostrProfile },
+    create: { npub, nostrProfile, publishRelaySource: "nip65_profile" },
   });
 }

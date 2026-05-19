@@ -229,7 +229,7 @@ type QueueTypeSettings = QueueType & {
 export const SETTINGS_LOADER_FALLBACK: SettingsLoaderData = {
   timezone: "Etc/GMT",
   relays: [],
-  publishRelaySource: "app",
+  publishRelaySource: "nip65_profile",
   profileRelays: [],
   profileRelayEntries: [],
   managedRelays: [],

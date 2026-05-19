@@ -79,7 +79,11 @@ export async function consumeChallengeAndCreateSession(input: {
         })()
       : await (async () => {
           const created = await tx.user.create({
-            data: { npub: input.pubkey, nostrProfile: input.profileJson },
+            data: {
+              npub: input.pubkey,
+              nostrProfile: input.profileJson,
+              publishRelaySource: "nip65_profile",
+            },
             select: { id: true },
           });
           const freePlan = await tx.plan.findUnique({

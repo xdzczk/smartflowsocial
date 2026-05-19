@@ -1,51 +1,99 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="23" failures="0" errors="0" time="0.014736583">
-    <testsuite name="tests/unit/coverage-w1-proof.test.ts" timestamp="2026-05-18T14:44:57.924Z" hostname="Ivans-MacBook-Pro.local" tests="23" failures="0" errors="0" skipped="0" time="0.014736583">
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofSummary &gt; builds metric-first summaries and trims empty lines" time="0.000564917">
+<testsuites name="vitest tests" tests="46" failures="0" errors="0" time="0.0114305">
+    <testsuite name="tests/unit/schemas-settings-client.test.ts" timestamp="2026-05-19T13:21:56.738Z" hostname="Ivans-MacBook-Pro.local" tests="23" failures="0" errors="0" skipped="0" time="0.005982667">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateRelaysClientSchema &gt; accepts array of strings" time="0.001095791">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofSummary &gt; falls back to title/subtitle when hero is absent" time="0.000099958">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateRelaysClientSchema &gt; accepts empty array" time="0.000120375">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofCaption &gt; creates giveaway public-summary caption" time="0.007802084">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateTimezoneClientSchema &gt; accepts non-empty timezone" time="0.000193583">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofCaption &gt; creates contest public-summary caption" time="0.000110917">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateTimezoneClientSchema &gt; rejects empty timezone" time="0.0004665">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofCaption &gt; creates admin caption with newline brand line" time="0.000076416">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateBlacklistClientSchema &gt; accepts array of strings" time="0.000129584">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; buildProofCaption &gt; uses generic fallback caption path" time="0.000047584">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; createHashtagPresetClientSchema &gt; parses name and tags" time="0.000180375">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; contest/giveaway adapters &gt; builds all contest payload card types" time="0.000261541">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; createHashtagPresetClientSchema &gt; rejects empty name" time="0.000124708">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; contest/giveaway adapters &gt; builds all giveaway payload card types" time="0.000182917">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; createHashtagPresetClientSchema &gt; rejects empty tags" time="0.000099333">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; themes &gt; covers class builders for all ratio/tone branches" time="0.002692708">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateHashtagPresetClientSchema &gt; parses id, name, tags" time="0.000386708">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; uses element background when non-transparent" time="0.000210667">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateHashtagPresetClientSchema &gt; rejects empty id" time="0.000158834">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; falls back to --surface CSS variable when transparent" time="0.000073416">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateBlossomMirrorsClientSchema &gt; parses enableMirrorBlossom and mirrorUrls" time="0.000436125">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; reads background from the card surface element" time="0.000516">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateNWCClientSchema &gt; parses nwcEnabled and optional nwcString" time="0.000124458">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; falls back to white when no surface bg and no token values" time="0.000050708">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateNWCClientSchema &gt; accepts nwcString" time="0.000049958">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; measures card root from bounding rect" time="0.000081291">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateTagsClientSchema &gt; parses empty object with optional hashtags" time="0.000085084">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; falls back to preview max size when card rect is zero" time="0.000068667">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateTagsClientSchema &gt; accepts hashtags string" time="0.0000365">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; upscales narrow previews to design max dimensions" time="0.00010475">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; parses INTERVAL with intervalHours" time="0.000561625">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; does not downscale when preview already at design max" time="0.000029542">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; parses INTERVAL with useGlobalInterval" time="0.000064">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; formats proof export filenames" time="0.000053167">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; rejects INTERVAL without intervalHours or useGlobalInterval" time="0.000127208">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; exports png at design preview dimensions without cache busting" time="0.000861667">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; parses FIXED_SLOTS with slots" time="0.000054416">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; export-proof-card &gt; triggerProofPngDownload appends anchor to body for mobile Safari" time="0.000110083">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; rejects FIXED_SLOTS without slots" time="0.000079083">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; proofStudioShouldRevalidate &gt; skips revalidation on same-url focus (e.g. after mobile export)" time="0.000052">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; parses WEEKLY_SLOTS with weeklySlots" time="0.000289083">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; proofStudioShouldRevalidate &gt; revalidates after form submissions" time="0.00002825">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; rejects WEEKLY_SLOTS without weeklySlots" time="0.000079875">
         </testcase>
-        <testcase classname="tests/unit/coverage-w1-proof.test.ts" name="W1 proof coverage &gt; proofStudioShouldRevalidate &gt; revalidates when navigating to a different proof URL" time="0.00004225">
+        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; rejects invalid colorToken" time="0.000257833">
+        </testcase>
+    </testsuite>
+    <testsuite name="tests/unit/schemas-settings.test.ts" timestamp="2026-05-19T13:21:56.740Z" hostname="Ivans-MacBook-Pro.local" tests="23" failures="0" errors="0" skipped="0" time="0.005447833">
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; relayUrlSchema &gt; accepts valid wss URL" time="0.000839416">
+        </testcase>
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; relayUrlSchema &gt; rejects non-wss" time="0.000555833">
+        </testcase>
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; relayUrlSchema &gt; rejects invalid domain" time="0.000120375">
+        </testcase>
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateTimezoneSchema &gt; accepts non-empty timezone" time="0.000389292">
+        </testcase>
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateTimezoneSchema &gt; rejects empty timezone" time="0.000160041">
+        </testcase>
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateRelaysSchema &gt; transforms newline-separated string to array and validates relay URLs" time="0.000670417">
+        </testcase>
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateRelaysSchema &gt; accepts publishRelaySource nip65_profile" time="0.000080458">
+        </testcase>
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateRelaysSchema &gt; rejects when no valid relays" time="0.000125917">
+        </testcase>
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateBlacklistSchema &gt; transforms newline-separated string and validates npub prefix" time="0.000228084">
+        </testcase>
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateBlacklistSchema &gt; rejects items not starting with npub" time="0.000142167">
+        </testcase>
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updatePreferredNostrClientSchema &gt; accepts preset without custom URL" time="0.000151333">
+        </testcase>
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updatePreferredNostrClientSchema &gt; accepts CUSTOM with valid https URL" time="0.000051167">
+        </testcase>
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updatePreferredNostrClientSchema &gt; rejects CUSTOM with non-https URL" time="0.00010525">
+        </testcase>
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; createHashtagPresetSchema &gt; parses name and tags" time="0.000139416">
+        </testcase>
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; createHashtagPresetSchema &gt; rejects empty name" time="0.000082333">
+        </testcase>
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateHashtagPresetSchema &gt; parses id, name, tags" time="0.000151958">
+        </testcase>
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; uploadProviderSchema &gt; accepts enum values" time="0.000058916">
+        </testcase>
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; uploadProviderSchema &gt; rejects invalid value" time="0.000127875">
+        </testcase>
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateUploadProviderSchema &gt; parses non-CUSTOM provider" time="0.000123166">
+        </testcase>
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateUploadProviderSchema &gt; rejects BLOSSOM_CUSTOM without customBlossomUrl" time="0.000068167">
+        </testcase>
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateUploadProviderSchema &gt; accepts BLOSSOM_CUSTOM with valid https URL" time="0.000032">
+        </testcase>
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateUploadProviderSchema &gt; strips trailing slash from customBlossomUrl" time="0.000031125">
+        </testcase>
+        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateUploadProviderSchema &gt; rejects BLOSSOM_CUSTOM with non-https URL" time="0.000082167">
         </testcase>
     </testsuite>
 </testsuites>

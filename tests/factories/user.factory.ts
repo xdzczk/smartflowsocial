@@ -7,6 +7,8 @@ import type { Prisma, UploadProvider, User } from "@prisma/client";
 
 import { TEST_USER_ID } from "../utils/test-helpers";
 
+import { DEFAULT_USER_WRITE_RELAYS } from "~/features/relays/relay-constants";
+
 export interface UserFactoryOptions {
   id?: string;
   npub?: string;
@@ -41,7 +43,7 @@ export class UserFactory {
       npub: `npub${Math.random().toString(36).substring(2, 15)}`,
       isEnabled: true,
       timezone: "America/New_York",
-      userRelays: ["wss://relay.bullishbounty.com", "wss://relay.snort.social"],
+      userRelays: [...DEFAULT_USER_WRITE_RELAYS],
       giveawayBlackListed: [],
       uploadProvider: "BLOSSOM_PRIMAL",
       showHashTagsinPosts: false,

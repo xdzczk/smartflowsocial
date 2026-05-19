@@ -51,7 +51,7 @@ describe("settings.schemas", () => {
       });
       expect(result.relays).toHaveLength(2);
       expect(result.relays).toContain("wss://relay.example.com");
-      expect(result.publishRelaySource).toBe("app");
+      expect(result.publishRelaySource).toBe("nip65_profile");
     });
     it("accepts publishRelaySource nip65_profile", () => {
       const result = updateRelaysSchema.parse({
