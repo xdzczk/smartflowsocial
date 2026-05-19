@@ -13,9 +13,9 @@ model User {
   updatedAt                  DateTime       @updatedAt
   isEnabled                  Boolean        @default(false)
   timezone                   String?        @default("Etc/GMT")
-  userRelays                 String[]       @default(["wss://relay.bullishbounty.com", "wss://relay.snort.social", "wss://relay.primal.net", "wss://relay.damus.io", "wss://relay.nostr.band"])
-  /// "app" = use userRelays (SmartFlow list); "nip65_profile" = use kind 10002 write relays from the user npub
-  publishRelaySource         String         @default("app")
+  userRelays                 String[]       @default(["wss://relay.primal.net", "wss://relay.damus.io", "wss://nos.lol/", "wss://nostr.mom", "wss://relay.ditto.pub"])
+  /// "app" = use userRelays (SmartFlow list); "nip65_profile" = use kind 10002 write relays from the user npub (default for new users)
+  publishRelaySource         String         @default("nip65_profile")
   giveawayBlackListed        String[]       @default([])
   uploadProvider             UploadProvider @default(S3)
   customBlossomUrl           String?

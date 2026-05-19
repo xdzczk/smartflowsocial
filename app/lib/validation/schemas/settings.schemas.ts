@@ -75,7 +75,9 @@ export const updateRelaysSchema = z.object({
     .string()
     .transform((val) => val.split("\n").filter((relay) => relay.trim()))
     .pipe(z.array(relayUrlSchema).min(1, "At least one relay is required")),
-  publishRelaySource: publishRelaySourceSchema.optional().default("app"),
+  publishRelaySource: publishRelaySourceSchema
+    .optional()
+    .default("nip65_profile"),
 });
 
 /**

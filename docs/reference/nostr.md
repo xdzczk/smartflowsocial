@@ -485,13 +485,16 @@ Users can configure their preferred **write relays** (relay intent) in settings.
 Relay intent is persisted in `User.userRelays` and is **not** mutated by execution-time health
 logic.
 
-**Default Relays:**
+**Default publish source:** New users use `publishRelaySource = nip65_profile` (kind 10002 write
+relays from their npub when available; otherwise the app default relay list below).
 
-- `wss://relay.bullishbounty.com`
-- `wss://relay.snort.social`
+**App default relays** (`User.userRelays` fallback and in-app list):
+
 - `wss://relay.primal.net`
 - `wss://relay.damus.io`
-- `wss://relay.nostr.band`
+- `wss://nos.lol/`
+- `wss://nostr.mom`
+- `wss://relay.ditto.pub`
 
 **Code Location:**
 
