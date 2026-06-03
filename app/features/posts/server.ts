@@ -171,7 +171,11 @@ export {
   type LoadFlowDataResult,
   type FlowItemDTO,
 } from "./services/flow-loader.server";
-export { getRunwayLastScheduledAtUtcMs } from "./runway/index.server";
+export {
+  getRunwayLastScheduledAtUtcMs,
+  runRunwayLowNotifications,
+  type RunwayLowSweepResult,
+} from "./runway/index.server";
 export {
   getScheduleNext7DaysCounts,
   type ScheduleDayCount,

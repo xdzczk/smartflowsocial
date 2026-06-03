@@ -60,7 +60,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
         TEST_USER_ID,
         {
           relays: ["wss://relay1.com", "wss://relay2.com", "wss://relay3.com"],
-          publishRelaySource: "app",
+          publishRelaySource: "nip65_profile",
         }
       );
       expect(jsonResult).toEqual({ success: true });
@@ -97,7 +97,7 @@ describe("General Settings Action Handler - Edge Cases", () => {
         TEST_USER_ID,
         {
           relays: ["wss://relay1.com"],
-          publishRelaySource: "app",
+          publishRelaySource: "nip65_profile",
         }
       );
       expect(jsonResult).toEqual({ success: true });

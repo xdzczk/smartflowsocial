@@ -260,6 +260,19 @@ export interface QueueType {
   userId?: string;
   /** Queue default for “include hashtags in note body”; unassigned uses true. */
   includeHashtagsInNoteBody?: boolean;
+  /** Queue's default hashtag preset id (if any). */
+  hashTagPresetId?: string | null;
+  /**
+   * Queue's default hashtag preset (relation), used to prefill/surface composer tags.
+   * Kept as a JSON-safe shape (no Date fields) so it survives loader serialization
+   * without diverging from the runtime type.
+   */
+  hashTagPreset?: {
+    id: string;
+    name: string;
+    tags: string;
+    description?: string | null;
+  } | null;
 }
 
 /** Default for the per-post “include hashtags in note body” toggle when a queue is selected. */

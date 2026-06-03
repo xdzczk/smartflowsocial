@@ -48,9 +48,9 @@ interface QueueTypeDialogQueueType extends QueueType {
     id: string;
     name: string;
     tags: string;
-    description?: string;
+    description?: string | null;
   } | null;
-  hashTagPresetId?: string;
+  hashTagPresetId?: string | null;
 }
 
 function readScheduleRandomWindowMinutes(

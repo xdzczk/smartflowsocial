@@ -9,9 +9,8 @@ import type { QueueType } from "~/features/posts/types";
 function baseQueue(
   overrides: Partial<QueueType> & {
     scheduleConfig?: QueueType["scheduleConfig"];
-    hashTagPreset?: { name: string } | null;
   }
-): QueueType & { hashTagPreset?: { name: string } | null } {
+): QueueType {
   return {
     id: "q1",
     name: "Test",
@@ -53,7 +52,7 @@ describe("getQueueMetadataChips", () => {
     const chips = getQueueMetadataChips(
       baseQueue({
         isEnabled: false,
-        hashTagPreset: { name: "P" },
+        hashTagPreset: { id: "p1", name: "P", tags: "#a #b" },
         includeHashtagsInNoteBody: false,
         scheduleType: "INTERVAL",
         scheduleConfig: {

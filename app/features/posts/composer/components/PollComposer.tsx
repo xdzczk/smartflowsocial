@@ -1200,6 +1200,12 @@ export function PollComposer({
                 onIncludeHashtagsInNoteBodyChange={(value) => {
                   setIncludeHashtagsInNoteBody(value);
                 }}
+                queuePresetName={
+                  selectedQueue !== "unassigned" &&
+                  typeof selectedQueueType === "object"
+                    ? (selectedQueueType.hashTagPreset?.name ?? undefined)
+                    : undefined
+                }
               />
             </div>
           </div>

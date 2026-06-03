@@ -55,15 +55,15 @@ export function UnifiedComposerTagsSection({
       }
       queuePresetName={
         selectedQueue !== "unassigned"
-          ? ((
-              queueTypes.find(
-                (q) => (typeof q === "string" ? q : q.name) === selectedQueue
-              ) as
-                | (QueueType & {
-                    hashTagPreset?: { name: string } | null;
-                  })
-                | undefined
-            )?.hashTagPreset?.name ?? undefined)
+          ? ((() => {
+              const q = queueTypes.find(
+                (qt) =>
+                  (typeof qt === "string" ? qt : qt.name) === selectedQueue
+              );
+              return typeof q === "object"
+                ? (q.hashTagPreset?.name ?? undefined)
+                : undefined;
+            })() ?? undefined)
           : undefined
       }
       hideSectionLabel={isContestSourcePostDensity}
