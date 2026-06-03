@@ -62,6 +62,20 @@ const queueTypeSchema = z.object({
   status: queueTypeStatusSchema,
   isEnabled: z.boolean().optional(),
   userId: z.string().optional(),
+  // Queue defaults the composer/editor reads back. Without these, Zod's object
+  // strip would drop them, silently resetting the hashtag preset + "metadata only"
+  // toggle whenever data flows through this schema (e.g. the dashboard query).
+  hashTagPresetId: z.string().nullable().optional(),
+  includeHashtagsInNoteBody: z.boolean().optional(),
+  hashTagPreset: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      tags: z.string(),
+      description: z.string().nullable().optional(),
+    })
+    .nullable()
+    .optional(),
 });
 
 /**

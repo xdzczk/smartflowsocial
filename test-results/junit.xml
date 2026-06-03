@@ -1,31 +1,104 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="12" failures="0" errors="0" time="0.046176291">
-    <testsuite name="tests/unit/queue-type-summary.test.ts" timestamp="2026-06-03T09:02:52.606Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.00139025">
-        <testcase classname="tests/unit/queue-type-summary.test.ts" name="getQueuePrimaryScheduleLine &gt; formats custom interval hours" time="0.000603292">
+<testsuites name="vitest tests" tests="14" failures="0" errors="0" time="0.013890041">
+    <testsuite name="tests/integration/dashboard-loader.test.ts" timestamp="2026-06-03T09:30:02.760Z" hostname="Ivans-MacBook-Pro.local" tests="11" failures="0" errors="0" skipped="0" time="0.010613333">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should load dashboard data for authenticated user" time="0.004148292">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
+}
+
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/queue-type-summary.test.ts" name="getQueuePrimaryScheduleLine &gt; formats global interval with user picks" time="0.000147958">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should handle queue type parameter" time="0.000755">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
+}
+
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/queue-type-summary.test.ts" name="getQueueMetadataChips &gt; caps chips" time="0.000131541">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should return proper Flow data structure" time="0.000839542">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should expose first-run dashboard state for new users" time="0.000581375">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should disable first-run dashboard when user has activity" time="0.000318209">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Queue Filtering &gt; should handle &apos;all&apos; queue type" time="0.000272708">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Queue Filtering &gt; should handle &apos;posts&apos; queue type" time="0.000242875">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Queue Filtering &gt; should handle &apos;longform&apos; queue type" time="0.000280292">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
+}
+
+            </system-err>
+        </testcase>
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Error Handling &gt; should handle authentication errors" time="0.000149959">
+        </testcase>
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Error Handling &gt; should handle feature access errors" time="0.000091458">
+        </testcase>
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Error Handling &gt; should handle data loading errors" time="0.002335375">
+            <system-err>
+
+❌ Error: {
+  message: &apos;Database error&apos;,
+  code: &apos;DATABASE_ERROR&apos;,
+  statusCode: 500,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
         </testcase>
     </testsuite>
-    <testsuite name="tests/integration/settings/queue-types-edge-cases.test.ts" timestamp="2026-06-03T09:02:52.606Z" hostname="Ivans-MacBook-Pro.local" tests="9" failures="0" errors="0" skipped="0" time="0.044786041">
-        <testcase classname="tests/integration/settings/queue-types-edge-cases.test.ts" name="Queue Types Action Handler - Edge Cases &gt; create_queue_type &gt; should handle &apos;none&apos; as hashtag preset ID" time="0.036117291">
+    <testsuite name="tests/integration/services/loaders/dashboard-loader.test.ts" timestamp="2026-06-03T09:30:02.762Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.003276708">
+        <testcase classname="tests/integration/services/loaders/dashboard-loader.test.ts" name="Dashboard Loader &gt; should load dashboard data with all queue types" time="0.001888042">
         </testcase>
-        <testcase classname="tests/integration/settings/queue-types-edge-cases.test.ts" name="Queue Types Action Handler - Edge Cases &gt; create_queue_type &gt; should handle empty hashtag preset ID" time="0.001968959">
+        <testcase classname="tests/integration/services/loaders/dashboard-loader.test.ts" name="Dashboard Loader &gt; should filter by queue type" time="0.000738583">
         </testcase>
-        <testcase classname="tests/integration/settings/queue-types-edge-cases.test.ts" name="Queue Types Action Handler - Edge Cases &gt; create_queue_type &gt; should handle useGlobalInterval flag for INTERVAL schedule" time="0.001633708">
-        </testcase>
-        <testcase classname="tests/integration/settings/queue-types-edge-cases.test.ts" name="Queue Types Action Handler - Edge Cases &gt; create_queue_type &gt; should handle FIXED_SLOTS with comma-separated slots" time="0.001296292">
-        </testcase>
-        <testcase classname="tests/integration/settings/queue-types-edge-cases.test.ts" name="Queue Types Action Handler - Edge Cases &gt; create_queue_type &gt; should filter out empty slots" time="0.001136333">
-        </testcase>
-        <testcase classname="tests/integration/settings/queue-types-edge-cases.test.ts" name="Queue Types Action Handler - Edge Cases &gt; create_queue_type &gt; should normalize and dedupe weekly slots before saving" time="0.001194375">
-        </testcase>
-        <testcase classname="tests/integration/settings/queue-types-edge-cases.test.ts" name="Queue Types Action Handler - Edge Cases &gt; update_queue_type &gt; should handle isEnabled flag" time="0.000567583">
-        </testcase>
-        <testcase classname="tests/integration/settings/queue-types-edge-cases.test.ts" name="Queue Types Action Handler - Edge Cases &gt; update_queue_type &gt; should handle isEnabled as false when not &apos;on&apos;" time="0.000199042">
-        </testcase>
-        <testcase classname="tests/integration/settings/queue-types-edge-cases.test.ts" name="Queue Types Action Handler - Edge Cases &gt; Invalid actions &gt; should return null for unknown action" time="0.000092083">
+        <testcase classname="tests/integration/services/loaders/dashboard-loader.test.ts" name="Dashboard Loader &gt; should filter out archived queue types" time="0.000160375">
         </testcase>
     </testsuite>
 </testsuites>
