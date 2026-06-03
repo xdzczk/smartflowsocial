@@ -72,6 +72,13 @@ function BulkComposerPostAdvancedBlock({
   scheduleOverlapWarning: string | null;
 }) {
   const scheduleInputId = `bulk-sched-${post.clientId}`;
+  const selectedQueueObject = queueTypes.find(
+    (q) => (typeof q === "string" ? q : q.name) === post.queueType
+  );
+  const queuePresetName =
+    selectedQueueObject && typeof selectedQueueObject === "object"
+      ? (selectedQueueObject.hashTagPreset?.name ?? null)
+      : null;
   const queuePopover = (
     <Popover>
       <PopoverTrigger asChild>{queueTrigger}</PopoverTrigger>
@@ -184,6 +191,11 @@ function BulkComposerPostAdvancedBlock({
             />
           }
         />
+        {queuePresetName ? (
+          <p className="text-text-secondary/80 text-[11px] leading-snug">
+            Queue preset: {queuePresetName}
+          </p>
+        ) : null}
       </div>
 
       {showAlsoSchedule && onRepostSchedulesChange && onQuoteSchedulesChange ? (

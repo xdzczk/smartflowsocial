@@ -26,6 +26,7 @@ import {
 // Import outbox worker
 import { startOutboxWorker } from "./app/infra/outbox/outbox-worker.server";
 import { getQueueInstance } from "./app/infra/queue";
+import { runRunwayLowNotifications } from "./app/features/posts/runway/runway-low-notifications.server";
 import {
   expireBlossomReservations,
   getBlossomReservationDriftStats,
@@ -132,6 +133,39 @@ const blossomReservationCleanupInterval = setInterval(() => {
     }
   })();
 }, blossomReservationCleanupIntervalMs);
+
+// Periodically send "runway low" push notifications to opted-in users.
+// Per-user 24h throttle lives in the notification service, so running this more
+// often than daily is safe and just makes notifications more timely.
+const runwayLowIntervalMinutes = parseInt(
+  env.RUNWAY_LOW_CRON_INTERVAL_MINUTES ?? "60",
+  10
+);
+let runwayLowInterval: ReturnType<typeof setInterval> | null = null;
+const runRunwayLowSweep = () => {
+  void (async () => {
+    try {
+      const result = await runRunwayLowNotifications();
+      logInfo("Runway-low sweep completed", { ...result });
+    } catch (error) {
+      logWarning("Runway-low sweep failed", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  })();
+};
+if (Number.isFinite(runwayLowIntervalMinutes) && runwayLowIntervalMinutes > 0) {
+  const runwayLowIntervalMs = runwayLowIntervalMinutes * 60_000;
+  // Delay the first run so the worker finishes booting (queues, DB pool) first.
+  const runwayLowStartupDelay = setTimeout(runRunwayLowSweep, 60_000);
+  runwayLowStartupDelay.unref?.();
+  runwayLowInterval = setInterval(runRunwayLowSweep, runwayLowIntervalMs);
+  logInfo("Runway-low scheduler started", {
+    intervalMinutes: runwayLowIntervalMinutes,
+  });
+} else {
+  logInfo("Runway-low scheduler disabled (RUNWAY_LOW_CRON_INTERVAL_MINUTES=0)");
+}
 
 logInfo("BullMQ worker started");
 logInfo("Workers initialized", {
@@ -254,6 +288,9 @@ process.on("SIGTERM", () => {
   if (outboxWorkerInterval) {
     clearInterval(outboxWorkerInterval);
   }
+  if (runwayLowInterval) {
+    clearInterval(runwayLowInterval);
+  }
   clearInterval(relayMetricsInterval);
   clearInterval(queueBacklogMetricsInterval);
   clearInterval(blossomReservationCleanupInterval);
@@ -269,6 +306,9 @@ process.on("SIGINT", () => {
   logInfo("Worker shutting down...");
   if (outboxWorkerInterval) {
     clearInterval(outboxWorkerInterval);
+  }
+  if (runwayLowInterval) {
+    clearInterval(runwayLowInterval);
   }
   clearInterval(relayMetricsInterval);
   clearInterval(queueBacklogMetricsInterval);

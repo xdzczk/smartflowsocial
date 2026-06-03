@@ -134,6 +134,17 @@ function parseQueueType(qt: unknown): string | QueueType {
         typeof queueTypeObj["userId"] === "string"
           ? queueTypeObj["userId"]
           : undefined,
+      includeHashtagsInNoteBody:
+        typeof queueTypeObj["includeHashtagsInNoteBody"] === "boolean"
+          ? queueTypeObj["includeHashtagsInNoteBody"]
+          : undefined,
+      hashTagPresetId:
+        queueTypeObj["hashTagPresetId"] === null
+          ? null
+          : typeof queueTypeObj["hashTagPresetId"] === "string"
+            ? queueTypeObj["hashTagPresetId"]
+            : undefined,
+      hashTagPreset: parseHashTagPreset(queueTypeObj["hashTagPreset"]),
     } as QueueType;
   }
   return qt as string | QueueType;

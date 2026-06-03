@@ -217,6 +217,14 @@ export function convertPrismaQueueTypeToQueueType(
   }
   const prisma = prismaQueueType as typeof prismaQueueType & {
     colorToken?: string | null;
+    hashTagPresetId?: string | null;
+    includeHashtagsInNoteBody?: boolean | null;
+    hashTagPreset?: {
+      id: string;
+      name: string;
+      tags: string;
+      description?: string | null;
+    } | null;
   };
   return {
     id: prisma.id,
@@ -233,6 +241,22 @@ export function convertPrismaQueueTypeToQueueType(
     status: normalizeQueueStatus(prisma.status, prisma.isEnabled),
     isEnabled: prisma.isEnabled ?? undefined,
     userId: prisma.userId,
+    // Carry queue hashtag-preset + "metadata only" defaults to the client. The
+    // flow/dashboard loader maps through here, so dropping these silently reset
+    // the queue editor's preset + visibility on reopen from the dashboard.
+    hashTagPresetId: prisma.hashTagPresetId ?? undefined,
+    includeHashtagsInNoteBody:
+      typeof prisma.includeHashtagsInNoteBody === "boolean"
+        ? prisma.includeHashtagsInNoteBody
+        : undefined,
+    hashTagPreset: prisma.hashTagPreset
+      ? {
+          id: prisma.hashTagPreset.id,
+          name: prisma.hashTagPreset.name,
+          tags: prisma.hashTagPreset.tags,
+          description: prisma.hashTagPreset.description ?? null,
+        }
+      : undefined,
   };
 }
 
@@ -260,6 +284,19 @@ export interface QueueType {
   userId?: string;
   /** Queue default for “include hashtags in note body”; unassigned uses true. */
   includeHashtagsInNoteBody?: boolean;
+  /** Queue's default hashtag preset id (if any). */
+  hashTagPresetId?: string | null;
+  /**
+   * Queue's default hashtag preset (relation), used to prefill/surface composer tags.
+   * Kept as a JSON-safe shape (no Date fields) so it survives loader serialization
+   * without diverging from the runtime type.
+   */
+  hashTagPreset?: {
+    id: string;
+    name: string;
+    tags: string;
+    description?: string | null;
+  } | null;
 }
 
 /** Default for the per-post “include hashtags in note body” toggle when a queue is selected. */

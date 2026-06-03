@@ -95,10 +95,7 @@ export interface QueueMetadataChip {
  * Up to `max` compact chips for queue rows (preset, flags, global, randomization).
  */
 export function getQueueMetadataChips(
-  queueType: QueueType & {
-    includeHashtagsInNoteBody?: boolean;
-    hashTagPreset?: { name: string } | null;
-  },
+  queueType: QueueType,
   max = 4
 ): QueueMetadataChip[] {
   const chips: QueueMetadataChip[] = [];

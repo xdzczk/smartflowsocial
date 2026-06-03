@@ -51,6 +51,12 @@ interface EnvConfig {
   DISABLE_RATE_LIMIT?: string; // "true" to disable (e.g. E2E)
   METRICS_PORT?: string;
   WORKER_METRICS_PORT?: string;
+  /**
+   * How often (minutes) the worker runs the runway-low notification sweep.
+   * Defaults to 60. Set to "0" to disable the worker's internal scheduler
+   * (e.g. when triggering `/cron/runway-low` from an external scheduler).
+   */
+  RUNWAY_LOW_CRON_INTERVAL_MINUTES?: string;
   FLY_REGION?: string;
   PRIMARY_REGION?: string;
   TEST_DATABASE_URL?: string;
@@ -219,6 +225,7 @@ function addOptionalConfig(config: EnvConfig): void {
     "PORT",
     "METRICS_PORT",
     "WORKER_METRICS_PORT",
+    "RUNWAY_LOW_CRON_INTERVAL_MINUTES",
     "FLY_REGION",
     "PRIMARY_REGION",
     "TEST_DATABASE_URL",

@@ -49,6 +49,7 @@ export function updateQueueType(
     return prisma.queueType.update({
       where: { id: data.id, userId },
       data: updateData,
+      include: { hashTagPreset: true },
     });
   }
   const createData: Prisma.QueueTypeCreateInput = {
@@ -65,7 +66,10 @@ export function updateQueueType(
   if (data.hashTagPresetId) {
     createData.hashTagPreset = { connect: { id: data.hashTagPresetId } };
   }
-  return prisma.queueType.create({ data: createData });
+  return prisma.queueType.create({
+    data: createData,
+    include: { hashTagPreset: true },
+  });
 }
 
 export async function deleteQueueType(

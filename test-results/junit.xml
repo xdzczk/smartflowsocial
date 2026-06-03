@@ -1,99 +1,108 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="46" failures="0" errors="0" time="0.0114305">
-    <testsuite name="tests/unit/schemas-settings-client.test.ts" timestamp="2026-05-19T13:21:56.738Z" hostname="Ivans-MacBook-Pro.local" tests="23" failures="0" errors="0" skipped="0" time="0.005982667">
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateRelaysClientSchema &gt; accepts array of strings" time="0.001095791">
+<testsuites name="vitest tests" tests="16" failures="0" errors="0" time="0.016119042">
+    <testsuite name="tests/integration/dashboard-loader.test.ts" timestamp="2026-06-03T09:45:22.991Z" hostname="Ivans-MacBook-Pro.local" tests="11" failures="0" errors="0" skipped="0" time="0.010304542">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should load dashboard data for authenticated user" time="0.00439825">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
+}
+
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateRelaysClientSchema &gt; accepts empty array" time="0.000120375">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should handle queue type parameter" time="0.00059775">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
+}
+
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateTimezoneClientSchema &gt; accepts non-empty timezone" time="0.000193583">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should return proper Flow data structure" time="0.000744917">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
+}
+
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateTimezoneClientSchema &gt; rejects empty timezone" time="0.0004665">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should expose first-run dashboard state for new users" time="0.000546042">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
+}
+
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateBlacklistClientSchema &gt; accepts array of strings" time="0.000129584">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should disable first-run dashboard when user has activity" time="0.000306125">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
+}
+
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; createHashtagPresetClientSchema &gt; parses name and tags" time="0.000180375">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Queue Filtering &gt; should handle &apos;all&apos; queue type" time="0.000265834">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
+}
+
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; createHashtagPresetClientSchema &gt; rejects empty name" time="0.000124708">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Queue Filtering &gt; should handle &apos;posts&apos; queue type" time="0.000231167">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
+}
+
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; createHashtagPresetClientSchema &gt; rejects empty tags" time="0.000099333">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Queue Filtering &gt; should handle &apos;longform&apos; queue type" time="0.000255041">
+            <system-err>
+⚠️  Warning: Dashboard flow loader validation failed {
+  message: &apos;Loader response validation failed&apos;,
+  context: { errors: [ [Object] ] }
+}
+
+            </system-err>
         </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateHashtagPresetClientSchema &gt; parses id, name, tags" time="0.000386708">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Error Handling &gt; should handle authentication errors" time="0.000165917">
         </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateHashtagPresetClientSchema &gt; rejects empty id" time="0.000158834">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Error Handling &gt; should handle feature access errors" time="0.000109125">
         </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateBlossomMirrorsClientSchema &gt; parses enableMirrorBlossom and mirrorUrls" time="0.000436125">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateNWCClientSchema &gt; parses nwcEnabled and optional nwcString" time="0.000124458">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateNWCClientSchema &gt; accepts nwcString" time="0.000049958">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateTagsClientSchema &gt; parses empty object with optional hashtags" time="0.000085084">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateTagsClientSchema &gt; accepts hashtags string" time="0.0000365">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; parses INTERVAL with intervalHours" time="0.000561625">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; parses INTERVAL with useGlobalInterval" time="0.000064">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; rejects INTERVAL without intervalHours or useGlobalInterval" time="0.000127208">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; parses FIXED_SLOTS with slots" time="0.000054416">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; rejects FIXED_SLOTS without slots" time="0.000079083">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; parses WEEKLY_SLOTS with weeklySlots" time="0.000289083">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; rejects WEEKLY_SLOTS without weeklySlots" time="0.000079875">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; rejects invalid colorToken" time="0.000257833">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Error Handling &gt; should handle data loading errors" time="0.002091625">
+            <system-err>
+
+❌ Error: {
+  message: &apos;Database error&apos;,
+  code: &apos;DATABASE_ERROR&apos;,
+  statusCode: 500,
+  path: undefined,
+  method: undefined,
+  userId: undefined,
+  correlationId: undefined
+}
+
+            </system-err>
         </testcase>
     </testsuite>
-    <testsuite name="tests/unit/schemas-settings.test.ts" timestamp="2026-05-19T13:21:56.740Z" hostname="Ivans-MacBook-Pro.local" tests="23" failures="0" errors="0" skipped="0" time="0.005447833">
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; relayUrlSchema &gt; accepts valid wss URL" time="0.000839416">
+    <testsuite name="tests/integration/services/loaders/flow-loader.test.ts" timestamp="2026-06-03T09:45:22.993Z" hostname="Ivans-MacBook-Pro.local" tests="5" failures="0" errors="0" skipped="0" time="0.0058145">
+        <testcase classname="tests/integration/services/loaders/flow-loader.test.ts" name="Flow Loader &gt; should return Flow loader shape (flowItems, hasMorePast, hasMoreFuture, cursors)" time="0.002964042">
         </testcase>
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; relayUrlSchema &gt; rejects non-wss" time="0.000555833">
+        <testcase classname="tests/integration/services/loaders/flow-loader.test.ts" name="Flow Loader &gt; should call past and scheduled queries for initial load" time="0.001286375">
         </testcase>
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; relayUrlSchema &gt; rejects invalid domain" time="0.000120375">
+        <testcase classname="tests/integration/services/loaders/flow-loader.test.ts" name="Flow Loader &gt; followups tab requests attached posts only (no longform window queries)" time="0.000453958">
         </testcase>
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateTimezoneSchema &gt; accepts non-empty timezone" time="0.000389292">
+        <testcase classname="tests/integration/services/loaders/flow-loader.test.ts" name="Flow Loader &gt; should accept before cursor for load more past" time="0.000263875">
         </testcase>
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateTimezoneSchema &gt; rejects empty timezone" time="0.000160041">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateRelaysSchema &gt; transforms newline-separated string to array and validates relay URLs" time="0.000670417">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateRelaysSchema &gt; accepts publishRelaySource nip65_profile" time="0.000080458">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateRelaysSchema &gt; rejects when no valid relays" time="0.000125917">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateBlacklistSchema &gt; transforms newline-separated string and validates npub prefix" time="0.000228084">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateBlacklistSchema &gt; rejects items not starting with npub" time="0.000142167">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updatePreferredNostrClientSchema &gt; accepts preset without custom URL" time="0.000151333">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updatePreferredNostrClientSchema &gt; accepts CUSTOM with valid https URL" time="0.000051167">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updatePreferredNostrClientSchema &gt; rejects CUSTOM with non-https URL" time="0.00010525">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; createHashtagPresetSchema &gt; parses name and tags" time="0.000139416">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; createHashtagPresetSchema &gt; rejects empty name" time="0.000082333">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateHashtagPresetSchema &gt; parses id, name, tags" time="0.000151958">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; uploadProviderSchema &gt; accepts enum values" time="0.000058916">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; uploadProviderSchema &gt; rejects invalid value" time="0.000127875">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateUploadProviderSchema &gt; parses non-CUSTOM provider" time="0.000123166">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateUploadProviderSchema &gt; rejects BLOSSOM_CUSTOM without customBlossomUrl" time="0.000068167">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateUploadProviderSchema &gt; accepts BLOSSOM_CUSTOM with valid https URL" time="0.000032">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateUploadProviderSchema &gt; strips trailing slash from customBlossomUrl" time="0.000031125">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings.test.ts" name="settings.schemas &gt; updateUploadProviderSchema &gt; rejects BLOSSOM_CUSTOM with non-https URL" time="0.000082167">
+        <testcase classname="tests/integration/services/loaders/flow-loader.test.ts" name="Flow Loader &gt; should accept after cursor for load more future" time="0.000329375">
         </testcase>
     </testsuite>
 </testsuites>

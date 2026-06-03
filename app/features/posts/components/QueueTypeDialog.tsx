@@ -48,9 +48,9 @@ interface QueueTypeDialogQueueType extends QueueType {
     id: string;
     name: string;
     tags: string;
-    description?: string;
+    description?: string | null;
   } | null;
-  hashTagPresetId?: string;
+  hashTagPresetId?: string | null;
 }
 
 function readScheduleRandomWindowMinutes(
@@ -498,7 +498,10 @@ export function QueueTypeDialog({
       ...(typeof data.scheduleRandomWindowMinutes === "number"
         ? { scheduleRandomWindowMinutes: data.scheduleRandomWindowMinutes }
         : {}),
-      includeHashtagsInNoteBody: data.includeHashtagsInNoteBody !== false,
+      // Send an explicit string: formDataToFormData drops `false` booleans, which
+      // would make the server default this back to true (losing "metadata only").
+      includeHashtagsInNoteBody:
+        data.includeHashtagsInNoteBody !== false ? "true" : "false",
     };
 
     const formData = formDataToFormData(

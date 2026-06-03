@@ -249,7 +249,7 @@ describe("Settings Action Handler", () => {
               "wss://relay2.com",
               "wss://relay3.com",
             ],
-            publishRelaySource: "app",
+            publishRelaySource: "nip65_profile",
           }
         );
         expect(data).toEqual({ success: true });

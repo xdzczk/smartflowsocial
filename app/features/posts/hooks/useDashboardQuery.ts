@@ -248,6 +248,11 @@ export function useDashboardData() {
                 ? statusRaw
                 : undefined;
             const userId = typeof q.userId === "string" ? q.userId : "";
+            const qExtra = q as {
+              hashTagPresetId?: unknown;
+              includeHashtagsInNoteBody?: unknown;
+              hashTagPreset?: QueueType["hashTagPreset"];
+            };
             const queueType: QueueType = {
               id,
               name,
@@ -259,6 +264,19 @@ export function useDashboardData() {
               status,
               isEnabled,
               userId,
+              // Preserve queue hashtag-preset + "metadata only" defaults so the
+              // editor reads them back (these were dropped by the rebuild).
+              hashTagPresetId:
+                typeof qExtra.hashTagPresetId === "string"
+                  ? qExtra.hashTagPresetId
+                  : qExtra.hashTagPresetId === null
+                    ? null
+                    : undefined,
+              includeHashtagsInNoteBody:
+                typeof qExtra.includeHashtagsInNoteBody === "boolean"
+                  ? qExtra.includeHashtagsInNoteBody
+                  : undefined,
+              hashTagPreset: qExtra.hashTagPreset ?? undefined,
             };
             return queueType;
           }
@@ -438,6 +456,11 @@ export function useDashboardInfiniteData() {
                 ? statusRaw
                 : undefined;
             const userId = typeof q.userId === "string" ? q.userId : "";
+            const qExtra = q as {
+              hashTagPresetId?: unknown;
+              includeHashtagsInNoteBody?: unknown;
+              hashTagPreset?: QueueType["hashTagPreset"];
+            };
             const queueType: QueueType = {
               id,
               name,
@@ -449,6 +472,19 @@ export function useDashboardInfiniteData() {
               status,
               isEnabled,
               userId,
+              // Preserve queue hashtag-preset + "metadata only" defaults so the
+              // editor reads them back (these were dropped by the rebuild).
+              hashTagPresetId:
+                typeof qExtra.hashTagPresetId === "string"
+                  ? qExtra.hashTagPresetId
+                  : qExtra.hashTagPresetId === null
+                    ? null
+                    : undefined,
+              includeHashtagsInNoteBody:
+                typeof qExtra.includeHashtagsInNoteBody === "boolean"
+                  ? qExtra.includeHashtagsInNoteBody
+                  : undefined,
+              hashTagPreset: qExtra.hashTagPreset ?? undefined,
             };
             return queueType;
           }

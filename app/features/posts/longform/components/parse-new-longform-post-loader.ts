@@ -48,6 +48,36 @@ function parseScheduleIntervals(scheduleIntervalsRaw: unknown): number[] {
     .filter((n): n is number => n !== null);
 }
 
+function parseQueueHashTagPreset(preset: unknown): QueueType["hashTagPreset"] {
+  if (
+    preset &&
+    typeof preset === "object" &&
+    "id" in preset &&
+    "name" in preset &&
+    "tags" in preset
+  ) {
+    const p = preset as {
+      id?: unknown;
+      name?: unknown;
+      tags?: unknown;
+      description?: unknown;
+    };
+    if (
+      typeof p.id === "string" &&
+      typeof p.name === "string" &&
+      typeof p.tags === "string"
+    ) {
+      return {
+        id: p.id,
+        name: p.name,
+        tags: p.tags,
+        description: typeof p.description === "string" ? p.description : null,
+      };
+    }
+  }
+  return null;
+}
+
 function parseQueueTypes(queueTypesRaw: unknown): QueueType[] {
   if (!Array.isArray(queueTypesRaw)) return [];
   return queueTypesRaw
@@ -109,6 +139,8 @@ function parseQueueTypes(queueTypesRaw: unknown): QueueType[] {
         const userIdVal = typeof q.userId === "string" ? q.userId : "";
         const includeRaw = (q as { includeHashtagsInNoteBody?: unknown })
           .includeHashtagsInNoteBody;
+        const presetIdRaw = (q as { hashTagPresetId?: unknown })
+          .hashTagPresetId;
         const result: QueueType = {
           id,
           name,
@@ -123,6 +155,15 @@ function parseQueueTypes(queueTypesRaw: unknown): QueueType[] {
           userId: userIdVal,
           includeHashtagsInNoteBody:
             typeof includeRaw === "boolean" ? includeRaw : undefined,
+          hashTagPresetId:
+            presetIdRaw === null
+              ? null
+              : typeof presetIdRaw === "string"
+                ? presetIdRaw
+                : undefined,
+          hashTagPreset: parseQueueHashTagPreset(
+            (q as { hashTagPreset?: unknown }).hashTagPreset
+          ),
         };
         return result;
       }

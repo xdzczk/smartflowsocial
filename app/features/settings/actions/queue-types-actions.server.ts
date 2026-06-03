@@ -56,6 +56,7 @@ function queueTypeToClient(qt: Awaited<ReturnType<typeof updateQueueType>>): {
   isEnabled: boolean;
   userId: string;
   isDefault?: boolean;
+  hashTagPresetId: string | null;
   hashTagPreset?: {
     id: string;
     name: string;
@@ -88,6 +89,12 @@ function queueTypeToClient(qt: Awaited<ReturnType<typeof updateQueueType>>): {
     isEnabled: qt.isEnabled,
     userId: qt.userId,
     isDefault: "isDefault" in qt ? qt.isDefault : false,
+    hashTagPresetId:
+      "hashTagPresetId" in qt && typeof qt.hashTagPresetId === "string"
+        ? qt.hashTagPresetId
+        : preset && typeof preset === "object" && "id" in preset
+          ? String(preset.id)
+          : null,
     hashTagPreset:
       preset && typeof preset === "object" && "id" in preset && "name" in preset
         ? {
