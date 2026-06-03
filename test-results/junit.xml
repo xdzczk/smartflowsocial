@@ -1,83 +1,31 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="37" failures="0" errors="0" time="0.01614996">
-    <testsuite name="tests/unit/queue-type-summary.test.ts" timestamp="2026-06-03T08:48:36.252Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.001489584">
-        <testcase classname="tests/unit/queue-type-summary.test.ts" name="getQueuePrimaryScheduleLine &gt; formats custom interval hours" time="0.000665042">
+<testsuites name="vitest tests" tests="12" failures="0" errors="0" time="0.046176291">
+    <testsuite name="tests/unit/queue-type-summary.test.ts" timestamp="2026-06-03T09:02:52.606Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.00139025">
+        <testcase classname="tests/unit/queue-type-summary.test.ts" name="getQueuePrimaryScheduleLine &gt; formats custom interval hours" time="0.000603292">
         </testcase>
-        <testcase classname="tests/unit/queue-type-summary.test.ts" name="getQueuePrimaryScheduleLine &gt; formats global interval with user picks" time="0.000154042">
+        <testcase classname="tests/unit/queue-type-summary.test.ts" name="getQueuePrimaryScheduleLine &gt; formats global interval with user picks" time="0.000147958">
         </testcase>
-        <testcase classname="tests/unit/queue-type-summary.test.ts" name="getQueueMetadataChips &gt; caps chips" time="0.000137667">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/schemas-settings-client.test.ts" timestamp="2026-06-03T08:48:36.252Z" hostname="Ivans-MacBook-Pro.local" tests="23" failures="0" errors="0" skipped="0" time="0.005192917">
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateRelaysClientSchema &gt; accepts array of strings" time="0.001094667">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateRelaysClientSchema &gt; accepts empty array" time="0.000102375">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateTimezoneClientSchema &gt; accepts non-empty timezone" time="0.000184959">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateTimezoneClientSchema &gt; rejects empty timezone" time="0.000446792">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateBlacklistClientSchema &gt; accepts array of strings" time="0.000122125">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; createHashtagPresetClientSchema &gt; parses name and tags" time="0.000172333">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; createHashtagPresetClientSchema &gt; rejects empty name" time="0.000110084">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; createHashtagPresetClientSchema &gt; rejects empty tags" time="0.000091875">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateHashtagPresetClientSchema &gt; parses id, name, tags" time="0.000156375">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateHashtagPresetClientSchema &gt; rejects empty id" time="0.000114125">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateBlossomMirrorsClientSchema &gt; parses enableMirrorBlossom and mirrorUrls" time="0.000362542">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateNWCClientSchema &gt; parses nwcEnabled and optional nwcString" time="0.000104458">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateNWCClientSchema &gt; accepts nwcString" time="0.000039958">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateTagsClientSchema &gt; parses empty object with optional hashtags" time="0.000074334">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; updateTagsClientSchema &gt; accepts hashtags string" time="0.000031083">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; parses INTERVAL with intervalHours" time="0.000351625">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; parses INTERVAL with useGlobalInterval" time="0.000041417">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; rejects INTERVAL without intervalHours or useGlobalInterval" time="0.000105834">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; parses FIXED_SLOTS with slots" time="0.00004725">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; rejects FIXED_SLOTS without slots" time="0.000073542">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; parses WEEKLY_SLOTS with weeklySlots" time="0.0003365">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; rejects WEEKLY_SLOTS without weeklySlots" time="0.000118708">
-        </testcase>
-        <testcase classname="tests/unit/schemas-settings-client.test.ts" name="settings.client.schemas &gt; queueTypeClientSchema &gt; rejects invalid colorToken" time="0.0001895">
+        <testcase classname="tests/unit/queue-type-summary.test.ts" name="getQueueMetadataChips &gt; caps chips" time="0.000131541">
         </testcase>
     </testsuite>
-    <testsuite name="tests/integration/handlers/queue-type-handler.test.ts" timestamp="2026-06-03T08:48:36.254Z" hostname="Ivans-MacBook-Pro.local" tests="11" failures="0" errors="0" skipped="0" time="0.009467459">
-        <testcase classname="tests/integration/handlers/queue-type-handler.test.ts" name="Queue Type Handler Integration Tests &gt; handleQueueTypeChange &gt; should update post queue type" time="0.000778625">
+    <testsuite name="tests/integration/settings/queue-types-edge-cases.test.ts" timestamp="2026-06-03T09:02:52.606Z" hostname="Ivans-MacBook-Pro.local" tests="9" failures="0" errors="0" skipped="0" time="0.044786041">
+        <testcase classname="tests/integration/settings/queue-types-edge-cases.test.ts" name="Queue Types Action Handler - Edge Cases &gt; create_queue_type &gt; should handle &apos;none&apos; as hashtag preset ID" time="0.036117291">
         </testcase>
-        <testcase classname="tests/integration/handlers/queue-type-handler.test.ts" name="Queue Type Handler Integration Tests &gt; handleQueueTypeChange &gt; should clear scheduledFor for unassigned queue type" time="0.000155791">
+        <testcase classname="tests/integration/settings/queue-types-edge-cases.test.ts" name="Queue Types Action Handler - Edge Cases &gt; create_queue_type &gt; should handle empty hashtag preset ID" time="0.001968959">
         </testcase>
-        <testcase classname="tests/integration/handlers/queue-type-handler.test.ts" name="Queue Type Handler Integration Tests &gt; handleQueueTypeChange &gt; should fetch scheduled time for assigned queue type" time="0.0006465">
+        <testcase classname="tests/integration/settings/queue-types-edge-cases.test.ts" name="Queue Types Action Handler - Edge Cases &gt; create_queue_type &gt; should handle useGlobalInterval flag for INTERVAL schedule" time="0.001633708">
         </testcase>
-        <testcase classname="tests/integration/handlers/queue-type-handler.test.ts" name="Queue Type Handler Integration Tests &gt; handleQueueTypeChange &gt; should handle API errors gracefully" time="0.00012525">
+        <testcase classname="tests/integration/settings/queue-types-edge-cases.test.ts" name="Queue Types Action Handler - Edge Cases &gt; create_queue_type &gt; should handle FIXED_SLOTS with comma-separated slots" time="0.001296292">
         </testcase>
-        <testcase classname="tests/integration/handlers/queue-type-handler.test.ts" name="Queue Type Handler Integration Tests &gt; handleQueueTypeChange &gt; should update displayed hashtags if most used queue type differs from changed value" time="0.000141333">
+        <testcase classname="tests/integration/settings/queue-types-edge-cases.test.ts" name="Queue Types Action Handler - Edge Cases &gt; create_queue_type &gt; should filter out empty slots" time="0.001136333">
         </testcase>
-        <testcase classname="tests/integration/handlers/queue-type-handler.test.ts" name="Queue Type Handler Integration Tests &gt; handleBulkQueueUpdate &gt; should return early for empty posts array" time="0.00012325">
+        <testcase classname="tests/integration/settings/queue-types-edge-cases.test.ts" name="Queue Types Action Handler - Edge Cases &gt; create_queue_type &gt; should normalize and dedupe weekly slots before saving" time="0.001194375">
         </testcase>
-        <testcase classname="tests/integration/handlers/queue-type-handler.test.ts" name="Queue Type Handler Integration Tests &gt; handleBulkQueueUpdate &gt; should update all posts to new queue type" time="0.003198416">
+        <testcase classname="tests/integration/settings/queue-types-edge-cases.test.ts" name="Queue Types Action Handler - Edge Cases &gt; update_queue_type &gt; should handle isEnabled flag" time="0.000567583">
         </testcase>
-        <testcase classname="tests/integration/handlers/queue-type-handler.test.ts" name="Queue Type Handler Integration Tests &gt; handleBulkQueueUpdate &gt; should use first item time if manually changed" time="0.000516958">
+        <testcase classname="tests/integration/settings/queue-types-edge-cases.test.ts" name="Queue Types Action Handler - Edge Cases &gt; update_queue_type &gt; should handle isEnabled as false when not &apos;on&apos;" time="0.000199042">
         </testcase>
-        <testcase classname="tests/integration/handlers/queue-type-handler.test.ts" name="Queue Type Handler Integration Tests &gt; handleBulkQueueUpdate &gt; should calculate interval-based schedule times" time="0.000508167">
-        </testcase>
-        <testcase classname="tests/integration/handlers/queue-type-handler.test.ts" name="Queue Type Handler Integration Tests &gt; handleBulkQueueUpdate &gt; should clear scheduledFor for unassigned queue type" time="0.000106583">
-        </testcase>
-        <testcase classname="tests/integration/handlers/queue-type-handler.test.ts" name="Queue Type Handler Integration Tests &gt; handleBulkQueueUpdate &gt; should calculate FIXED_SLOTS using user timezone for non-UTC users" time="0.002616">
+        <testcase classname="tests/integration/settings/queue-types-edge-cases.test.ts" name="Queue Types Action Handler - Edge Cases &gt; Invalid actions &gt; should return null for unknown action" time="0.000092083">
         </testcase>
     </testsuite>
 </testsuites>

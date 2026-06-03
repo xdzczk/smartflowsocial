@@ -37,6 +37,7 @@ export function parseQueueType(qt: unknown): QueueTypeSettings | null {
     isEnabled?: boolean;
     status?: string;
     hashTagPresetId?: string;
+    includeHashtagsInNoteBody?: boolean;
     isDefault?: boolean;
     colorToken?: string | null;
     hashTagPreset?: {
@@ -79,6 +80,9 @@ export function parseQueueType(qt: unknown): QueueTypeSettings | null {
     isEnabled: q.isEnabled,
     isDefault: q.isDefault ?? false,
     hashTagPresetId: q.hashTagPresetId,
+    // Preserve the queue's "metadata-only hashtags" default so the editor reflects
+    // the saved value on reopen (was dropped here, defaulting the toggle back to on).
+    includeHashtagsInNoteBody: q.includeHashtagsInNoteBody,
     hashTagPreset: q.hashTagPreset,
   };
 }
