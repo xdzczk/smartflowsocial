@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="14" failures="0" errors="0" time="0.013890041">
-    <testsuite name="tests/integration/dashboard-loader.test.ts" timestamp="2026-06-03T09:30:02.760Z" hostname="Ivans-MacBook-Pro.local" tests="11" failures="0" errors="0" skipped="0" time="0.010613333">
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should load dashboard data for authenticated user" time="0.004148292">
+<testsuites name="vitest tests" tests="16" failures="0" errors="0" time="0.016119042">
+    <testsuite name="tests/integration/dashboard-loader.test.ts" timestamp="2026-06-03T09:45:22.991Z" hostname="Ivans-MacBook-Pro.local" tests="11" failures="0" errors="0" skipped="0" time="0.010304542">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should load dashboard data for authenticated user" time="0.00439825">
             <system-err>
 ⚠️  Warning: Dashboard flow loader validation failed {
   message: &apos;Loader response validation failed&apos;,
@@ -10,7 +10,7 @@
 
             </system-err>
         </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should handle queue type parameter" time="0.000755">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should handle queue type parameter" time="0.00059775">
             <system-err>
 ⚠️  Warning: Dashboard flow loader validation failed {
   message: &apos;Loader response validation failed&apos;,
@@ -19,7 +19,7 @@
 
             </system-err>
         </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should return proper Flow data structure" time="0.000839542">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should return proper Flow data structure" time="0.000744917">
             <system-err>
 ⚠️  Warning: Dashboard flow loader validation failed {
   message: &apos;Loader response validation failed&apos;,
@@ -28,7 +28,7 @@
 
             </system-err>
         </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should expose first-run dashboard state for new users" time="0.000581375">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should expose first-run dashboard state for new users" time="0.000546042">
             <system-err>
 ⚠️  Warning: Dashboard flow loader validation failed {
   message: &apos;Loader response validation failed&apos;,
@@ -37,7 +37,7 @@
 
             </system-err>
         </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should disable first-run dashboard when user has activity" time="0.000318209">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Index Loader &gt; should disable first-run dashboard when user has activity" time="0.000306125">
             <system-err>
 ⚠️  Warning: Dashboard flow loader validation failed {
   message: &apos;Loader response validation failed&apos;,
@@ -46,7 +46,7 @@
 
             </system-err>
         </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Queue Filtering &gt; should handle &apos;all&apos; queue type" time="0.000272708">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Queue Filtering &gt; should handle &apos;all&apos; queue type" time="0.000265834">
             <system-err>
 ⚠️  Warning: Dashboard flow loader validation failed {
   message: &apos;Loader response validation failed&apos;,
@@ -55,7 +55,7 @@
 
             </system-err>
         </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Queue Filtering &gt; should handle &apos;posts&apos; queue type" time="0.000242875">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Queue Filtering &gt; should handle &apos;posts&apos; queue type" time="0.000231167">
             <system-err>
 ⚠️  Warning: Dashboard flow loader validation failed {
   message: &apos;Loader response validation failed&apos;,
@@ -64,7 +64,7 @@
 
             </system-err>
         </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Queue Filtering &gt; should handle &apos;longform&apos; queue type" time="0.000280292">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Dashboard Queue Filtering &gt; should handle &apos;longform&apos; queue type" time="0.000255041">
             <system-err>
 ⚠️  Warning: Dashboard flow loader validation failed {
   message: &apos;Loader response validation failed&apos;,
@@ -73,11 +73,11 @@
 
             </system-err>
         </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Error Handling &gt; should handle authentication errors" time="0.000149959">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Error Handling &gt; should handle authentication errors" time="0.000165917">
         </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Error Handling &gt; should handle feature access errors" time="0.000091458">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Error Handling &gt; should handle feature access errors" time="0.000109125">
         </testcase>
-        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Error Handling &gt; should handle data loading errors" time="0.002335375">
+        <testcase classname="tests/integration/dashboard-loader.test.ts" name="Dashboard Loader Integration &gt; Error Handling &gt; should handle data loading errors" time="0.002091625">
             <system-err>
 
 ❌ Error: {
@@ -93,12 +93,16 @@
             </system-err>
         </testcase>
     </testsuite>
-    <testsuite name="tests/integration/services/loaders/dashboard-loader.test.ts" timestamp="2026-06-03T09:30:02.762Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.003276708">
-        <testcase classname="tests/integration/services/loaders/dashboard-loader.test.ts" name="Dashboard Loader &gt; should load dashboard data with all queue types" time="0.001888042">
+    <testsuite name="tests/integration/services/loaders/flow-loader.test.ts" timestamp="2026-06-03T09:45:22.993Z" hostname="Ivans-MacBook-Pro.local" tests="5" failures="0" errors="0" skipped="0" time="0.0058145">
+        <testcase classname="tests/integration/services/loaders/flow-loader.test.ts" name="Flow Loader &gt; should return Flow loader shape (flowItems, hasMorePast, hasMoreFuture, cursors)" time="0.002964042">
         </testcase>
-        <testcase classname="tests/integration/services/loaders/dashboard-loader.test.ts" name="Dashboard Loader &gt; should filter by queue type" time="0.000738583">
+        <testcase classname="tests/integration/services/loaders/flow-loader.test.ts" name="Flow Loader &gt; should call past and scheduled queries for initial load" time="0.001286375">
         </testcase>
-        <testcase classname="tests/integration/services/loaders/dashboard-loader.test.ts" name="Dashboard Loader &gt; should filter out archived queue types" time="0.000160375">
+        <testcase classname="tests/integration/services/loaders/flow-loader.test.ts" name="Flow Loader &gt; followups tab requests attached posts only (no longform window queries)" time="0.000453958">
+        </testcase>
+        <testcase classname="tests/integration/services/loaders/flow-loader.test.ts" name="Flow Loader &gt; should accept before cursor for load more past" time="0.000263875">
+        </testcase>
+        <testcase classname="tests/integration/services/loaders/flow-loader.test.ts" name="Flow Loader &gt; should accept after cursor for load more future" time="0.000329375">
         </testcase>
     </testsuite>
 </testsuites>
