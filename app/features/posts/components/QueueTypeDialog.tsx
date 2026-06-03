@@ -498,7 +498,10 @@ export function QueueTypeDialog({
       ...(typeof data.scheduleRandomWindowMinutes === "number"
         ? { scheduleRandomWindowMinutes: data.scheduleRandomWindowMinutes }
         : {}),
-      includeHashtagsInNoteBody: data.includeHashtagsInNoteBody !== false,
+      // Send an explicit string: formDataToFormData drops `false` booleans, which
+      // would make the server default this back to true (losing "metadata only").
+      includeHashtagsInNoteBody:
+        data.includeHashtagsInNoteBody !== false ? "true" : "false",
     };
 
     const formData = formDataToFormData(

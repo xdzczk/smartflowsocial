@@ -86,6 +86,14 @@ function normalizeQueueTypeFromAction(
       raw["hashTagPreset"] && typeof raw["hashTagPreset"] === "object"
         ? (raw["hashTagPreset"] as QueueTypeSettings["hashTagPreset"])
         : null,
+    hashTagPresetId:
+      typeof raw["hashTagPresetId"] === "string"
+        ? raw["hashTagPresetId"]
+        : raw["hashTagPreset"] &&
+            typeof raw["hashTagPreset"] === "object" &&
+            "id" in (raw["hashTagPreset"] as Record<string, unknown>)
+          ? String((raw["hashTagPreset"] as { id: unknown }).id)
+          : undefined,
     includeHashtagsInNoteBody:
       raw["includeHashtagsInNoteBody"] === false ? false : true,
   };
@@ -110,26 +118,37 @@ export function QueueTypesSettings({
   const lastHandledDeleteRef = useRef<unknown>(null);
   const lastHandledFormRef = useRef<unknown>(null);
   const lastRevalidatedFormRef = useRef<unknown>(null);
-  const prevQueueTypesRef = useRef(queueTypes);
+  const prevQueueTypesFingerprintRef = useRef("");
 
   const _isCreating = formFetcher.state === "submitting";
   const _isUpdating = formFetcher.state === "submitting";
   const isDeleting = deleteFetcher.state === "submitting";
 
-  // Sync from loader only when the list of ids actually changed (e.g. navigation or revalidation caught up).
-  // Avoid syncing on every parent re-render (new array reference) so we don't overwrite optimistic updates.
+  // Sync from loader when the meaningful content changes (e.g. navigation or
+  // revalidation caught up after a save). We fingerprint the fields the dialog
+  // reads back (incl. hashTagPresetId + includeHashtagsInNoteBody) so authoritative
+  // DB data wins over a stale optimistic item, while still avoiding redundant
+  // setState on every parent re-render (new array reference, same content).
   // Defer setState to avoid synchronous setState in effect (react-hooks/set-state-in-effect).
   useEffect(() => {
-    const prevIds = prevQueueTypesRef.current
-      .map((q) => q.id)
-      .sort()
-      .join(",");
-    const nextIds = queueTypes
-      .map((q) => q.id)
-      .sort()
-      .join(",");
-    if (prevIds !== nextIds) {
-      prevQueueTypesRef.current = queueTypes;
+    const fingerprint = JSON.stringify(
+      queueTypes
+        .map((q) => {
+          const r = q;
+          return [
+            r.id,
+            r.name,
+            r.hashTagPresetId ?? r.hashTagPreset?.id ?? null,
+            r.includeHashtagsInNoteBody !== false,
+            r.isEnabled !== false,
+            r.scheduleType ?? null,
+            r.colorToken ?? null,
+          ];
+        })
+        .sort((a, b) => String(a[0]).localeCompare(String(b[0])))
+    );
+    if (prevQueueTypesFingerprintRef.current !== fingerprint) {
+      prevQueueTypesFingerprintRef.current = fingerprint;
       queueMicrotask(() => setQueueTypesState(queueTypes));
     }
   }, [queueTypes]);
