@@ -30,3 +30,4 @@ test-results/# Build artifacts
 eslint-report.json
 *.tsbuildinfo
 .tsbuildinfo
+.cache/node-compile-cache

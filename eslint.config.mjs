@@ -9,12 +9,9 @@ import tseslintParser from "@typescript-eslint/parser";
 import reactPlugin from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
 import jsxA11y from "eslint-plugin-jsx-a11y";
-import importPlugin from "eslint-plugin-import";
 import jest from "eslint-plugin-jest";
 import jestDom from "eslint-plugin-jest-dom";
 import testingLibrary from "eslint-plugin-testing-library";
-import unicorn from "eslint-plugin-unicorn";
-import sonarjs from "eslint-plugin-sonarjs";
 import promise from "eslint-plugin-promise";
 import noSecrets from "eslint-plugin-no-secrets";
 import eslintComments from "eslint-plugin-eslint-comments";
@@ -289,13 +286,21 @@ const qualityRules = {
 // ============================================================================
 
 export default (async () => {
-  let cypressPlugin;
-  try {
-    const cypressModule = await import("eslint-plugin-cypress");
-    cypressPlugin = cypressModule.default;
-  } catch {
-    cypressPlugin = undefined;
-  }
+  const [
+    importModule,
+    unicornModule,
+    sonarjsModule,
+    cypressModule,
+  ] = await Promise.all([
+    import("eslint-plugin-import"),
+    import("eslint-plugin-unicorn"),
+    import("eslint-plugin-sonarjs"),
+    import("eslint-plugin-cypress").catch(() => null),
+  ]);
+  const importPlugin = importModule.default;
+  const unicorn = unicornModule.default;
+  const sonarjs = sonarjsModule.default;
+  const cypressPlugin = cypressModule?.default;
 
   return [
     js.configs.recommended,
@@ -414,7 +419,7 @@ export default (async () => {
       languageOptions: {
         parser: tseslintParser,
         parserOptions: {
-          project: "./tsconfig.json",
+          projectService: true,
           tsconfigRootDir: import.meta.dirname,
           isolatedModules: true, // Match tsconfig.json setting
         },
@@ -423,7 +428,11 @@ export default (async () => {
         "import/internal-regex": "^~/",
         "import/resolver": {
           node: { extensions: [".ts", ".tsx"] },
-          typescript: { alwaysTryTypes: true },
+          typescript: {
+            project: "./tsconfig.json",
+            alwaysTryTypes: true,
+            noWarnOnMultipleProjects: true,
+          },
         },
       },
       rules: {
@@ -570,7 +579,7 @@ export default (async () => {
       languageOptions: {
         parser: tseslintParser,
         parserOptions: {
-          project: ["./tsconfig.json", "./tests/e2e/tsconfig.json"],
+          projectService: true,
           tsconfigRootDir: import.meta.dirname,
           isolatedModules: true, // Match tsconfig.json setting
         },
