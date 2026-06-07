@@ -27,11 +27,14 @@ export function computeBulkComposerReviewDisplay(
   const eventsData = preparedEvent.events;
   const kind = getEventsKind(eventsData);
   const isRepost = kind === 6;
-  let mediaUrl = "";
+  const preparedMediaUrl =
+    preparedEvent.fileUrl.find(
+      (url) => typeof url === "string" && url.trim().length > 0
+    ) ?? "";
+  let mediaUrl = preparedMediaUrl;
   let caption = "";
   let tags = "";
   if (isRepost) {
-    mediaUrl = preparedEvent.fileUrl[0] ?? "";
     caption = preparedEvent.caption;
   } else {
     const content = getEventsContent(eventsData);
@@ -39,13 +42,13 @@ export function computeBulkComposerReviewDisplay(
       const parsed = parseContentForRegularPost(
         content,
         preparedEvent.caption,
-        preparedEvent.fileUrl[0] ?? ""
+        preparedMediaUrl
       );
       caption = parsed.caption;
-      mediaUrl = parsed.mediaUrl;
+      mediaUrl = parsed.mediaUrl || preparedMediaUrl;
     } else {
       caption = preparedEvent.caption;
-      mediaUrl = preparedEvent.fileUrl[0] ?? "";
+      mediaUrl = preparedMediaUrl;
     }
     tags = extractTagsFromEvents(getEventsTags(eventsData));
   }

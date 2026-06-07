@@ -45,6 +45,19 @@ describe("posts utility coverage", () => {
       });
     });
 
+    it("parses newline-separated bulk content without corrupting media URLs", () => {
+      expect(
+        parseContentForRegularPost(
+          "https://img.example/a.png\nMEME CHECKPOINT\n#MemeCheckpoint",
+          "fallback caption",
+          "https://fallback"
+        )
+      ).toEqual({
+        caption: "MEME CHECKPOINT\n#MemeCheckpoint",
+        mediaUrl: "https://img.example/a.png",
+      });
+    });
+
     it("extracts hashtag-style tags and created_at", () => {
       expect(
         extractTagsFromEvents([

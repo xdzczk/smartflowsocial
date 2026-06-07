@@ -36,22 +36,54 @@ export function getEventsTags(eventsData: unknown): unknown {
   return undefined;
 }
 
+const HTTP_URL_RE = /^https?:\/\/\S+$/i;
+
+function isHttpUrlToken(value: string): boolean {
+  return (
+    value.trim() !== "" && value !== "null" && HTTP_URL_RE.test(value.trim())
+  );
+}
+
+/** Matches bulk `buildContent` layout: media URL lines, then caption, then tags. */
 export function parseContentForRegularPost(
   eventsContent: string,
   fallbackCaption: string,
   fallbackFileUrl: string
 ): { caption: string; mediaUrl: string } {
-  const contentParts = eventsContent.split(" ");
-  const mediaUrl =
-    contentParts.find(
-      (part) =>
-        part && part.trim() !== "" && part !== "null" && part.startsWith("http")
-    ) ?? "";
+  const trimmed = eventsContent.trim();
+  if (!trimmed) {
+    return { caption: fallbackCaption, mediaUrl: fallbackFileUrl };
+  }
 
-  const captionParts = contentParts.filter(
-    (part) =>
-      part && part.trim() !== "" && part !== "null" && !part.startsWith("http")
-  );
+  const lines = trimmed
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const mediaUrls: string[] = [];
+  const captionLines: string[] = [];
+
+  for (const line of lines) {
+    if (isHttpUrlToken(line)) {
+      mediaUrls.push(line);
+      continue;
+    }
+    captionLines.push(line);
+  }
+
+  if (mediaUrls.length > 0 || captionLines.length > 0) {
+    return {
+      caption:
+        captionLines.length > 0 ? captionLines.join("\n") : fallbackCaption,
+      mediaUrl: mediaUrls[0] ?? fallbackFileUrl,
+    };
+  }
+
+  // Legacy space-separated content (caption and URL on one line).
+  const contentParts = trimmed.split(/\s+/);
+  const mediaUrl =
+    contentParts.find((part) => isHttpUrlToken(part))?.trim() ?? "";
+  const captionParts = contentParts.filter((part) => !isHttpUrlToken(part));
 
   return {
     caption: captionParts.length > 0 ? captionParts.join(" ") : fallbackCaption,
