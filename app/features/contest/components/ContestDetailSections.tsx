@@ -416,8 +416,7 @@ export function ContestDetailFormsSection({
   }>();
   const isBatchPayoutPending = batchPayoutFetcher.state !== "idle";
   const batchProgressSnapshot: BatchPayoutProgressSnapshot | null =
-    batchPayoutFetcher.data &&
-    batchPayoutFetcher.data.success === true &&
+    batchPayoutFetcher.data?.success === true &&
     batchPayoutFetcher.data.eligible !== false &&
     batchPayoutFetcher.data.totals &&
     typeof batchPayoutFetcher.data.stepIndex === "number" &&
@@ -437,7 +436,7 @@ export function ContestDetailFormsSection({
   useEffect(() => {
     if (batchPayoutFetcher.state !== "idle") return;
     const d = batchPayoutFetcher.data;
-    if (!d || d.success !== true) return;
+    if (d?.success !== true) return;
     if (d.done !== false || typeof d.nextStep !== "number") return;
     const fd = new FormData();
     fd.set("intent", "runBatchPayout");
@@ -575,8 +574,7 @@ export function ContestDetailFormsSection({
               active={isBatchPayoutPending}
               progress={batchProgressSnapshot}
             />
-            {batchPayoutFetcher.data &&
-            batchPayoutFetcher.data.success === false &&
+            {batchPayoutFetcher.data?.success === false &&
             batchPayoutFetcher.data.error ? (
               <p className="text-danger text-xs">
                 {batchPayoutFetcher.data.error}

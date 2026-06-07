@@ -180,7 +180,7 @@ describe("Cron Subscription Checker", () => {
       );
 
       const { loader } = await import("~/routes/cron.checksubscription");
-      const response = await (loader as () => Promise<Response>)();
+      const response = await loader();
 
       const dataRaw: unknown = await response.json();
       const data =
@@ -215,7 +215,7 @@ describe("Cron Subscription Checker", () => {
       ).mockResolvedValue(users);
 
       const { loader } = await import("~/routes/cron.checksubscription");
-      const response = await (loader as () => Promise<Response>)();
+      const response = await loader();
 
       const dataRaw: unknown = await response.json();
       const data =
@@ -265,7 +265,7 @@ describe("Cron Subscription Checker", () => {
       ).mockResolvedValue(users);
 
       const { loader } = await import("~/routes/cron.checksubscription");
-      const response = await (loader as () => Promise<Response>)();
+      const response = await loader();
 
       const dataRaw: unknown = await response.json();
       const data =
@@ -315,7 +315,7 @@ describe("Cron Subscription Checker", () => {
       ).mockResolvedValue(users);
 
       const { loader } = await import("~/routes/cron.checksubscription");
-      const response = await (loader as () => Promise<Response>)();
+      const response = await loader();
 
       const dataRaw: unknown = await response.json();
       const data =
@@ -378,7 +378,7 @@ describe("Cron Subscription Checker", () => {
       });
 
       const { loader } = await import("~/routes/cron.checksubscription");
-      const response = await (loader as () => Promise<Response>)();
+      const response = await loader();
 
       const dataRaw: unknown = await response.json();
       const data =
@@ -467,7 +467,7 @@ describe("Cron Subscription Checker", () => {
       );
 
       const { loader } = await import("~/routes/cron.checksubscription");
-      const response = await (loader as () => Promise<Response>)();
+      const response = await loader();
 
       const dataRaw: unknown = await response.json();
       const data =
@@ -529,7 +529,7 @@ describe("Cron Subscription Checker", () => {
       lnMock.mockImplementation(() => mockLNInstance);
 
       const { loader } = await import("~/routes/cron.checksubscription");
-      const response = await (loader as () => Promise<Response>)();
+      const response = await loader();
 
       const dataRaw: unknown = await response.json();
       const data =
@@ -584,7 +584,7 @@ describe("Cron Subscription Checker", () => {
       (decrypt as ReturnType<typeof vi.fn>).mockReturnValue("decrypted-nwc");
 
       const { loader } = await import("~/routes/cron.checksubscription");
-      const response = await (loader as () => Promise<Response>)();
+      const response = await loader();
 
       const dataRaw: unknown = await response.json();
       const data =
@@ -638,7 +638,7 @@ describe("Cron Subscription Checker", () => {
       });
 
       const { loader } = await import("~/routes/cron.checksubscription");
-      const response = await (loader as () => Promise<Response>)();
+      const response = await loader();
 
       const dataRaw: unknown = await response.json();
       const data =
@@ -710,7 +710,7 @@ describe("Cron Subscription Checker", () => {
         .mockResolvedValueOnce(undefined);
 
       const { loader } = await import("~/routes/cron.checksubscription");
-      const response = await (loader as () => Promise<Response>)();
+      const response = await loader();
 
       const dataRaw: unknown = await response.json();
       const data =
@@ -739,7 +739,7 @@ describe("Cron Subscription Checker", () => {
       ).mockRejectedValue(new Error("Database connection failed"));
 
       const { loader } = await import("~/routes/cron.checksubscription");
-      const response = await (loader as () => Promise<Response>)();
+      const response = await loader();
 
       const dataRaw: unknown = await response.json();
       const data =

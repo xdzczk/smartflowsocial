@@ -37,7 +37,7 @@ export async function previewGiveaway(
   await updateGiveawayRow(giveawayId, {
     status: "PREVIEWED",
     winnerSnapshot: winners as unknown as Prisma.InputJsonValue,
-    lastPreviewMeta: lastPreviewMeta as unknown as Prisma.InputJsonValue,
+    lastPreviewMeta: lastPreviewMeta,
     activityLog: appendGiveawayActivityLog(g.activityLog, "preview_generated", {
       eligiblePoolSize: eligibleAccountCount,
       winnersDrawn: winners.length,
@@ -73,7 +73,7 @@ export async function rerollGiveaway(
 
   await updateGiveawayRow(giveawayId, {
     winnerSnapshot: winners as unknown as Prisma.InputJsonValue,
-    lastPreviewMeta: lastPreviewMeta as unknown as Prisma.InputJsonValue,
+    lastPreviewMeta: lastPreviewMeta,
     rerollCount: { increment: 1 },
     activityLog: appendGiveawayActivityLog(g.activityLog, "rerolled", {
       eligiblePoolSize: eligibleAccountCount,
@@ -121,8 +121,8 @@ export async function excludeWinnerAndRedraw(
 
   await updateGiveawayRow(giveawayId, {
     winnerSnapshot: updated as unknown as Prisma.InputJsonValue,
-    lastPreviewMeta: lastPreviewMeta as unknown as Prisma.InputJsonValue,
-    excludedPubkeys: excludedHistory as unknown as Prisma.InputJsonValue,
+    lastPreviewMeta: lastPreviewMeta,
+    excludedPubkeys: excludedHistory,
     rerollCount: { increment: 1 },
     activityLog: appendGiveawayActivityLog(g.activityLog, "winner_excluded", {
       excludedPubkey: winnerPubkey,

@@ -75,7 +75,7 @@ export function getKind1EventFromItem(
     !Array.isArray(item) &&
     "event" in item
   ) {
-    raw = (item as { event: unknown }).event;
+    raw = item.event;
   }
   if (
     Array.isArray(raw) &&
@@ -180,12 +180,12 @@ export function isPrimalItemQuoteRepostMentioningUser(
       isQuotePost(
         {
           content: ev.content,
-          tags: tags as string[][],
+          tags: tags,
           kind: ev.kind,
           id: ev.id,
           pubkey: ev.pubkey,
         },
-        eTag as string[]
+        eTag
       )
     ) {
       return true;

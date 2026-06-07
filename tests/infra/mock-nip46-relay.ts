@@ -340,9 +340,7 @@ export function startMockNip46Relay(
     const onListen = (): void => {
       const addr = wss.address();
       const portNum =
-        addr && typeof addr === "object" && "port" in addr
-          ? (addr as { port: number }).port
-          : port;
+        addr && typeof addr === "object" && "port" in addr ? addr.port : port;
       const url = `ws://127.0.0.1:${portNum}`;
       resolve({
         url,

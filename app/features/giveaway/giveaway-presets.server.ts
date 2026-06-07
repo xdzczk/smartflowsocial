@@ -56,16 +56,14 @@ export async function createGiveawayPreset(
     name: input.name.trim(),
     scopeType: input.scopeType,
     scopeReference: input.scopeReference as Prisma.InputJsonValue,
-    engagementTypes: input.engagementTypes as Prisma.InputJsonValue,
+    engagementTypes: input.engagementTypes,
     winnerCount: input.winnerCount,
     engagementConfig:
       input.engagementConfig && Object.keys(input.engagementConfig).length > 0
-        ? (input.engagementConfig as unknown as Prisma.InputJsonValue)
+        ? input.engagementConfig
         : undefined,
     selectionMode: input.selectionMode ?? "UNIQUE_USER",
-    engagementWeights: (input.engagementWeights ?? undefined) as
-      | Prisma.InputJsonValue
-      | undefined,
+    engagementWeights: input.engagementWeights ?? undefined,
     filters: (input.filters ?? undefined) as Prisma.InputJsonValue | undefined,
   });
 }
@@ -81,12 +79,12 @@ export async function updateGiveawayPreset(
   if (input.scopeReference !== undefined)
     data.scopeReference = input.scopeReference as Prisma.InputJsonValue;
   if (input.engagementTypes !== undefined)
-    data.engagementTypes = input.engagementTypes as Prisma.InputJsonValue;
+    data.engagementTypes = input.engagementTypes;
   if (input.winnerCount !== undefined) data.winnerCount = input.winnerCount;
   if (input.engagementConfig !== undefined)
     data.engagementConfig =
       input.engagementConfig && Object.keys(input.engagementConfig).length > 0
-        ? (input.engagementConfig as unknown as Prisma.InputJsonValue)
+        ? input.engagementConfig
         : Prisma.JsonNull;
   if (input.selectionMode !== undefined)
     data.selectionMode = input.selectionMode;

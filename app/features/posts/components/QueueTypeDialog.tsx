@@ -61,10 +61,7 @@ function readScheduleRandomWindowMinutes(
     typeof scheduleConfig === "object" &&
     "scheduleRandomWindowMinutes" in scheduleConfig
   ) {
-    return (
-      (scheduleConfig as { scheduleRandomWindowMinutes?: number })
-        .scheduleRandomWindowMinutes ?? 0
-    );
+    return scheduleConfig.scheduleRandomWindowMinutes ?? 0;
   }
   return 0;
 }
@@ -281,10 +278,7 @@ function QueueTypeDialogScheduleAndTimingSections({
           <Select
             value={String(form.watch("scheduleRandomWindowMinutes"))}
             onValueChange={(value) => {
-              form.setValue(
-                "scheduleRandomWindowMinutes",
-                Number(value) as 0 | 5 | 10 | 15
-              );
+              form.setValue("scheduleRandomWindowMinutes", Number(value));
             }}
           >
             <SelectTrigger id="scheduleRandomWindowMinutes">
@@ -415,10 +409,7 @@ export function QueueTypeDialog({
   const { fields, append, remove } = useZodFieldArray<
     z.infer<typeof queueTypeClientSchema>,
     "weeklySlots"
-  >(
-    form as unknown as UseFormReturn<z.infer<typeof queueTypeClientSchema>>,
-    "weeklySlots"
-  );
+  >(form, "weeklySlots");
 
   const isSubmitting =
     fetcher.state === "submitting" || fetcher.state === "loading";
@@ -693,7 +684,7 @@ export function QueueTypeDialog({
             </section>
 
             <QueueTypeDialogScheduleAndTimingSections
-              form={form as UseFormReturn<QueueTypeFormValues>}
+              form={form}
               scheduleType={scheduleType}
               hasLegacyGlobalInterval={hasLegacyGlobalInterval}
               fields={fields}

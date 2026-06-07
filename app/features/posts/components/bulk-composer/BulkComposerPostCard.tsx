@@ -110,12 +110,19 @@ export function BulkComposerPostCard({
   const canMoveUp = index > 0;
   const canMoveDown = index < totalPosts - 1;
 
-  const previewList = previewData.get(index) ?? [];
-  const fileUrlsFromDraft = Array.isArray(post.fileUrl)
-    ? post.fileUrl
-    : post.fileUrl
-      ? [post.fileUrl]
-      : [];
+  const previewList = useMemo(
+    () => previewData.get(index) ?? [],
+    [previewData, index]
+  );
+  const fileUrlsFromDraft = useMemo(
+    () =>
+      Array.isArray(post.fileUrl)
+        ? post.fileUrl
+        : post.fileUrl
+          ? [post.fileUrl]
+          : [],
+    [post.fileUrl]
+  );
 
   const reviewDisplay = useMemo(() => {
     if (!preparedEvent) return null;

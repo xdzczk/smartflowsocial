@@ -1,4 +1,3 @@
-import type { CalendarPost } from "~/features/posts/calendar";
 import { getFirstMediaFromFileUrl } from "~/features/posts/calendar";
 import type { LongFormPostData, PostData } from "~/features/posts/types";
 import { cn } from "~/lib/utils";
@@ -9,7 +8,7 @@ function getPreviewImage(
 ): string | null {
   if (isLongform && "image" in post && post.image) return post.image;
   if ("fileUrl" in post && post.fileUrl.length) {
-    return getFirstMediaFromFileUrl(post as unknown as CalendarPost);
+    return getFirstMediaFromFileUrl(post);
   }
   return null;
 }

@@ -205,8 +205,8 @@ class ErrorAggregationStore {
     }
 
     return {
-      byCategory: byCategory as Record<ErrorCategory, number>,
-      bySeverity: bySeverity as Record<ErrorSeverity, number>,
+      byCategory: byCategory,
+      bySeverity: bySeverity,
       criticalErrors,
       highSeverityErrors,
       retryableErrors,

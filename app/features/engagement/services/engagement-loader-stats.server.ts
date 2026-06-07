@@ -121,7 +121,7 @@ export function getEventIdsFromPosts(
         typeof se === "object" &&
         !Array.isArray(se) &&
         "id" in se &&
-        typeof (se as { id: unknown }).id === "string"
+        typeof se.id === "string"
       );
     })
     .map((post) => (post.signedEvent as { id: string }).id);

@@ -118,7 +118,7 @@ describe("Queue Client", () => {
             tags: [],
             content: "",
             sig: "test-sig",
-          } satisfies Partial<SignedEvent> as SignedEvent,
+          } satisfies Partial<SignedEvent>,
         },
         { scheduledFor }
       );
@@ -145,7 +145,7 @@ describe("Queue Client", () => {
             tags: [],
             content: "",
             sig: "test-sig",
-          } satisfies Partial<SignedEvent> as SignedEvent,
+          } satisfies Partial<SignedEvent>,
         },
         { scheduledFor: pastTime }
       );
@@ -177,7 +177,7 @@ describe("Queue Client", () => {
             tags: [],
             content: "",
             sig: "test-sig",
-          } satisfies Partial<SignedEvent> as SignedEvent,
+          } satisfies Partial<SignedEvent>,
         }
       );
 

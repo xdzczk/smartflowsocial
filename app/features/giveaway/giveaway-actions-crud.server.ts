@@ -124,7 +124,7 @@ export async function createGiveaway(
     scopeReference: input.scopeReference as Prisma.InputJsonValue,
     eligibilityFrom: input.eligibilityFrom ?? undefined,
     eligibilityTo: input.eligibilityTo ?? undefined,
-    engagementTypes: engagementTypesStored as Prisma.InputJsonValue,
+    engagementTypes: engagementTypesStored,
     winnerCount,
     engagementConfig:
       engagementConfigStored && Object.keys(engagementConfigStored).length > 0
@@ -133,9 +133,7 @@ export async function createGiveaway(
     selectionMode: selectionModeStored,
     engagementWeights: scopeIsFollowGraphAccountPool(input.scopeType)
       ? undefined
-      : ((input.engagementWeights ?? undefined) as
-          | Prisma.InputJsonValue
-          | undefined),
+      : (input.engagementWeights ?? undefined),
     filters: (input.filters ?? undefined) as Prisma.InputJsonValue | undefined,
     plannedPayoutSats,
     status: "DRAFT",

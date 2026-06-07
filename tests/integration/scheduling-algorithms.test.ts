@@ -711,8 +711,8 @@ describe("Scheduling Algorithms", () => {
       const queueType = createIntervalQueueType(4, {
         id: "queue-1",
         name: "posts",
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment -- Testing edge case with null scheduleConfig
-        scheduleConfig: null as any,
+
+        scheduleConfig: null,
       });
 
       const result = await calculateNextScheduleTime({
@@ -761,9 +761,7 @@ describe("Scheduling Algorithms", () => {
 
       const result = await calculateNextScheduleTime({
         // Minimal queueType without scheduleType to hit invalid-queueType path
-        queueType: queueType as Parameters<
-          typeof calculateNextScheduleTime
-        >[0]["queueType"],
+        queueType: queueType,
         userId: TEST_USER_ID,
         baseTime: BASE_TIME,
       });
@@ -785,7 +783,7 @@ describe("Scheduling Algorithms", () => {
       const result = await calculateNextScheduleTime({
         queueType,
         userId: TEST_USER_ID,
-        baseTime: new Date("invalid") as unknown as Date,
+        baseTime: new Date("invalid"),
       });
 
       expect(result).toBeInstanceOf(Date);

@@ -323,7 +323,7 @@ export function recordConnectionEvent(
 
 // Initialize event listeners for connection state changes
 if (typeof window !== "undefined") {
-  window.addEventListener("nostr-connection-stale", (() => {
+  window.addEventListener("nostr-connection-stale", () => {
     const active = getActiveConnection();
     if (active) {
       recordConnectionEvent(active.id, {
@@ -332,9 +332,9 @@ if (typeof window !== "undefined") {
         error: "Connection stale",
       });
     }
-  }) as EventListener);
+  });
 
-  window.addEventListener("nostr-connection-healthy", (() => {
+  window.addEventListener("nostr-connection-healthy", () => {
     const active = getActiveConnection();
     if (active) {
       recordConnectionEvent(active.id, {
@@ -342,5 +342,5 @@ if (typeof window !== "undefined") {
         healthy: true,
       });
     }
-  }) as EventListener);
+  });
 }

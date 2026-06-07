@@ -138,7 +138,7 @@ async function getBroadcastReviewData({
   const lintWarnings = getBroadcastMessageLintWarnings(campaign.messageBody, {
     footerReserveChars: true,
   }).map((w) => ({
-    level: w.level as "info" | "warning",
+    level: w.level,
     message: w.message,
   }));
   const warnings = [...lintWarnings, ...reviewWarnings];

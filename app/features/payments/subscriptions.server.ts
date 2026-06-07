@@ -111,24 +111,23 @@ export async function getSubscriptionData(
 
   return {
     user: user ? { id: userId, isEnabled: user.isEnabled } : null,
-    currentSubscription:
-      currentSubscription && currentSubscription.planId
-        ? {
-            planId: currentSubscription.planId,
-            status: currentSubscription.status,
-            currentPeriodEnd: currentSubscription.currentPeriodEnd ?? undefined,
-            Plan: currentSubscription.Plan
-              ? {
-                  name: currentSubscription.Plan.name,
-                  id: currentSubscription.Plan.id,
-                  enableLifetimeAccess: currentSubscription.Plan
-                    .enableLifetimeAccess
-                    ? true
-                    : undefined,
-                }
-              : undefined,
-          }
-        : null,
+    currentSubscription: currentSubscription?.planId
+      ? {
+          planId: currentSubscription.planId,
+          status: currentSubscription.status,
+          currentPeriodEnd: currentSubscription.currentPeriodEnd ?? undefined,
+          Plan: currentSubscription.Plan
+            ? {
+                name: currentSubscription.Plan.name,
+                id: currentSubscription.Plan.id,
+                enableLifetimeAccess: currentSubscription.Plan
+                  .enableLifetimeAccess
+                  ? true
+                  : undefined,
+              }
+            : undefined,
+        }
+      : null,
     billingContext,
   };
 }
@@ -142,7 +141,7 @@ export async function isSubscriptionActiveForGating(
   userId: string
 ): Promise<boolean> {
   const subscription = await getUserSubscription(userId);
-  if (!subscription || subscription.status !== "ACTIVE") {
+  if (subscription?.status !== "ACTIVE") {
     return false;
   }
   const commercialPlanType = parseCommercialPlanType(

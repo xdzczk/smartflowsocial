@@ -1,4 +1,3 @@
-import { useRouteLoaderData } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 
@@ -15,6 +14,10 @@ import { formatDate } from "~/features/posts/utils/content-helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 import { useThreadView } from "~/lib/query/hooks/useApiQuery";
+import {
+  useDashboardRouteLoaderData,
+  useOptionalUser,
+} from "~/lib/remix-utils";
 import { cn } from "~/lib/utils";
 
 import type { Post } from "../../data/posts-prisma-types.server";
@@ -99,22 +102,10 @@ export default function PostDetailsModal({
   const [isMediaOpen, setIsMediaOpen] = useState(false);
   const [activeMediaSrc, setActiveMediaSrc] = useState<string | null>(null);
   const [showEventData, setShowEventData] = useState(false);
-  const rootData = useRouteLoaderData("root") as
-    | {
-        user?: {
-          preferredNostrClient?: string;
-          customNostrClientBaseUrl?: string | null;
-        } | null;
-      }
-    | undefined;
-  const dashboardRouteData = useRouteLoaderData("routes/dashboard") as
-    | { nip88PollsEnabled?: boolean }
-    | undefined;
+  const user = useOptionalUser();
+  const dashboardRouteData = useDashboardRouteLoaderData();
   const nip88PollsEnabled = Boolean(dashboardRouteData?.nip88PollsEnabled);
-  const nostrUrls = useMemo(
-    () => getNostrClientUrlsFromUser(rootData?.user),
-    [rootData?.user]
-  );
+  const nostrUrls = useMemo(() => getNostrClientUrlsFromUser(user), [user]);
 
   const handleDelete = useCallback(() => {
     const postId = post.id;

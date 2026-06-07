@@ -616,7 +616,7 @@ describe("Settings Action Handler", () => {
           queueType?: unknown;
         } =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
-            ? (dataRaw as { success?: unknown; error?: unknown })
+            ? dataRaw
             : {};
 
         expect(hashTagPresetExistsForUser).toHaveBeenCalledWith(
@@ -675,7 +675,7 @@ describe("Settings Action Handler", () => {
           queueType?: unknown;
         } =
           dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
-            ? (dataRaw as { success?: unknown; error?: unknown })
+            ? dataRaw
             : {};
 
         expect(updateQueueType).toHaveBeenCalledWith(TEST_USER_ID, {

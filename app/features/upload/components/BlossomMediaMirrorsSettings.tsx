@@ -1,7 +1,6 @@
 import { useFetcher, useRevalidator } from "@remix-run/react";
 import { Plus, X } from "lucide-react";
 import { useEffect, useMemo } from "react";
-import type { UseFormReturn } from "react-hook-form";
 import type { z } from "zod";
 
 import { Button } from "~/components/ui/button";
@@ -49,12 +48,7 @@ export function BlossomMediaMirrorsSettings({
   const { fields, append, remove } = useZodFieldArray<
     z.infer<typeof updateBlossomMirrorsClientSchema>,
     "mirrorUrls"
-  >(
-    form as unknown as UseFormReturn<
-      z.infer<typeof updateBlossomMirrorsClientSchema>
-    >,
-    "mirrorUrls"
-  );
+  >(form, "mirrorUrls");
 
   const isSubmitting = fetcher.state === "submitting";
   const watchedMirrorUrls = form.watch("mirrorUrls");

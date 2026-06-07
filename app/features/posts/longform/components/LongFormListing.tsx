@@ -1,4 +1,4 @@
-import { useFetcher, useRouteLoaderData } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useState, useEffect, useMemo, useRef, type Key } from "react";
@@ -17,6 +17,7 @@ import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 import { skipInfiniteQueries } from "~/lib/query/is-infinite-query-data";
+import { useOptionalUser } from "~/lib/remix-utils";
 
 import { useLongFormListingState } from "../hooks/useLongFormListingState";
 import {
@@ -95,18 +96,8 @@ export default function LongFormListing({
     userTimezone,
   });
 
-  const rootData = useRouteLoaderData("root") as
-    | {
-        user?: {
-          preferredNostrClient?: string;
-          customNostrClientBaseUrl?: string | null;
-        } | null;
-      }
-    | undefined;
-  const nostrUrls = useMemo(
-    () => getNostrClientUrlsFromUser(rootData?.user),
-    [rootData?.user]
-  );
+  const user = useOptionalUser();
+  const nostrUrls = useMemo(() => getNostrClientUrlsFromUser(user), [user]);
   const deleteFetcher = useFetcher<{
     success?: boolean;
     moved?: boolean;

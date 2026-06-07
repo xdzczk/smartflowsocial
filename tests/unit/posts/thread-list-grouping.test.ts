@@ -65,7 +65,7 @@ describe("thread-list-grouping", () => {
         fileUrl: [],
       },
     ] as never[];
-    const out = filterPostsBySearchWithThreads(posts as never, "beta");
+    const out = filterPostsBySearchWithThreads(posts, "beta");
     expect(out.map((p) => p.id).sort()).toEqual(["1", "2"]);
   });
 
@@ -187,7 +187,7 @@ describe("thread-list-grouping", () => {
         fileUrl: [],
       },
     ] as never[];
-    const rows = buildPostThreadRows(posts as never, "scheduled");
+    const rows = buildPostThreadRows(posts, "scheduled");
     expect(rows[0]?.root.id).toBe("y");
     expect(rows[0]?.threadSegments).toHaveLength(1);
     expect(rows[0]?.threadSegments[0]?.id).toBe("x");

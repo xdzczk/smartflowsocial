@@ -195,9 +195,7 @@ async function runPublishApiAction(request: Request): Promise<Response> {
         })
       : {};
   const { relays, event, pollEvent: pollEventRaw, recordAsReply } = body;
-  const attemptId = readAttemptIdFromBody(
-    body as Record<string, unknown> | undefined
-  );
+  const attemptId = readAttemptIdFromBody(body);
 
   assert(event !== null && event !== undefined, "Event is required", {
     hasEvent: event !== null && event !== undefined,

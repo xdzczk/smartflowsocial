@@ -1,4 +1,4 @@
-import { Link, useRouteLoaderData } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { Bell, MessageCircle, Zap } from "lucide-react";
 import { useMemo } from "react";
 
@@ -8,7 +8,8 @@ import {
   INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
 } from "~/lib/icon-constants";
-import { eventUrl, getNostrClientConfig } from "~/lib/nostr-client-urls";
+import { eventUrl, getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
+import { useOptionalUser } from "~/lib/remix-utils";
 
 import type { Notification } from "../engagement.server";
 import type {
@@ -26,24 +27,10 @@ export default function NotificationList({
   notifications,
   userTimezone: _userTimezone,
 }: NotificationListProps) {
-  const rootData = useRouteLoaderData("root") as
-    | {
-        user?: {
-          preferredNostrClient?: string;
-          customNostrClientBaseUrl?: string | null;
-        } | null;
-      }
-    | undefined;
-  const nostrClientConfig = useMemo(
-    () =>
-      getNostrClientConfig(
-        rootData?.user?.preferredNostrClient,
-        rootData?.user?.customNostrClientBaseUrl
-      ),
-    [
-      rootData?.user?.preferredNostrClient,
-      rootData?.user?.customNostrClientBaseUrl,
-    ]
+  const user = useOptionalUser();
+  const { config: nostrClientConfig } = useMemo(
+    () => getNostrClientUrlsFromUser(user),
+    [user]
   );
 
   if (notifications.length === 0) {

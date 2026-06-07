@@ -3,16 +3,13 @@
  * and sticky action rail (desktop) / inline primary actions (mobile).
  */
 
-import { useRouteLoaderData } from "@remix-run/react";
 import { nip19 } from "nostr-tools";
 import { useMemo, type ReactNode } from "react";
 
 import type { SearchLookupResolution } from "~/features/search";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
-import {
-  getNostrClientConfig,
-  getNostrClientDisplayName,
-} from "~/lib/nostr-client-urls";
+import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
+import { useOptionalUser } from "~/lib/remix-utils";
 import { DEFAULT_ZAP_AMOUNT_SATS_FALLBACK } from "~/lib/zap-defaults";
 
 import { LookupEngageNowSection } from "./lookup-engage/LookupEngageNowSection";
@@ -85,39 +82,21 @@ export function SearchResult({
   defaultZapAmountSats: defaultZapAmountSatsProp,
 }: SearchResultProps) {
   const { formatDate } = useFormattedDate();
-  const rootData = useRouteLoaderData("root") as
-    | {
-        user?: {
-          preferredNostrClient?: string;
-          customNostrClientBaseUrl?: string | null;
-          defaultZapAmountSats?: number | null;
-        } | null;
-      }
-    | undefined;
+  const user = useOptionalUser();
 
   const defaultZapAmountSats =
     typeof defaultZapAmountSatsProp === "number" &&
     Number.isInteger(defaultZapAmountSatsProp) &&
     defaultZapAmountSatsProp >= 1
       ? defaultZapAmountSatsProp
-      : typeof rootData?.user?.defaultZapAmountSats === "number" &&
-          Number.isInteger(rootData.user.defaultZapAmountSats) &&
-          rootData.user.defaultZapAmountSats >= 1
-        ? rootData.user.defaultZapAmountSats
+      : typeof user?.defaultZapAmountSats === "number" &&
+          Number.isInteger(user.defaultZapAmountSats) &&
+          user.defaultZapAmountSats >= 1
+        ? user.defaultZapAmountSats
         : DEFAULT_ZAP_AMOUNT_SATS_FALLBACK;
-  const nostrClientConfig = useMemo(
-    () =>
-      getNostrClientConfig(
-        rootData?.user?.preferredNostrClient,
-        rootData?.user?.customNostrClientBaseUrl
-      ),
-    [
-      rootData?.user?.preferredNostrClient,
-      rootData?.user?.customNostrClientBaseUrl,
-    ]
-  );
-  const viewEventLabel = getNostrClientDisplayName(
-    rootData?.user?.preferredNostrClient
+  const { config: nostrClientConfig, viewEventLabel } = useMemo(
+    () => getNostrClientUrlsFromUser(user),
+    [user]
   );
 
   const noteOrNeventDisplay = useMemo(() => {

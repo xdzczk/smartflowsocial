@@ -42,8 +42,8 @@ function convertPostDataToDraftsPost(postData: PostData): DraftsHookPost {
   };
   const hookPost: DraftsHookPost = {
     ...postData,
-    createdAt: toIso(postData.createdAt as Date | string),
-    updatedAt: toIso(postData.updatedAt as Date | string | undefined),
+    createdAt: toIso(postData.createdAt),
+    updatedAt: toIso(postData.updatedAt),
   };
   return hookPost;
 }

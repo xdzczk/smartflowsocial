@@ -34,9 +34,8 @@ vi.mock("~/lib/feature-flags.server", async (importOriginal) => {
     actualUnknown === null ||
     typeof actualUnknown !== "object" ||
     !("featureFlags" in actualUnknown) ||
-    typeof (actualUnknown as { featureFlags: unknown }).featureFlags !==
-      "object" ||
-    (actualUnknown as { featureFlags: unknown }).featureFlags === null
+    typeof actualUnknown.featureFlags !== "object" ||
+    actualUnknown.featureFlags === null
   ) {
     throw new Error("feature-flags.server mock: unexpected importOriginal()");
   }

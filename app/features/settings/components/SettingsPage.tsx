@@ -199,7 +199,7 @@ function renderSettingsPanel(
         typeof blastrPolicyRaw === "object" &&
         blastrPolicyRaw != null &&
         "policy" in blastrPolicyRaw &&
-        (blastrPolicyRaw as { policy: unknown }).policy != null
+        blastrPolicyRaw.policy != null
           ? (
               blastrPolicyRaw as {
                 policy: {
@@ -214,7 +214,7 @@ function renderSettingsPanel(
         typeof blastrPolicyRaw === "object" &&
         blastrPolicyRaw != null &&
         "relays" in blastrPolicyRaw &&
-        Array.isArray((blastrPolicyRaw as { relays: unknown }).relays)
+        Array.isArray(blastrPolicyRaw.relays)
           ? (
               blastrPolicyRaw as {
                 relays: Array<{
@@ -620,16 +620,7 @@ export default function SettingsPage() {
     referralRaw &&
     typeof referralRaw === "object" &&
     "referralLink" in referralRaw
-      ? (referralRaw as {
-          referralLink: string;
-          commissionRatePercent: number;
-          totalEarnedSats: number;
-          paidSats: number;
-          pendingSats: number;
-          failedSats: number;
-          payoutDestination: string | null;
-          payoutDestinationType: string | null;
-        })
+      ? referralRaw
       : {
           referralLink: "",
           commissionRatePercent: 20,

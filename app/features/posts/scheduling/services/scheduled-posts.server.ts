@@ -222,8 +222,8 @@ function parseItemData(
           item !== null &&
           "id" in item &&
           "type" in item &&
-          typeof (item as { id: unknown; type: unknown }).id === "string" &&
-          typeof (item as { id: unknown; type: unknown }).type === "string"
+          typeof item.id === "string" &&
+          typeof item.type === "string"
       );
     }
   } catch {
@@ -373,7 +373,7 @@ async function handleReschedule(formData: FormData, userId: string) {
       postId,
       userId,
       scheduledAtUtc,
-      signedEvent: parsedSignedEvent as SignedEvent,
+      signedEvent: parsedSignedEvent,
     });
     await resyncAttachedChildrenAfterParentMutation({
       parentPostId: postId,
@@ -413,7 +413,7 @@ async function handleRescheduleLongform(formData: FormData, userId: string) {
       postId,
       userId,
       scheduledAtUtc,
-      signedEvent: parsedSignedEvent as SignedEvent,
+      signedEvent: parsedSignedEvent,
     });
 
     // Also update the post with other fields
@@ -530,7 +530,7 @@ async function handleEditPost(formData: FormData, userId: string) {
       postId,
       userId,
       scheduledAtUtc,
-      signedEvent: parsedSignedEvent as SignedEvent,
+      signedEvent: parsedSignedEvent,
     });
   }
   if (parsedSignedEvent) {

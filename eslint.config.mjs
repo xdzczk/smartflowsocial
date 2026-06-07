@@ -464,8 +464,8 @@ export default (async () => {
               "Deprecated. Use nostrAdapter.signEvent / signLongFormEvent / signPollEvent (with { clearCacheOnError: false }) inside the signing-attempts state machine (startRecoverableSign or pendingPublish.start).",
           },
         ],
-        // Import quality rules
-        "import/no-cycle": ["error", { maxDepth: 10 }],
+        // Direct cycles only: maxDepth > 1 explodes lint time on this codebase (minutes+).
+        "import/no-cycle": ["error", { maxDepth: 1, ignoreExternal: true }],
         "import/no-duplicates": "error",
         "import/no-self-import": "error",
         "import/no-useless-path-segments": ["warn", { noUselessIndex: true }],

@@ -115,7 +115,7 @@ export async function runQueueResumeAutoResign(params: {
       raw &&
       typeof raw === "object" &&
       "error" in raw &&
-      typeof (raw as { error: unknown }).error === "string"
+      typeof raw.error === "string"
         ? (raw as { error: string }).error
         : "Could not load posts to sign.";
     return { ok: false, message: msg };
@@ -124,7 +124,7 @@ export async function runQueueResumeAutoResign(params: {
     !raw ||
     typeof raw !== "object" ||
     !("items" in raw) ||
-    !Array.isArray((raw as { items: unknown }).items)
+    !Array.isArray(raw.items)
   ) {
     return { ok: false, message: "Invalid response from server." };
   }

@@ -86,9 +86,7 @@ export async function duplicateContest(
     equalRewardSats:
       c.prizeMode === "EQUAL" ? Math.max(0, c.equalRewardSats ?? 0) : null,
     rankRewards: rankRewardsJson,
-    fairnessConfig: (c.fairnessConfig ?? undefined) as
-      | Prisma.InputJsonValue
-      | undefined,
+    fairnessConfig: c.fairnessConfig ?? undefined,
     entryType: c.entryType,
     tieBreakRule: c.tieBreakRule ?? DEFAULT_TIE_BREAK_RULE,
     status: "DRAFT",

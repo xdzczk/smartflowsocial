@@ -235,8 +235,8 @@ describe("Content Helpers", () => {
     it("should use currentState from originalData when item.currentState missing", () => {
       const item = combinedContentFactory.post({
         id: "1",
-        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- minimal test double
-        originalData: { currentState: "PUBLISHED" } as never,
+
+        originalData: { currentState: "PUBLISHED" },
       });
       const result = getStatusColor(item);
       expect(result).toContain("success");
@@ -403,8 +403,8 @@ describe("Content Helpers", () => {
     it("should use originalData.postKind when postKind is absent", () => {
       const item = combinedContentFactory.post({
         id: "1",
-        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- minimal test double
-        originalData: { postKind: "REPOST" } as never,
+
+        originalData: { postKind: "REPOST" },
       });
       const result = getContentTypeBadge(item);
       expect(result.text).toBe("REPOST");
@@ -447,10 +447,10 @@ describe("Content Helpers", () => {
     it("should check originalData.signedEvent for kind", () => {
       const item = combinedContentFactory.post({
         id: "1",
-        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- minimal test double
+
         originalData: {
           signedEvent: { kind: 6 },
-        } as never,
+        },
       });
       const result = getContentTypeBadge(item);
       expect(result.text).toBe("REPOST");
@@ -493,8 +493,7 @@ describe("Content Helpers", () => {
       expect(
         isRepostContent(
           combinedContentFactory.post({
-            // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- minimal test double
-            originalData: { postKind: "REPOST" } as never,
+            originalData: { postKind: "REPOST" },
           })
         )
       ).toBe(true);

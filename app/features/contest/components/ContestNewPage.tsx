@@ -1189,7 +1189,7 @@ function NewContestForm({ loaderData }: { loaderData: ContestNewLoaderData }) {
             createBody={
               <>
                 <ContestEmbeddedComposer
-                  loaderData={loaderData as Record<string, unknown>}
+                  loaderData={loaderData}
                   composerKey={composerSessionKey}
                   contestRailLaunchMode={launchMode}
                   contestRailScheduledFor={scheduledActivationFor}

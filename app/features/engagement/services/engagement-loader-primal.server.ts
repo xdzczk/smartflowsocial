@@ -14,7 +14,6 @@ import type {
   EventStats,
   GroupedNotification,
   NotificationMention,
-  NostrTag,
 } from "../types";
 
 import {
@@ -140,7 +139,7 @@ export async function loadPrimalSupplementalEngagementData(params: {
         if (!doesEventMentionUser(e.content, e.tags, userPubkeyHex)) continue;
         if (
           shouldExcludeKind1FromGlobalMentionInbox(
-            e.tags as NostrTag[],
+            e.tags,
             userPublishedEventIds
           )
         ) {
@@ -153,10 +152,7 @@ export async function loadPrimalSupplementalEngagementData(params: {
           content: e.content,
           createdAt: e.created_at,
           pubkey: e.pubkey,
-          originalEventId: inferThreadRootEventIdFromTags(
-            e.tags as NostrTag[],
-            e.id
-          ),
+          originalEventId: inferThreadRootEventIdFromTags(e.tags, e.id),
         });
       }
       fromRelay.sort((a, b) => b.createdAt - a.createdAt);

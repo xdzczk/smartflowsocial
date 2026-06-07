@@ -154,7 +154,7 @@ describe("Queue Operations", () => {
         tags: [],
         content: "",
         sig: "test-sig",
-      } as unknown as SignedEvent;
+      };
 
       (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValue({
         success: true,
@@ -189,7 +189,7 @@ describe("Queue Operations", () => {
         tags: [],
         content: "",
         sig: "test-sig",
-      } as unknown as SignedEvent;
+      };
 
       (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValue({
         success: true,
@@ -224,7 +224,7 @@ describe("Queue Operations", () => {
         tags: [],
         content: "",
         sig: "test-sig",
-      } as unknown as SignedEvent;
+      };
 
       (queueClient.enqueue as ReturnType<typeof vi.fn>).mockResolvedValue({
         success: false,

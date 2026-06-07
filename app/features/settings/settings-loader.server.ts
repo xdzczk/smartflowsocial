@@ -21,11 +21,7 @@ import {
 } from "~/features/payments/subscriptions.server";
 import type { BillingContext } from "~/features/payments/types/subscription-billing.types";
 import { getQueueAccentHex } from "~/features/posts/queue-colors";
-import type {
-  HashTagPreset,
-  QueueType,
-  ScheduleConfig,
-} from "~/features/posts/types";
+import type { HashTagPreset, QueueType } from "~/features/posts/types";
 import { getReferralSettingsData } from "~/features/referral/referral-settings.server";
 import type { Nip65ProfileRelayEntry } from "~/features/relays/nip65-relay-entry";
 import { BLASTR_KNOWN_SYSTEM_RELAYS } from "~/features/relays/relay-constants";
@@ -623,7 +619,7 @@ export async function loadSettingsData(
           row.scheduleConfig &&
           typeof row.scheduleConfig === "object" &&
           !Array.isArray(row.scheduleConfig)
-            ? (row.scheduleConfig as ScheduleConfig)
+            ? row.scheduleConfig
             : undefined,
         status:
           row.status === "PAUSED"
@@ -646,7 +642,7 @@ export async function loadSettingsData(
     customBlossomUrl,
     enableMirrorBlossom,
     mirrorUploadUrls,
-    hashTagPresets: hashTagPresets as unknown as typeof hashTagPresets,
+    hashTagPresets: hashTagPresets,
     nwcEnabled: nwcSettings.enabled,
     maskedNwcString: nwcSettings.maskedString ?? null,
     nwcLastUsed: nwcSettings.lastUsed ?? null,
@@ -654,7 +650,7 @@ export async function loadSettingsData(
       ? {
           id: subscription.id,
           planId: subscription.planId ?? null,
-          status: subscription.status as string,
+          status: subscription.status,
           renewalMode:
             typeof (subscription as unknown as { renewalMode?: unknown })
               .renewalMode === "string"

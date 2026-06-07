@@ -31,3 +31,4 @@ eslint-report.json
 *.tsbuildinfo
 .tsbuildinfo
 .cache/node-compile-cache
+.cache/tsconfig.e2e.tsbuildinfo

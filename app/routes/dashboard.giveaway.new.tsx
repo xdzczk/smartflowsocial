@@ -415,7 +415,7 @@ export async function action({ request }: ActionFunctionArgs) {
 function pickActionError(actionData: unknown): string | undefined {
   if (!actionData || typeof actionData !== "object") return undefined;
   if (!("error" in actionData)) return undefined;
-  const err = (actionData as { error: unknown }).error;
+  const err = actionData.error;
   return typeof err === "string" ? err : undefined;
 }
 

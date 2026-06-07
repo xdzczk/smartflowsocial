@@ -133,7 +133,7 @@ export function setupFetchMock(
   jsonResponse: unknown = {}
 ) {
   const mockFetch = vi.fn();
-  global.fetch = mockFetch as unknown as typeof fetch;
+  global.fetch = mockFetch;
 
   // Default successful response
   mockFetch.mockResolvedValue({

@@ -240,7 +240,7 @@ export async function getDeadLetterStats(): Promise<{
 
   return {
     total: allEntries.length,
-    byQueueType: byQueueType as Record<QueueType, number>,
+    byQueueType: byQueueType,
     recentErrors,
   };
 }

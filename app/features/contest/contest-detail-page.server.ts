@@ -32,7 +32,7 @@ import {
   findContestWinnersWithEntries,
   findLatestContestSnapshot,
 } from "./repositories/contest-detail-queries.server";
-import type { ContestRankReward, ContestStatus } from "./types";
+import type { ContestRankReward } from "./types";
 
 export type { ContestDetailPageData } from "./contest-detail.types";
 
@@ -358,8 +358,8 @@ export async function getContestDetailPageData(
       title,
       sourceNoteId: contest.sourceNoteId,
       sourcePostId: contest.sourcePostId,
-      status: contest.status as ContestStatus,
-      statusLabel: formatContestStatusLabel(contest.status as ContestStatus),
+      status: contest.status,
+      statusLabel: formatContestStatusLabel(contest.status),
       rankingMetric: contest.rankingMetric,
       contestEndAt: contest.contestEndAt.toISOString(),
       contestStartAt: contest.contestStartAt?.toISOString() ?? null,
@@ -375,8 +375,7 @@ export async function getContestDetailPageData(
       planLabel,
       freezeSnapshotAt: contest.freezeSnapshotAt?.toISOString() ?? null,
       lockConfigHash: contest.lockConfigHash ?? quote.lockConfigHash,
-      payoutState:
-        payoutState as ContestDetailPageData["contest"]["payoutState"],
+      payoutState: payoutState,
       payoutWalletMode: contest.payoutWalletMode,
       payoutAutoRunEnabled: contest.payoutAutoRunEnabled,
       payoutAutoRunSpendCapSats: contest.payoutAutoRunSpendCapSats ?? null,

@@ -34,11 +34,7 @@ export async function createBroadcastDraft(
   if (!limits.allowedAudienceTypes.length) {
     throw new BroadcastActionError("Broadcasts require a paid plan", "PLAN");
   }
-  if (
-    !limits.allowedAudienceTypes.includes(
-      input.audienceType as (typeof limits.allowedAudienceTypes)[number]
-    )
-  ) {
+  if (!limits.allowedAudienceTypes.includes(input.audienceType)) {
     throw new BroadcastActionError(
       "This audience type is not available on your plan",
       "AUDIENCE"

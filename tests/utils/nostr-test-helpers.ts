@@ -47,7 +47,7 @@ export function createValidSignedEvent(
 
   const signedEvent = finalizeEvent(nostrEvent, testPrivateKey);
 
-  return signedEvent as unknown as SignedEvent;
+  return signedEvent;
 }
 
 /**

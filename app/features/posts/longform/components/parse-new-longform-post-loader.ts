@@ -148,8 +148,7 @@ function parseQueueTypes(queueTypesRaw: unknown): QueueType[] {
           colorToken: colorToken ?? undefined,
           description: undefined,
           scheduleType: scheduleType,
-          scheduleConfig:
-            scheduleConfig as unknown as QueueType["scheduleConfig"],
+          scheduleConfig: scheduleConfig,
           status: status,
           isEnabled: isEnabled,
           userId: userIdVal,
@@ -192,12 +191,9 @@ function parseHashTagPresets(hashTagPresetsRaw: unknown): HashTagPreset[] {
         "id" in preset &&
         "name" in preset &&
         "tags" in preset &&
-        typeof (preset as { id: unknown; name: unknown; tags: unknown }).id ===
-          "string" &&
-        typeof (preset as { id: unknown; name: unknown; tags: unknown })
-          .name === "string" &&
-        typeof (preset as { id: unknown; name: unknown; tags: unknown })
-          .tags === "string"
+        typeof preset.id === "string" &&
+        typeof preset.name === "string" &&
+        typeof preset.tags === "string"
     )
     .map((preset) => ({
       id: preset.id,
@@ -252,7 +248,7 @@ function parseInitialTemplateData(
   if (raw === null || typeof raw !== "object") {
     return null;
   }
-  return raw as NewLongFormPostLoaderParsed["initialTemplateData"];
+  return raw;
 }
 
 function parseEditingMetaFromLoader(raw: unknown): ComposerEditingMeta | null {
@@ -264,7 +260,7 @@ function parseEditingMetaFromLoader(raw: unknown): ComposerEditingMeta | null {
   ) {
     return null;
   }
-  const o = raw as { modeLabel: unknown; accountLabel: unknown };
+  const o = raw;
   if (typeof o.modeLabel !== "string" || typeof o.accountLabel !== "string") {
     return null;
   }

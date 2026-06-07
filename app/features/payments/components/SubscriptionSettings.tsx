@@ -692,9 +692,7 @@ export function SubscriptionSettings({
                 <div className="text-sm">{topUpFetcher.data.message}</div>
               ) : null}
 
-              {topUpFetcher.data &&
-              topUpFetcher.data.invoice &&
-              topUpFetcher.data.paymentId ? (
+              {topUpFetcher.data?.invoice && topUpFetcher.data.paymentId ? (
                 <div className="bg-surface-hover/30 space-y-2 rounded-lg border p-3">
                   <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">

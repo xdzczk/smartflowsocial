@@ -1,4 +1,4 @@
-import { Link, useRouteLoaderData } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import type { useFetcher } from "@remix-run/react";
 import { useMemo } from "react";
 
@@ -13,6 +13,7 @@ import { getPostRowThumbnailBadge } from "~/features/posts/utils/content-helpers
 import { getImageUrls } from "~/lib/helpers";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
+import { useOptionalUser } from "~/lib/remix-utils";
 
 interface Post {
   id: string;
@@ -97,18 +98,8 @@ export function RecyclablesTable({
   recycleFetcher,
 }: RecyclablesTableProps) {
   const { formatDate } = useFormattedDate();
-  const rootData = useRouteLoaderData("root") as
-    | {
-        user?: {
-          preferredNostrClient?: string;
-          customNostrClientBaseUrl?: string | null;
-        } | null;
-      }
-    | undefined;
-  const nostrUrls = useMemo(
-    () => getNostrClientUrlsFromUser(rootData?.user),
-    [rootData?.user]
-  );
+  const user = useOptionalUser();
+  const nostrUrls = useMemo(() => getNostrClientUrlsFromUser(user), [user]);
 
   return (
     <div className="border-border bg-surface min-w-full overflow-x-auto rounded-xs border">

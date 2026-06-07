@@ -137,10 +137,7 @@ export async function runGiveawayPayoutBatchWithNwc(
   syncPayoutStateFromLedgerItems({
     state,
     snapshot,
-    itemByPubkey: itemByPubkey as Map<
-      string,
-      { status: string; errorMessage: string | null }
-    >,
+    itemByPubkey: itemByPubkey,
     nowIso: now,
   });
   if (!exec.eligible) {
@@ -242,10 +239,7 @@ export async function runGiveawayPayoutBatchStepWithNwc(
   syncPayoutStateFromLedgerItems({
     state,
     snapshot,
-    itemByPubkey: itemByPubkey as Map<
-      string,
-      { status: string; errorMessage: string | null }
-    >,
+    itemByPubkey: itemByPubkey,
     nowIso: now,
   });
   if (!exec.eligible) {

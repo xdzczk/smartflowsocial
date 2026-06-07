@@ -94,22 +94,14 @@ function parseNostrProfileForNotification(
       const parsed: unknown = JSON.parse(nostrProfile);
       p =
         parsed && typeof parsed === "object" && !Array.isArray(parsed)
-          ? (parsed as {
-              picture?: string;
-              display_name?: string;
-              name?: string;
-            })
+          ? parsed
           : null;
     } else if (
       nostrProfile &&
       typeof nostrProfile === "object" &&
       !Array.isArray(nostrProfile)
     ) {
-      p = nostrProfile as {
-        picture?: string;
-        display_name?: string;
-        name?: string;
-      };
+      p = nostrProfile;
     }
   } catch {
     // ignore

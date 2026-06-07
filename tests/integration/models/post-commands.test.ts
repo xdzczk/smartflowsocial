@@ -409,7 +409,7 @@ describe("Post Commands", () => {
         id: TEST_POST_ID,
         userId: TEST_USER_ID,
         data: {
-          queueTypeId: null as unknown as undefined, // Pass null explicitly
+          queueTypeId: null, // Pass null explicitly
         },
       });
 

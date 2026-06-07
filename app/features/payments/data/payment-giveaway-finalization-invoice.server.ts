@@ -106,14 +106,9 @@ export async function createGiveawayFinalizationInvoice(params: {
   try {
     await expireStaleFinalizationPaymentsForGiveaway(giveawayId);
 
-    const request = (await withOwnerWalletInvoiceRequestTimeout(
+    const request = await withOwnerWalletInvoiceRequestTimeout(
       ln.requestPayment(SATS(quote.feeSats) as unknown as { amount: number })
-    )) as unknown as {
-      onPaid: (callback: () => void) => {
-        onTimeout: (seconds: number, callback: () => void) => void;
-      };
-      onTimeout: (seconds: number, callback: () => void) => void;
-    };
+    );
 
     const paymentId = `gf_${giveawayId}_${Date.now()}_${userId}`;
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000);

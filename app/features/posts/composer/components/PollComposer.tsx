@@ -227,8 +227,7 @@ export function PollComposer({
         qt.scheduleConfig &&
         typeof qt.scheduleConfig === "object" &&
         "scheduleRandomWindowMinutes" in qt.scheduleConfig
-          ? ((qt.scheduleConfig as { scheduleRandomWindowMinutes?: number })
-              .scheduleRandomWindowMinutes ?? 0)
+          ? (qt.scheduleConfig.scheduleRandomWindowMinutes ?? 0)
           : 0;
       setScheduleRandomWindowMinutes(
         typeof window === "number" && window >= 0 && window <= 15 ? window : 0

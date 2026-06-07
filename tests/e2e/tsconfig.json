@@ -4,14 +4,14 @@
     "**/*.cy.ts",
     "**/*.config.ts",
     "support/**/*",
-    "../../node_modules/cypress",
-    "../../node_modules/@testing-library/cypress",
     "../../remix.env.d.ts",
     "../../app/types/**/*.d.ts"
   ],
   "compilerOptions": {
     "baseUrl": ".",
     "noEmit": true,
+    "incremental": true,
+    "tsBuildInfoFile": "../../.cache/tsconfig.e2e.tsbuildinfo",
     "types": ["node", "cypress", "@testing-library/cypress"],
     "esModuleInterop": true,
     "jsx": "react-jsx",

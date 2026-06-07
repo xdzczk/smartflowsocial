@@ -311,7 +311,7 @@ function repostThresholdsSummary(
   if (!bulkRepostConditions) return "None";
   let active = 0;
   for (const [key] of REPOST_CONDITION_FIELDS) {
-    const k = key as keyof RepostConditions;
+    const k = key;
     const v = bulkRepostConditions[k];
     if (typeof v === "number" && v > 0) active += 1;
   }
@@ -370,7 +370,7 @@ export function BulkSettingsRepostConditionsFields({
             this batch).
           </p>
           {REPOST_CONDITION_FIELDS.map(([key, label]) => {
-            const fieldKey = key as keyof RepostConditions;
+            const fieldKey = key;
             const inputId = `bulk-rail-repost-${key}`;
             return (
               <RailSettingsRow

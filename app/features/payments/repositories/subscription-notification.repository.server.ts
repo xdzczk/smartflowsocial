@@ -1,7 +1,4 @@
-import type {
-  BillingNotificationChannel,
-  BillingNotificationCommMode as PrismaBillingCommMode,
-} from "@prisma/client";
+import type { BillingNotificationChannel } from "@prisma/client";
 
 import type { BillingNotificationCommMode } from "~/features/payments/types/subscription-billing.types";
 import { prisma } from "~/lib/prisma.server";
@@ -90,7 +87,7 @@ export async function createPendingAttempt(params: {
       subscriptionId: params.subscriptionId,
       planId: params.planId,
       eventType: params.eventType,
-      commMode: params.commMode as PrismaBillingCommMode,
+      commMode: params.commMode,
       channel: params.channel ?? "nostr_dm",
       dedupeKey: params.dedupeKey,
       status: "pending",

@@ -44,7 +44,7 @@
     "docker": "docker compose up -d",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "cross-env NODE_OPTIONS=--max-old-space-size=4096 NODE_COMPILE_CACHE=./.cache/node-compile-cache eslint --cache --cache-location ./node_modules/.cache/eslint .",
+    "lint": "printf '🔍 Running ESLint...\\n' && cross-env NODE_OPTIONS=--max-old-space-size=4096 NODE_COMPILE_CACHE=./.cache/node-compile-cache eslint --cache --cache-location ./node_modules/.cache/eslint .",
     "typecheck:app": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsc --noEmit",
     "typecheck:e2e": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsc -p tests/e2e/tsconfig.json --noEmit",
     "lint:ci": "cross-env NODE_OPTIONS=--max-old-space-size=4096 eslint . --format json --output-file eslint-report.json || exit 1",

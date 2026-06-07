@@ -128,7 +128,7 @@ import { nostrAdapter } from "~/lib/nostr-adapter.server";
 const ANY_DATE = expect.any(Date) as unknown as Date;
 const ANY_STRING = expect.any(String) as unknown as string;
 const stringContaining = (value: string): string =>
-  expect.stringContaining(value) as unknown as string;
+  expect.stringContaining(value);
 
 describe("Outbox Worker", () => {
   beforeEach(() => {

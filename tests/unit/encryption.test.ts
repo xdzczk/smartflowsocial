@@ -13,7 +13,7 @@ const { envOverrides } = vi.hoisted(() => {
 
 vi.mock("~/lib/env.server", () => ({
   get env() {
-    return new Proxy(process.env as Record<string, string | undefined>, {
+    return new Proxy(process.env, {
       get(target, key: string) {
         if (Object.prototype.hasOwnProperty.call(envOverrides, key)) {
           return envOverrides[key];

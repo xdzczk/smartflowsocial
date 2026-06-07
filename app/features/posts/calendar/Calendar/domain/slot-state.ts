@@ -95,9 +95,7 @@ function isSinglePostSelected(
   selectedPost: GetSlotStateOptions["selectedPost"]
 ): boolean {
   return (
-    !!selectedPost &&
-    posts.length === 1 &&
-    (posts[0] as CalendarPost | undefined)?.id === selectedPost.id
+    !!selectedPost && posts.length === 1 && posts[0]?.id === selectedPost.id
   );
 }
 

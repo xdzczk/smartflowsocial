@@ -129,7 +129,7 @@ describe("Drafts Loader Integration", () => {
         request,
         params: { queueType: "posts" },
         context: {},
-      } as unknown as LoaderFunctionArgs);
+      });
       const responseObj =
         response instanceof Response
           ? response
@@ -244,7 +244,7 @@ describe("Drafts Loader Integration", () => {
         data.error &&
         typeof data.error === "object" &&
         !Array.isArray(data.error)
-          ? (data.error as { message?: string })
+          ? data.error
           : {};
       const errorMessage =
         typeof error.message === "string" ? error.message : "";
@@ -287,7 +287,7 @@ describe("Drafts Loader Integration", () => {
         data.error &&
         typeof data.error === "object" &&
         !Array.isArray(data.error)
-          ? (data.error as { message?: string })
+          ? data.error
           : {};
       const errorMessage =
         typeof error.message === "string" ? error.message : "";
@@ -330,7 +330,7 @@ describe("Drafts Loader Integration", () => {
         data.error &&
         typeof data.error === "object" &&
         !Array.isArray(data.error)
-          ? (data.error as { message?: string })
+          ? data.error
           : {};
       const errorMessage =
         typeof error.message === "string" ? error.message : "";

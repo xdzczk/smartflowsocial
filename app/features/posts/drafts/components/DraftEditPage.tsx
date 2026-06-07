@@ -88,8 +88,8 @@ export default function DraftEditPage() {
         qt != null &&
         "id" in qt &&
         "name" in qt &&
-        typeof (qt as { id: unknown; name: unknown }).id === "string" &&
-        typeof (qt as { id: unknown; name: unknown }).name === "string"
+        typeof qt.id === "string" &&
+        typeof qt.name === "string"
     )
     .map((qt) => {
       const raw = qt as {
@@ -154,12 +154,9 @@ export default function DraftEditPage() {
         "id" in preset &&
         "name" in preset &&
         "tags" in preset &&
-        typeof (preset as { id: unknown; name: unknown; tags: unknown }).id ===
-          "string" &&
-        typeof (preset as { id: unknown; name: unknown; tags: unknown })
-          .name === "string" &&
-        typeof (preset as { id: unknown; name: unknown; tags: unknown })
-          .tags === "string"
+        typeof preset.id === "string" &&
+        typeof preset.name === "string" &&
+        typeof preset.tags === "string"
     )
     .map((preset) => ({
       id: preset.id,

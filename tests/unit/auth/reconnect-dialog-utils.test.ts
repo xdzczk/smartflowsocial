@@ -52,7 +52,7 @@ describe("reconnect-dialog-utils", () => {
 
     it("uses RELAY_UNION_CAP when cap not provided", () => {
       const many = Array.from({ length: 20 }, (_, i) => `wss://r${i}.com`);
-      const out = buildRelayUnion(many, [], undefined as unknown as number);
+      const out = buildRelayUnion(many, [], undefined);
       expect(out.length).toBe(RELAY_UNION_CAP);
     });
   });

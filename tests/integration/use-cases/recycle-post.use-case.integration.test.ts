@@ -47,12 +47,12 @@ describe.skipIf(!TEST_DATABASE_URL || SHOULD_SKIP_DB_TESTS)(
       useCase = new RecyclePostUseCase();
 
       // Mock fetch for Nostr publisher
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Test mock needs type assertion
+
       (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
         ok: true,
         status: 200,
         statusText: "OK",
-      } as Response);
+      });
     });
 
     afterEach(async () => {

@@ -154,7 +154,7 @@ export async function processQuoteReposts(
         createdAt: event.created_at,
         pubkey: event.pubkey,
         authorName: profile?.display_name ?? profile?.name,
-        authorPicture: profile?.picture as string | null | undefined,
+        authorPicture: profile?.picture,
         authorNip05: profile?.["nip05"] as string | undefined,
         originalEventId,
         stats,

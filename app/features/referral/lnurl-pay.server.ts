@@ -16,11 +16,7 @@ export async function fetchInvoiceFromLnurlPay(
     if (!res.ok) return null;
     const data = (await res.json()) as unknown;
     if (typeof data !== "object" || data === null) return null;
-    meta = data as {
-      callback?: string;
-      minSendable?: number;
-      maxSendable?: number;
-    };
+    meta = data;
   } catch {
     return null;
   }

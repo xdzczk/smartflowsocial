@@ -78,7 +78,7 @@ function normalizeQueueTypeFromAction(
       raw["scheduleConfig"] &&
       typeof raw["scheduleConfig"] === "object" &&
       !Array.isArray(raw["scheduleConfig"])
-        ? (raw["scheduleConfig"] as QueueTypeSettings["scheduleConfig"])
+        ? raw["scheduleConfig"]
         : undefined,
     isEnabled: typeof raw["isEnabled"] === "boolean" ? raw["isEnabled"] : true,
     isDefault: typeof raw["isDefault"] === "boolean" ? raw["isDefault"] : false,

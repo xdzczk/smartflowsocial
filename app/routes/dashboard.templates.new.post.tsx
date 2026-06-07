@@ -30,8 +30,8 @@ function parseQueueType(qt: unknown): string | QueueType {
     qt !== null &&
     "id" in qt &&
     "name" in qt &&
-    typeof (qt as { id: unknown; name: unknown }).id === "string" &&
-    typeof (qt as { id: unknown; name: unknown }).name === "string"
+    typeof qt.id === "string" &&
+    typeof qt.name === "string"
   ) {
     const o = qt as { id: string; name: string; [key: string]: unknown };
     const queueType: QueueType = {

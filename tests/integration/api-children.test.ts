@@ -504,12 +504,7 @@ describe("API: Children", () => {
         children[0] &&
         typeof children[0] === "object" &&
         !Array.isArray(children[0])
-          ? (children[0] as {
-              name?: string;
-              displayName?: string;
-              npub?: string;
-              picture?: string;
-            })
+          ? children[0]
           : {};
       expect(firstChild.name).toBeUndefined();
     });

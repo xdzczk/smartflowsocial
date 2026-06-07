@@ -165,7 +165,7 @@ describe("Calendar Loader Integration", () => {
       const dataRaw: unknown = await responseObj.json();
       const data: LoaderData =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
-          ? (dataRaw as LoaderData)
+          ? dataRaw
           : {};
 
       expect(responseObj.status).toBe(200);
@@ -201,7 +201,7 @@ describe("Calendar Loader Integration", () => {
         request,
         params: { queueType: "posts" },
         context: {},
-      } as unknown as LoaderFunctionArgs);
+      });
       const responseObj =
         response instanceof Response
           ? response
@@ -209,7 +209,7 @@ describe("Calendar Loader Integration", () => {
       const dataRaw: unknown = await responseObj.json();
       const data: LoaderData =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
-          ? (dataRaw as LoaderData)
+          ? dataRaw
           : {};
       const selectedQueueType =
         typeof data.selectedQueueType === "string"
@@ -249,7 +249,7 @@ describe("Calendar Loader Integration", () => {
         request,
         params: { queueType: "posts" },
         context: {},
-      } as unknown as LoaderFunctionArgs);
+      });
       const responseObj =
         response instanceof Response
           ? response
@@ -257,7 +257,7 @@ describe("Calendar Loader Integration", () => {
       const dataRaw: unknown = await responseObj.json();
       const data: LoaderData =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
-          ? (dataRaw as LoaderData)
+          ? dataRaw
           : {};
       const scheduledPosts = Array.isArray(data.scheduledPosts)
         ? data.scheduledPosts
@@ -292,7 +292,7 @@ describe("Calendar Loader Integration", () => {
         request,
         params: { queueType: "all" },
         context: {},
-      } as unknown as LoaderFunctionArgs);
+      });
       const responseObj =
         response instanceof Response
           ? response
@@ -300,7 +300,7 @@ describe("Calendar Loader Integration", () => {
       const dataRaw: unknown = await responseObj.json();
       const data: LoaderData =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
-          ? (dataRaw as LoaderData)
+          ? dataRaw
           : {};
       const selectedQueueType =
         typeof data.selectedQueueType === "string"
@@ -348,7 +348,7 @@ describe("Calendar Loader Integration", () => {
       const dataRaw: unknown = await responseObj.json();
       const data: LoaderData =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
-          ? (dataRaw as LoaderData)
+          ? dataRaw
           : {};
       const scheduleIntervals = Array.isArray(data.scheduleIntervals)
         ? data.scheduleIntervals
@@ -393,7 +393,7 @@ describe("Calendar Loader Integration", () => {
       const dataRaw: unknown = await responseObj.json();
       const data: LoaderData =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
-          ? (dataRaw as LoaderData)
+          ? dataRaw
           : {};
       const queueTypes = Array.isArray(data.queueTypes) ? data.queueTypes : [];
       const enabledQueueTypes = queueTypes.filter((qt: unknown) => {
@@ -427,13 +427,13 @@ describe("Calendar Loader Integration", () => {
       const dataRaw: unknown = await responseObj.json();
       const data: LoaderData =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
-          ? (dataRaw as LoaderData)
+          ? dataRaw
           : {};
       const error =
         data.error &&
         typeof data.error === "object" &&
         !Array.isArray(data.error)
-          ? (data.error as { message?: string })
+          ? data.error
           : {};
 
       expect(responseObj.status).toBe(401);
@@ -462,13 +462,13 @@ describe("Calendar Loader Integration", () => {
       const dataRaw: unknown = await responseObj.json();
       const data: LoaderData =
         dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
-          ? (dataRaw as LoaderData)
+          ? dataRaw
           : {};
       const error =
         data.error &&
         typeof data.error === "object" &&
         !Array.isArray(data.error)
-          ? (data.error as { message?: string })
+          ? data.error
           : {};
 
       expect(responseObj.status).toBe(500);

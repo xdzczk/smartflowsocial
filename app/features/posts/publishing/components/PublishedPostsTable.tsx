@@ -1,4 +1,4 @@
-import { Link, useRouteLoaderData } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { MoreHorizontal, Quote, Repeat } from "lucide-react";
 import { useMemo, useRef, useState, type Key } from "react";
@@ -67,6 +67,7 @@ import {
   SMALL_ICON_SIZE_CLASS,
 } from "~/lib/icon-constants";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
+import { useOptionalUser } from "~/lib/remix-utils";
 import { cn } from "~/lib/utils";
 
 // Helper to safely access formData from a fetcher
@@ -263,18 +264,8 @@ export default function PublishedPostsTable({
   });
   const virtualItems = rowVirtualizer.getVirtualItems();
   const [openMenuRowKey, setOpenMenuRowKey] = useState<Key | null>(null);
-  const rootData = useRouteLoaderData("root") as
-    | {
-        user?: {
-          preferredNostrClient?: string;
-          customNostrClientBaseUrl?: string | null;
-        } | null;
-      }
-    | undefined;
-  const nostrUrls = useMemo(
-    () => getNostrClientUrlsFromUser(rootData?.user),
-    [rootData?.user]
-  );
+  const user = useOptionalUser();
+  const nostrUrls = useMemo(() => getNostrClientUrlsFromUser(user), [user]);
 
   return (
     <>

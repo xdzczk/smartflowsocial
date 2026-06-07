@@ -365,7 +365,7 @@ export function ErrorBoundary() {
     error &&
     typeof error === "object" &&
     "message" in error &&
-    typeof (error as { message: unknown }).message === "string"
+    typeof error.message === "string"
   ) {
     errorMessage = (error as { message: string }).message;
     const errObj = error as unknown as { statusCode?: number };

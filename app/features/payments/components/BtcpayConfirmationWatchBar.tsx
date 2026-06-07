@@ -35,7 +35,7 @@ export function BtcpayConfirmationWatchBar() {
     loaderData.user &&
     typeof loaderData.user === "object" &&
     "id" in loaderData.user &&
-    typeof (loaderData.user as { id: unknown }).id === "string"
+    typeof loaderData.user.id === "string"
       ? (loaderData.user as { id: string })
       : null;
   const revalidator = useRevalidator();

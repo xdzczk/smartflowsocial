@@ -960,11 +960,7 @@ export function ScheduledPostsTable({
                             onReschedulePost={(post) =>
                               onReschedulePost(post as PostData)
                             }
-                            deleteFetcher={
-                              moveToDraftFetcher as Parameters<
-                                typeof ContentListCard
-                              >[0]["deleteFetcher"]
-                            }
+                            deleteFetcher={moveToDraftFetcher}
                             onScheduleRepost={onScheduleRepost}
                             onScheduleQuote={onScheduleQuote}
                             onDelete={handleDeleteWithCascade}
@@ -1039,11 +1035,7 @@ export function ScheduledPostsTable({
                       onReschedulePost={(post) =>
                         onReschedulePost(post as PostData)
                       }
-                      deleteFetcher={
-                        moveToDraftFetcher as Parameters<
-                          typeof ContentListCard
-                        >[0]["deleteFetcher"]
-                      }
+                      deleteFetcher={moveToDraftFetcher}
                       onScheduleRepost={onScheduleRepost}
                       onScheduleQuote={onScheduleQuote}
                       onDelete={handleDeleteWithCascade}

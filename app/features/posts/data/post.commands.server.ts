@@ -351,8 +351,8 @@ export async function createPostWithOutbox(
       "POST_CREATED",
       post.id,
       "Post",
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Partial payload for read model events
-      { postId: post.id, userId: post.userId } as PostScheduledPayload,
+
+      { postId: post.id, userId: post.userId },
       undefined,
       undefined,
       correlationId
@@ -443,8 +443,8 @@ export async function deletePost({
         "POST_DELETED",
         deleted.id,
         "Post",
-        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Partial payload for read model events
-        { postId: deleted.id, userId: deleted.userId } as PostScheduledPayload,
+
+        { postId: deleted.id, userId: deleted.userId },
         undefined,
         undefined,
         correlationId
@@ -686,8 +686,8 @@ export async function updatePost({
     "POST_UPDATED",
     post.id,
     "Post",
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Partial payload for read model events
-    { postId: post.id, userId: post.userId } as PostScheduledPayload
+
+    { postId: post.id, userId: post.userId }
     // eslint-disable-next-line promise/prefer-await-to-then, promise/prefer-await-to-callbacks -- Fire-and-forget pattern
   ).catch((error) => {
     // Log but don't throw - read model updates shouldn't block writes

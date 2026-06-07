@@ -115,7 +115,7 @@ export async function searchUsersByProfileName(
     200
   );
 
-  const filtered = fetched
+  return fetched
     .map((u) => {
       const bits = extractProfileBits(u.nostrProfile);
       const profile =
@@ -148,14 +148,6 @@ export async function searchUsersByProfileName(
     .filter((u) => u._match)
     .slice(0, limit)
     .map(({ _match, ...rest }) => rest);
-
-  return filtered as Array<
-    MinimalUser & {
-      profileName?: string;
-      profileDisplayName?: string;
-      profilePicture?: string;
-    }
-  >;
 }
 
 /**

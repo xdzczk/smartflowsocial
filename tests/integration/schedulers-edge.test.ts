@@ -40,9 +40,7 @@ describe("Schedulers edge cases", () => {
       };
 
       const result = await calculateNextScheduleTime({
-        queueType: queueType as Parameters<
-          typeof calculateNextScheduleTime
-        >[0]["queueType"],
+        queueType: queueType,
         userId: "user-1",
         baseTime: BASE_TIME,
       });
