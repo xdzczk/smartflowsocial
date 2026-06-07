@@ -412,7 +412,7 @@ export function EditPostModal({
     "scheduledAtUtc" in post && post.scheduledAtUtc
       ? post.scheduledAtUtc instanceof Date
         ? post.scheduledAtUtc
-        : new Date(post.scheduledAtUtc as string | number)
+        : new Date(post.scheduledAtUtc)
       : null,
     userTimezone,
     userTimeFormat,

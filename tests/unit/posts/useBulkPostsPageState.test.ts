@@ -108,5 +108,6 @@ describe("useBulkPostsPageState", () => {
     expect(typeof handlers.handleRemovePost).toBe("function");
     expect(typeof handlers.handleScheduleIntervalClick).toBe("function");
     expect(typeof handlers.duplicatePost).toBe("function");
+    expect(typeof handlers.clearBulkComposerWorkspace).toBe("function");
   });
 });

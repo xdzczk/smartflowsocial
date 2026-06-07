@@ -104,8 +104,7 @@ export async function loadParentData(userId: string) {
     return json({ parent: null });
   }
 
-  let profileForDisplay: ProfileData | null | undefined =
-    parent.nostrProfile as ProfileData | null | undefined;
+  let profileForDisplay: ProfileData | null | undefined = parent.nostrProfile;
 
   if (isDisplayProfileEmpty(profileForDisplay)) {
     try {
@@ -115,7 +114,7 @@ export async function loadParentData(userId: string) {
       });
       if (!isDisplayProfileEmpty(fresh)) {
         await createUser(parent.npub, JSON.stringify(fresh));
-        profileForDisplay = fresh as ProfileData | null | undefined;
+        profileForDisplay = fresh;
       }
     } catch (e) {
       logError(normalizeError(e), {

@@ -1,4 +1,4 @@
-import { useNavigate, useRouteLoaderData } from "@remix-run/react";
+import { useNavigate } from "@remix-run/react";
 import type { FetcherWithComponents, useFetcher } from "@remix-run/react";
 import { useState, useEffect, useMemo } from "react";
 
@@ -16,6 +16,7 @@ import {
 import { logClientError } from "~/lib/error-handler.client";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
+import { useOptionalUser } from "~/lib/remix-utils";
 import {
   addHours,
   compareZonedDateTime,
@@ -161,17 +162,10 @@ export function useRecyclablesState({
     linkText?: string;
   } | null>(null);
 
-  const rootData = useRouteLoaderData("root") as
-    | {
-        user?: {
-          preferredNostrClient?: string;
-          customNostrClientBaseUrl?: string | null;
-        } | null;
-      }
-    | undefined;
+  const rootUser = useOptionalUser();
   const nostrUrls = useMemo(
-    () => getNostrClientUrlsFromUser(rootData?.user),
-    [rootData?.user]
+    () => getNostrClientUrlsFromUser(rootUser),
+    [rootUser]
   );
 
   // Sort and filter posts
@@ -333,10 +327,7 @@ export function useRecyclablesState({
       const min = engagementFilter.min;
       list = list.filter((post) => {
         const eventId = getEventId(post);
-        const postStats = getPostStats(
-          eventId,
-          stats as Record<string, unknown>
-        );
+        const postStats = getPostStats(eventId, stats);
         const value = Number(postStats[statKey] ?? 0);
         return value >= min;
       });

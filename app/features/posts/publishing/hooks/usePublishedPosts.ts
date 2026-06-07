@@ -2,7 +2,6 @@ import {
   useFetcher,
   useNavigate,
   useRevalidator,
-  useRouteLoaderData,
   useSearchParams,
 } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -29,6 +28,7 @@ import {
 } from "~/features/posts/utils/bulk-composer-data";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
+import { useOptionalUser } from "~/lib/remix-utils";
 import {
   addHours,
   formatForDateTimeLocal,
@@ -90,17 +90,10 @@ export function usePublishedPosts({
     useState<LongFormPostData | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
-  const rootData = useRouteLoaderData("root") as
-    | {
-        user?: {
-          preferredNostrClient?: string;
-          customNostrClientBaseUrl?: string | null;
-        } | null;
-      }
-    | undefined;
+  const rootUser = useOptionalUser();
   const nostrUrls = useMemo(
-    () => getNostrClientUrlsFromUser(rootData?.user),
-    [rootData?.user]
+    () => getNostrClientUrlsFromUser(rootUser),
+    [rootUser]
   );
 
   const deleteFetcher = useFetcher<{ success?: boolean; error?: string }>();
@@ -328,9 +321,7 @@ export function usePublishedPosts({
     const currentState = bulkDeleteFetcher.state;
     const dataChanged =
       bulkDeleteFetcher.data !== previousBulkDeleteDataRef.current;
-    const fetcherData = bulkDeleteFetcher.data as
-      | { success?: boolean; error?: string }
-      | undefined;
+    const fetcherData = bulkDeleteFetcher.data;
     const formData = bulkDeleteFetcher.formData;
     const action = formData?.get("_action");
     if (
@@ -377,9 +368,7 @@ export function usePublishedPosts({
     const previousState = previousDeleteStateRef.current;
     const currentState = deleteFetcher.state;
     const dataChanged = deleteFetcher.data !== previousDeleteDataRef.current;
-    const deleteFetcherData = deleteFetcher.data as
-      | { success?: boolean; error?: string }
-      | undefined;
+    const deleteFetcherData = deleteFetcher.data;
     const formData = deleteFetcher.formData;
     const action = formData?.get("_action");
     const submittedPostId = formData?.get("postId");
@@ -539,9 +528,7 @@ export function usePublishedPosts({
       }
 
       if (onOpenBulkComposer) {
-        const initialPosts = convertQuoteDataToBulkPosts(
-          quoteData as Parameters<typeof convertQuoteDataToBulkPosts>[0]
-        );
+        const initialPosts = convertQuoteDataToBulkPosts(quoteData);
         onOpenBulkComposer({ mode: "quote", initialPosts });
         setSelectedPosts(new Set());
       } else {
@@ -558,9 +545,7 @@ export function usePublishedPosts({
       const quoteData = repostFetcher.data.longformQuotePostData;
 
       if (onOpenBulkComposer) {
-        const initialPosts = convertQuoteDataToBulkPosts(
-          quoteData as Parameters<typeof convertQuoteDataToBulkPosts>[0]
-        );
+        const initialPosts = convertQuoteDataToBulkPosts(quoteData);
         onOpenBulkComposer({ mode: "quote", initialPosts });
         setSelectedPosts(new Set());
       } else {

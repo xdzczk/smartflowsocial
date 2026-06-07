@@ -208,7 +208,7 @@ describe("API: Link Preview", () => {
         meta.image &&
         typeof meta.image === "object" &&
         !Array.isArray(meta.image)
-          ? (meta.image as { url?: string })
+          ? meta.image
           : {};
 
       expect(image.url).toBe("https://example.com/image.jpg");

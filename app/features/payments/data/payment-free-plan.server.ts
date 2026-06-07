@@ -114,9 +114,7 @@ export async function ensureUserHasFreePlan(userId: string): Promise<void> {
   }
 
   const isFreeInactive =
-    subscription &&
-    subscription.planId === FREE_PLAN_ID &&
-    subscription.status !== "ACTIVE";
+    subscription?.planId === FREE_PLAN_ID && subscription.status !== "ACTIVE";
 
   if (subscription && !isFreeInactive) {
     return;

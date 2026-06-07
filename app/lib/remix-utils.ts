@@ -1,7 +1,13 @@
-import { useMatches, useNavigation } from "@remix-run/react";
+import {
+  useMatches,
+  useNavigation,
+  useRouteLoaderData,
+} from "@remix-run/react";
 import { useMemo, useState } from "react";
 
 import type { User } from "~/features/user";
+import type { loader as rootLoader } from "~/root";
+import type { loader as dashboardLoader } from "~/routes/dashboard";
 const DEFAULT_REDIRECT = "/";
 
 /**
@@ -46,6 +52,16 @@ export function useMatchesData(
     return data as Record<string, unknown>;
   }
   return undefined;
+}
+
+/** Typed root route loader data (`useRouteLoaderData("root")`). */
+export function useRootRouteLoaderData() {
+  return useRouteLoaderData<typeof rootLoader>("root");
+}
+
+/** Typed dashboard layout loader data (`useRouteLoaderData("routes/dashboard")`). */
+export function useDashboardRouteLoaderData() {
+  return useRouteLoaderData<typeof dashboardLoader>("routes/dashboard");
 }
 
 function isUser(user: unknown): user is User {

@@ -6,7 +6,6 @@
 
 import { useFetcher, useNavigate } from "@remix-run/react";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import type { UseFormReturn } from "react-hook-form";
 
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
@@ -43,7 +42,6 @@ import {
   type ComposerAttachment,
 } from "../../types";
 import { stripAttachmentTokens } from "../../utils/inline-tokens";
-import type { TextPostFormData } from "../hooks/composer-submit-types";
 import {
   useComposerLocalDraft,
   type ComposerLocalSnapshot,
@@ -437,8 +435,7 @@ export function UnifiedComposer({
       qt.scheduleConfig &&
       typeof qt.scheduleConfig === "object" &&
       "scheduleRandomWindowMinutes" in qt.scheduleConfig
-        ? ((qt.scheduleConfig as { scheduleRandomWindowMinutes?: number })
-            .scheduleRandomWindowMinutes ?? 0)
+        ? (qt.scheduleConfig.scheduleRandomWindowMinutes ?? 0)
         : 0;
     setScheduleRandomWindowMinutes(
       typeof window === "number" && window >= 0 && window <= 15 ? window : 0
@@ -1590,7 +1587,7 @@ export function UnifiedComposer({
           selectedQueue={selectedQueue}
           setSelectedQueue={setSelectedQueue}
           disabled={disabled}
-          form={form as UseFormReturn<TextPostFormData>}
+          form={form}
           formScheduledFor={formScheduledFor}
           schedulingScheduledFor={schedulingScheduledFor}
           setSchedulingScheduledFor={setSchedulingScheduledFor}

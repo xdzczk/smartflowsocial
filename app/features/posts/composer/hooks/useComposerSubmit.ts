@@ -26,7 +26,6 @@ import {
   parseScheduledTime,
   buildRepostSchedules,
   buildQuoteSchedules,
-  type SignedEventLike,
 } from "../components/composer/composer-submit-utils";
 import {
   COMPOSER_CONTENT_REQUIRED,
@@ -621,7 +620,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
                   value: item.value,
                   unit: item.unit,
                 })),
-                signedEvent as SignedEventLike,
+                signedEvent,
                 setSigningError
               );
               if (repostSchedules == null) return false;
@@ -640,7 +639,7 @@ export function useComposerSubmit(options: UseComposerSubmitOptions) {
               const quoteSchedules = await buildQuoteSchedules(
                 scheduledForUnix,
                 quoteEntries,
-                signedEvent as SignedEventLike,
+                signedEvent,
                 tagArray,
                 setSigningError
               );

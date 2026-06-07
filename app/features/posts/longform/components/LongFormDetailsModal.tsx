@@ -1,4 +1,4 @@
-import { Link, useRouteLoaderData } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronRight } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
@@ -39,6 +39,7 @@ import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
 import { stripMarkdownToPlainText } from "~/lib/markdown-utils";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 import { useThreadView } from "~/lib/query/hooks/useApiQuery";
+import { useOptionalUser } from "~/lib/remix-utils";
 import {
   formatForDisplay,
   fromDate,
@@ -254,15 +255,7 @@ function LongFormDetailRail({
           {queueType && "name" in queueType ? (
             <div className="flex flex-col gap-1">
               <span className="text-text text-xs font-medium">Queue</span>
-              <QueueTypeCalm
-                queueType={
-                  queueType as {
-                    name: string;
-                    color?: string | null;
-                    id?: string;
-                  }
-                }
-              />
+              <QueueTypeCalm queueType={queueType} />
             </div>
           ) : null}
           {post.tags.length > 0 ? (
@@ -521,18 +514,8 @@ export default function LongFormDetailsModal({
   const [showEventData, setShowEventData] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const queryClient = useQueryClient();
-  const rootData = useRouteLoaderData("root") as
-    | {
-        user?: {
-          preferredNostrClient?: string;
-          customNostrClientBaseUrl?: string | null;
-        } | null;
-      }
-    | undefined;
-  const nostrUrls = useMemo(
-    () => getNostrClientUrlsFromUser(rootData?.user),
-    [rootData?.user]
-  );
+  const user = useOptionalUser();
+  const nostrUrls = useMemo(() => getNostrClientUrlsFromUser(user), [user]);
 
   const handleDelete = useCallback(() => {
     const postId = post.id;

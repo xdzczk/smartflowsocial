@@ -50,9 +50,7 @@ export async function loadDraftEditData(userId: string, postId: string) {
     post.nostrEvent as PostData["nostrEvent"];
   const postData: PostData = {
     ...rest,
-    queueType: convertPrismaQueueTypeToQueueType(
-      queueType as Parameters<typeof convertPrismaQueueTypeToQueueType>[0]
-    ),
+    queueType: convertPrismaQueueTypeToQueueType(queueType),
     signedEvent: signedEventValue,
     nostrEvent: nostrEventValue,
   } as unknown as PostData;

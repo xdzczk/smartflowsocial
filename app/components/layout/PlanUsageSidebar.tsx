@@ -5,6 +5,7 @@ import { useCallback, useMemo, useState } from "react";
 import { formatBytesForPlanMarketing } from "~/features/payments/limit-display";
 import type { PlanUsageSnapshot } from "~/features/payments/plan-usage.types";
 import { cn } from "~/lib/utils";
+import type { loader as dashboardLoader } from "~/routes/dashboard";
 
 const PLAN_USAGE_EXPANDED_LS_KEY = "sfs:dashboard-plan-usage-expanded";
 
@@ -433,9 +434,7 @@ export function PlanUsageSidebar({
   isDesktopExpanded,
   onMobileNavActiveClick,
 }: PlanUsageSidebarProps) {
-  const raw = useRouteLoaderData("routes/dashboard") as
-    | { planUsage?: PlanUsageSnapshot }
-    | undefined;
+  const raw = useRouteLoaderData<typeof dashboardLoader>("routes/dashboard");
   const snapshot = raw?.planUsage;
 
   const autoExpand = snapshot ? shouldAutoExpand(snapshot) : false;

@@ -142,7 +142,7 @@ export async function buildUserSignedFeedbackNip17GiftWraps(params: {
       randomKey
     );
 
-    out.push(giftWrap as SignedEvent);
+    out.push(giftWrap);
   }
 
   return out;

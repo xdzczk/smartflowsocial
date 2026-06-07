@@ -72,8 +72,8 @@ function parseQueueType(qt: unknown): string | QueueType {
     qt !== null &&
     "id" in qt &&
     "name" in qt &&
-    typeof (qt as { id: unknown; name: unknown }).id === "string" &&
-    typeof (qt as { id: unknown; name: unknown }).name === "string"
+    typeof qt.id === "string" &&
+    typeof qt.name === "string"
   ) {
     const queueTypeObj = qt as {
       id: string;
@@ -84,7 +84,7 @@ function parseQueueType(qt: unknown): string | QueueType {
       status?: unknown;
       [key: string]: unknown;
     };
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Type assertion needed for Remix loader data structure
+
     return {
       id: queueTypeObj.id,
       name: queueTypeObj.name,
@@ -145,7 +145,7 @@ function parseQueueType(qt: unknown): string | QueueType {
             ? queueTypeObj["hashTagPresetId"]
             : undefined,
       hashTagPreset: parseHashTagPreset(queueTypeObj["hashTagPreset"]),
-    } as QueueType;
+    };
   }
   return qt as string | QueueType;
 }
@@ -164,12 +164,9 @@ function parseHashTagPreset(preset: unknown): HashTagPreset | null {
     "id" in preset &&
     "name" in preset &&
     "tags" in preset &&
-    typeof (preset as { id: unknown; name: unknown; tags: unknown }).id ===
-      "string" &&
-    typeof (preset as { id: unknown; name: unknown; tags: unknown }).name ===
-      "string" &&
-    typeof (preset as { id: unknown; name: unknown; tags: unknown }).tags ===
-      "string"
+    typeof preset.id === "string" &&
+    typeof preset.name === "string" &&
+    typeof preset.tags === "string"
   ) {
     const typedPreset = preset as {
       id: string;

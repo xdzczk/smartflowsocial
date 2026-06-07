@@ -1,4 +1,4 @@
-import { Link, useRouteLoaderData } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import type { FetcherWithComponents } from "@remix-run/react";
 import { formatDistanceToNow } from "date-fns";
 import { MoreHorizontal, Repeat } from "lucide-react";
@@ -26,6 +26,7 @@ import {
   SMALL_ICON_SIZE_CLASS,
 } from "~/lib/icon-constants";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
+import { useOptionalUser } from "~/lib/remix-utils";
 
 import type {
   CombinedContent,
@@ -129,18 +130,8 @@ export function ContentListCard({
   attachedFollowUpItems = [],
 }: ContentListCardProps) {
   const { dateLocale } = useFormattedDate();
-  const rootData = useRouteLoaderData("root") as
-    | {
-        user?: {
-          preferredNostrClient?: string;
-          customNostrClientBaseUrl?: string | null;
-        } | null;
-      }
-    | undefined;
-  const nostrUrls = useMemo(
-    () => getNostrClientUrlsFromUser(rootData?.user),
-    [rootData?.user]
-  );
+  const user = useOptionalUser();
+  const nostrUrls = useMemo(() => getNostrClientUrlsFromUser(user), [user]);
   const mediaUrls = getMediaPreviewUrls(item, 4);
   const hasMedia = mediaUrls.length > 0;
   const blockRepostQuoteChain = isPureRepostSourceContent(item);
@@ -757,9 +748,7 @@ export function ContentListCard({
                         >
                           Reschedule
                         </DropdownMenuItem>
-                        {needsResignAfterQueueResume(
-                          child.originalData as PostData
-                        ) ? (
+                        {needsResignAfterQueueResume(child.originalData) ? (
                           <DropdownMenuItem
                             onSelect={() =>
                               onReschedulePost?.(child.originalData)

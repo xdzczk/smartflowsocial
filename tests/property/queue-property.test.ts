@@ -81,10 +81,10 @@ describe("Property-Based Tests: Queue Operations", () => {
         } | null>);
       // State transitions now use PostStateMachine, not updatePostStatus
 
-      const existingPost = (await mockPostFindUnique({
+      const existingPost = await mockPostFindUnique({
         where: { id: postId, userId },
         select: { currentState: true, nostrEventId: true },
-      })) as { currentState: string; nostrEventId: string | null } | null;
+      });
 
       if (!existingPost) {
         return { success: false, error: "Post not found" };

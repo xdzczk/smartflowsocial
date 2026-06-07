@@ -154,12 +154,7 @@ async function main() {
       throw new Error("parentUnix and child arg must be numbers");
     }
 
-    await createAttachedFollowupChain(
-      npub,
-      modeRaw as FollowupMode,
-      parentUnix,
-      childArg
-    );
+    await createAttachedFollowupChain(npub, modeRaw, parentUnix, childArg);
     process.exit(0);
   } catch (error) {
     console.error(

@@ -77,7 +77,7 @@ export function GiveawayNewBuilder({
 
   useEffect(() => {
     const d = saveFetcher.data;
-    if (d && d.ok === true && typeof d.giveawayId === "string") {
+    if (d?.ok === true && typeof d.giveawayId === "string") {
       navigate(`/dashboard/giveaway/detail/${d.giveawayId}`, {
         replace: true,
       });

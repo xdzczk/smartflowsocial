@@ -120,7 +120,7 @@ function readExistingDraft(): ComposerLocalSnapshotLike | null {
       parsed != null &&
       typeof parsed === "object" &&
       "content" in parsed &&
-      typeof (parsed as { content: unknown }).content === "string"
+      typeof parsed.content === "string"
     ) {
       return parsed as ComposerLocalSnapshotLike;
     }

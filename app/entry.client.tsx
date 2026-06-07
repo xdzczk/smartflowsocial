@@ -92,7 +92,7 @@ function initWebVitalsRUM() {
 
     let clsValue = 0;
     const clsObserver = new PerformanceObserver((entryList) => {
-      for (const entry of entryList.getEntries() as PerformanceEntry[]) {
+      for (const entry of entryList.getEntries()) {
         const layoutShift = entry as PerformanceEntry & {
           hadRecentInput?: boolean;
           value?: number;

@@ -45,7 +45,7 @@ export async function getPostsInScope(
       if (post?.currentState !== "PUBLISHED") {
         return [];
       }
-      return [post as PostWithQueueType];
+      return [post];
     }
     case "QUEUE": {
       const queue = await findQueueTypeFullByIdAndUser(

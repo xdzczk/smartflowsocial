@@ -22,6 +22,11 @@ export function BulkComposerPostCardReviewBody({
   showBatchRepostConditions: boolean;
 }) {
   const hasMedia = reviewDisplay.mediaUrl.trim().length > 0;
+  const previewList = post.files.length > 0 ? post.files : [];
+  const isVideoPreview =
+    previewList.length > 0 &&
+    typeof previewList[0]?.type === "string" &&
+    previewList[0].type.startsWith("video/");
 
   const mediaBlock = hasMedia ? (
     <MediaThumbnail
@@ -29,6 +34,7 @@ export function BulkComposerPostCardReviewBody({
       alt=""
       className="max-h-40 w-full max-w-44 rounded-lg object-cover sm:h-24 sm:max-h-none sm:w-24"
       onClick={() => onMediaClick(reviewDisplay.mediaUrl)}
+      forceType={isVideoPreview ? "video" : undefined}
     />
   ) : !reviewDisplay.caption ? (
     <div className="bg-surface-hover text-text-secondary flex h-24 w-full max-w-44 items-center justify-center rounded-lg text-xs sm:w-24">

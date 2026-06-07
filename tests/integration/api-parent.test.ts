@@ -374,12 +374,7 @@ describe("API: Parent", () => {
         data.parent &&
         typeof data.parent === "object" &&
         !Array.isArray(data.parent)
-          ? (data.parent as {
-              name?: string;
-              displayName?: string;
-              picture?: string;
-              npub?: string;
-            })
+          ? data.parent
           : null;
       expect(parent?.name).toBeUndefined();
     });

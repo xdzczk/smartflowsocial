@@ -284,7 +284,7 @@ describe("giveaway-actions", () => {
         engagementWeights: null,
         filters: null,
         winnerSnapshot: null,
-      } as unknown as Giveaway);
+      });
       const result = await previewGiveaway(userId, giveawayId);
       expect(result.error).toBe("Giveaway cannot be previewed");
     });
@@ -311,7 +311,7 @@ describe("giveaway-actions", () => {
         engagementWeights: null,
         filters: null,
         winnerSnapshot: null,
-      } as unknown as Giveaway);
+      });
       mockUpdateGiveawayRow.mockResolvedValue({});
 
       const result = await previewGiveaway(userId, giveawayId);
@@ -346,7 +346,7 @@ describe("giveaway-actions", () => {
         engagementWeights: null,
         filters: null,
         winnerSnapshot: null,
-      } as unknown as Giveaway);
+      });
       mockRunGiveawaySelectionPerEngagement.mockReturnValue([
         {
           pubkey: "pk1",
@@ -386,7 +386,7 @@ describe("giveaway-actions", () => {
         engagementWeights: null,
         filters: null,
         winnerSnapshot: null,
-      } as unknown as Giveaway);
+      });
       const result = await rerollGiveaway(userId, giveawayId);
       expect(result.error).toBe("Only previewed giveaways can be rerolled");
     });
@@ -422,7 +422,7 @@ describe("giveaway-actions", () => {
             satsPerWinner: 0,
           },
         ],
-      } as unknown as Giveaway);
+      });
       mockUpdateGiveawayRow.mockResolvedValue({});
 
       const result = await lockGiveaway(userId, giveawayId);
@@ -465,7 +465,7 @@ describe("giveaway-actions", () => {
             satsPerWinner: 1000,
           },
         ],
-      } as unknown as Giveaway);
+      });
 
       const result = await lockGiveaway(userId, giveawayId);
       expect(result.success).toBe(false);
@@ -496,7 +496,7 @@ describe("giveaway-actions", () => {
             satsPerWinner: 1000,
           },
         ],
-      } as unknown as Giveaway);
+      });
       mockUpdateGiveawayRow.mockResolvedValue({});
 
       const result = await lockGiveaway(userId, giveawayId);
@@ -520,7 +520,7 @@ describe("giveaway-actions", () => {
         winnerSnapshot: [
           { pubkey: "pk1", npub: "npub1", qualifyingActions: [] },
         ],
-      } as unknown as Giveaway);
+      });
 
       const result = await lockGiveaway(userId, giveawayId);
       expect(result.success).toBe(true);
@@ -543,7 +543,7 @@ describe("giveaway-actions", () => {
         engagementWeights: null,
         filters: null,
         winnerSnapshot: [],
-      } as unknown as Giveaway);
+      });
       const result = await cancelGiveaway(userId, giveawayId);
       expect(result.success).toBe(false);
       expect(result.error).toContain("Cannot cancel");
@@ -563,7 +563,7 @@ describe("giveaway-actions", () => {
         engagementWeights: null,
         filters: null,
         winnerSnapshot: null,
-      } as unknown as Giveaway);
+      });
       mockUpdateGiveawayRow.mockResolvedValue({});
 
       const result = await cancelGiveaway(userId, giveawayId);
@@ -590,7 +590,7 @@ describe("giveaway-actions", () => {
         engagementWeights: null,
         filters: null,
         winnerSnapshot: [],
-      } as unknown as Giveaway);
+      });
       const result = await markGiveawayPaidOut(userId, giveawayId);
       expect(result.success).toBe(false);
       expect(result.error).toContain("Only locked");
@@ -615,7 +615,7 @@ describe("giveaway-actions", () => {
         payoutState: {
           pk1: { status: "pending", updatedAt: new Date().toISOString() },
         },
-      } as unknown as Giveaway);
+      });
 
       const result = await markGiveawayPaidOut(userId, giveawayId);
       expect(result.success).toBe(false);
@@ -642,7 +642,7 @@ describe("giveaway-actions", () => {
         payoutState: {
           pk1: { status: "sent", updatedAt: new Date().toISOString() },
         },
-      } as unknown as Giveaway);
+      });
       mockUpdateGiveawayRow.mockResolvedValue({});
 
       const result = await markGiveawayPaidOut(userId, giveawayId);
@@ -672,7 +672,7 @@ describe("giveaway-actions", () => {
         payoutState: {
           pk1: { status: "pending", updatedAt: new Date().toISOString() },
         },
-      } as unknown as Giveaway);
+      });
       mockUpdateGiveawayRow.mockResolvedValue({});
 
       const result = await markGiveawayPaidOut(userId, giveawayId, {
@@ -701,7 +701,7 @@ describe("giveaway-actions", () => {
         engagementWeights: null,
         filters: null,
         winnerSnapshot: [],
-      } as unknown as Giveaway);
+      });
       const result = await deleteGiveaway(userId, giveawayId);
       expect(result.success).toBe(false);
       expect(mockDeleteGiveawayById).not.toHaveBeenCalled();
@@ -721,8 +721,8 @@ describe("giveaway-actions", () => {
         engagementWeights: null,
         filters: null,
         winnerSnapshot: null,
-      } as unknown as Giveaway);
-      mockDeleteGiveawayById.mockResolvedValue({} as unknown as Giveaway);
+      });
+      mockDeleteGiveawayById.mockResolvedValue({});
 
       const result = await deleteGiveaway(userId, giveawayId);
       expect(result.success).toBe(true);

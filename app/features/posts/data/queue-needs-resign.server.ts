@@ -91,16 +91,7 @@ export async function loadNeedsResignItemsForQueue(
   ]);
 
   const postsData: PostData[] = posts.map((post) => {
-    const { queueType, repostOf, quoteOf, quoteOfLongForm, ...rest } =
-      post as typeof post & {
-        repostOf?: {
-          fileUrl: string[];
-          postType: string | null;
-          signedEvent?: unknown;
-        } | null;
-        quoteOf?: { signedEvent?: unknown } | null;
-        quoteOfLongForm?: { signedEvent?: unknown } | null;
-      };
+    const { queueType, repostOf, quoteOf, quoteOfLongForm, ...rest } = post;
     const isRepostWithNoMedia =
       post.postKind === "REPOST" &&
       Boolean(repostOf) &&

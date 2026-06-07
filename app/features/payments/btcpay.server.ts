@@ -37,7 +37,7 @@ function extractBtcpayErrorMessage(data: unknown, fallback: string): string {
     data &&
     typeof data === "object" &&
     "message" in data &&
-    typeof (data as { message: unknown }).message === "string"
+    typeof data.message === "string"
   ) {
     return (data as { message: string }).message;
   }

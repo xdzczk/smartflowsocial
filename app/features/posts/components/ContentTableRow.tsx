@@ -1,4 +1,4 @@
-import { Link, useRouteLoaderData } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import type { FetcherWithComponents } from "@remix-run/react";
 import { MoreHorizontal, Repeat } from "lucide-react";
 import { useMemo } from "react";
@@ -31,6 +31,7 @@ import {
   SMALL_ICON_SIZE_CLASS,
 } from "~/lib/icon-constants";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
+import { useOptionalUser } from "~/lib/remix-utils";
 import { cn } from "~/lib/utils";
 
 import type {
@@ -385,18 +386,8 @@ export function ContentRowActions({
   onDelete?: (postId: string, postType: "post" | "longform") => void;
   attachedFollowUpItems?: CombinedContent[];
 }) {
-  const rootData = useRouteLoaderData("root") as
-    | {
-        user?: {
-          preferredNostrClient?: string;
-          customNostrClientBaseUrl?: string | null;
-        } | null;
-      }
-    | undefined;
-  const nostrUrls = useMemo(
-    () => getNostrClientUrlsFromUser(rootData?.user),
-    [rootData?.user]
-  );
+  const user = useOptionalUser();
+  const nostrUrls = useMemo(() => getNostrClientUrlsFromUser(user), [user]);
   const blockRepostQuoteChain = isPureRepostSourceContent(item);
   if (
     (type === "scheduled" || type === "published") &&

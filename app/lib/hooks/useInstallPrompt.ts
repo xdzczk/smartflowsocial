@@ -123,17 +123,11 @@ export function useInstallPrompt(): UseInstallPromptResult {
       setDeferredPrompt(null);
     };
 
-    window.addEventListener(
-      "beforeinstallprompt",
-      onBeforeInstall as EventListener
-    );
+    window.addEventListener("beforeinstallprompt", onBeforeInstall);
     window.addEventListener("appinstalled", onAppInstalled);
 
     return () => {
-      window.removeEventListener(
-        "beforeinstallprompt",
-        onBeforeInstall as EventListener
-      );
+      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
       window.removeEventListener("appinstalled", onAppInstalled);
     };
   }, []);

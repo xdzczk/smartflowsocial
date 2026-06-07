@@ -250,9 +250,7 @@ export default function TemplatesPage() {
     actionFetcher.submit(formData, { method: "post" });
   };
 
-  const detail = sheetTemplate
-    ? templateToDetailPayload(sheetTemplate as never)
-    : null;
+  const detail = sheetTemplate ? templateToDetailPayload(sheetTemplate) : null;
   const useHref =
     detail &&
     (detail.templateType === "LONGFORM"
@@ -435,14 +433,14 @@ export default function TemplatesPage() {
                                 <TextOnlyIndicatorChip />
                               )}
                               <span className="text-text-secondary text-xs sm:hidden">
-                                {formatTemplateUpdated(t as never, dateLocale)}
+                                {formatTemplateUpdated(t, dateLocale)}
                               </span>
                             </div>
                           </div>
 
                           <div className="flex shrink-0 flex-col gap-2 sm:min-w-[12rem] sm:items-end">
                             <span className="text-text-secondary hidden text-xs tabular-nums sm:block sm:text-right">
-                              {formatTemplateUpdated(t as never, dateLocale)}
+                              {formatTemplateUpdated(t, dateLocale)}
                             </span>
                             <div
                               role="toolbar"

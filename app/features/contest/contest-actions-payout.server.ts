@@ -149,10 +149,7 @@ export async function runContestPayoutBatchWithNwc(
   syncContestPayoutFromLedgerItems({
     state: payoutState,
     winnerPubkeys,
-    itemByPubkey: itemByPubkey as Map<
-      string,
-      { status: string; errorMessage: string | null }
-    >,
+    itemByPubkey: itemByPubkey,
     nowIso: now,
   });
 
@@ -261,10 +258,7 @@ export async function runContestPayoutBatchStepWithNwc(
   syncContestPayoutFromLedgerItems({
     state: payoutState,
     winnerPubkeys,
-    itemByPubkey: itemByPubkey as Map<
-      string,
-      { status: string; errorMessage: string | null }
-    >,
+    itemByPubkey: itemByPubkey,
     nowIso: now,
   });
 

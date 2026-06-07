@@ -88,7 +88,7 @@ export async function createDraftGroupVersion(
   await createDraftGroupVersionRow({
     draftGroupId,
     version,
-    snapshot: snapshot as unknown as object,
+    snapshot: snapshot,
     createdBy: userId,
   });
   const versions = await findDraftGroupVersionIds(draftGroupId);

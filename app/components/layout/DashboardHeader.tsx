@@ -1,9 +1,4 @@
-import {
-  Link,
-  useLocation,
-  useNavigate,
-  useRouteLoaderData,
-} from "@remix-run/react";
+import { Link, useLocation, useNavigate } from "@remix-run/react";
 import {
   CalendarDays,
   Check,
@@ -48,6 +43,7 @@ import { useSubscription, type FeatureName } from "~/features/payments/types";
 import { BRAND_NAME } from "~/lib/brand";
 import { useInstallPrompt } from "~/lib/hooks/useInstallPrompt";
 import { useIsMobile } from "~/lib/hooks/useIsMobile";
+import { useDashboardRouteLoaderData } from "~/lib/remix-utils";
 
 // Sidebar/nav icon tuning for Kanit: 18px, stroke 2.25 so icons feel co-equal with text (not decorative)
 const NAV_ICON_SIZE_CLASS = "inline-block size-[18px] shrink-0";
@@ -564,9 +560,7 @@ export default function Header({
     featureName: string;
   }>({ isOpen: false, feature: null, featureName: "" });
   const location = useLocation();
-  const dashboardLayoutData = useRouteLoaderData("routes/dashboard") as
-    | { isFirstRunDashboard?: boolean }
-    | undefined;
+  const dashboardLayoutData = useDashboardRouteLoaderData();
   const isFirstRunDashboard = dashboardLayoutData?.isFirstRunDashboard === true;
 
   const install = useInstallPrompt();

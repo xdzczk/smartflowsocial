@@ -110,22 +110,41 @@ export function BulkComposerPostCard({
   const canMoveUp = index > 0;
   const canMoveDown = index < totalPosts - 1;
 
+  const previewList = useMemo(
+    () => previewData.get(index) ?? [],
+    [previewData, index]
+  );
+  const fileUrlsFromDraft = useMemo(
+    () =>
+      Array.isArray(post.fileUrl)
+        ? post.fileUrl
+        : post.fileUrl
+          ? [post.fileUrl]
+          : [],
+    [post.fileUrl]
+  );
+
   const reviewDisplay = useMemo(() => {
     if (!preparedEvent) return null;
-    return computeBulkComposerReviewDisplay(
+    const display = computeBulkComposerReviewDisplay(
       preparedEvent,
       userTimezone,
       userTimeFormat,
       dateLocale
     );
-  }, [preparedEvent, userTimezone, userTimeFormat, dateLocale]);
-
-  const previewList = previewData.get(index) ?? [];
-  const fileUrlsFromDraft = Array.isArray(post.fileUrl)
-    ? post.fileUrl
-    : post.fileUrl
-      ? [post.fileUrl]
-      : [];
+    const localPreviewUrl = previewList[0]?.url ?? fileUrlsFromDraft[0] ?? "";
+    if (!display.mediaUrl.trim() && localPreviewUrl) {
+      return { ...display, mediaUrl: localPreviewUrl };
+    }
+    return display;
+  }, [
+    preparedEvent,
+    userTimezone,
+    userTimeFormat,
+    dateLocale,
+    previewList,
+    fileUrlsFromDraft,
+  ]);
 
   const queueTrigger = (
     <button

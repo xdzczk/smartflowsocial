@@ -90,14 +90,21 @@ export async function findLongFormPostStateTransitions(longFormPostId: string) {
 export async function findManyLongFormPosts(
   where: Prisma.LongFormPostWhereInput,
   options?: {
-    select?: Prisma.LongFormPostSelect;
+    select?: Prisma.LongFormPostFindManyArgs["select"];
     take?: number;
   }
 ) {
+  const take = options?.take;
+  if (options?.select) {
+    return prisma.longFormPost.findMany({
+      where,
+      select: options.select,
+      ...(take != null ? { take } : {}),
+    });
+  }
   return prisma.longFormPost.findMany({
     where,
-    ...(options?.select && { select: options.select }),
-    ...(options?.take != null && { take: options.take }),
+    ...(take != null ? { take } : {}),
   });
 }
 

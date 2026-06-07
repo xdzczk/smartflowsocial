@@ -450,7 +450,7 @@ describe("Subscription/Billing Loader Integration", () => {
         data.error &&
         typeof data.error === "object" &&
         !Array.isArray(data.error)
-          ? (data.error as { message?: string })
+          ? data.error
           : {};
       const errorMessage =
         typeof error.message === "string" ? error.message : "";

@@ -177,7 +177,7 @@ export function createMockLN(
   mockLN.onPaid = (options.onPaid ?? vi.fn()).mockReturnValue(mockLN);
   mockLN.onTimeout = (options.onTimeout ?? vi.fn()).mockReturnValue(mockLN);
 
-  return mockLN as unknown as InstanceType<typeof LN>;
+  return mockLN;
 }
 
 /**

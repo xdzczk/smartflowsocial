@@ -407,7 +407,7 @@ async function applyFixtures(
       if (presetId) {
         await prisma.hashTagPreset.upsert({
           where: { id: presetId },
-          update: preset as unknown as Prisma.HashTagPresetUpdateInput,
+          update: preset,
           create: preset as unknown as Prisma.HashTagPresetCreateInput,
         });
       } else {
@@ -479,7 +479,7 @@ async function applyFixtures(
       if (paymentId) {
         await prisma.payment.upsert({
           where: { id: paymentId },
-          update: payment as unknown as Prisma.PaymentUpdateInput,
+          update: payment,
           create: payment as unknown as Prisma.PaymentCreateInput,
         });
       } else {

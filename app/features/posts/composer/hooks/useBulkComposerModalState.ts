@@ -339,7 +339,7 @@ export function useBulkComposerModalState({
       "queueSummary" in data &&
         data.queueSummary &&
         typeof data.queueSummary === "object"
-        ? (data.queueSummary as Record<string, number>)
+        ? data.queueSummary
         : null
     );
     setModalPostId(firstPostId);

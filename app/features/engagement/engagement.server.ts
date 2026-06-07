@@ -109,7 +109,7 @@ function parseUserProfile(
   if (event.kind === 0 && event.content && event.pubkey) {
     try {
       const profile = JSON.parse(event.content) as Record<string, unknown>;
-      userProfiles.set(event.pubkey, profile as UserProfile);
+      userProfiles.set(event.pubkey, profile);
     } catch {
       // Ignore parse errors
     }
@@ -202,7 +202,7 @@ export function isQuotePost(
 ): boolean {
   if (!targetETag) return false;
 
-  const marker = targetETag[3] as string | undefined;
+  const marker = targetETag[3];
   if (marker !== "mention") {
     return false;
   }
@@ -219,7 +219,7 @@ export function isQuotePost(
 
 function isReply(targetETag: string[] | undefined): boolean {
   if (!targetETag) return false;
-  const marker = targetETag[3] as string | undefined;
+  const marker = targetETag[3];
   return marker === "reply" || marker === "root";
 }
 

@@ -322,16 +322,9 @@ export function DraftsTable({
             </thead>
             <tbody>
               {posts.map((post, rowIndex) => {
-                const preview = buildDraftRowPreview(
-                  post as Parameters<typeof buildDraftRowPreview>[0]
-                );
-                const typeLabel = draftTypeLabel(
-                  post as Parameters<typeof draftTypeLabel>[0]
-                );
-                const resumeUrl = getShortDraftComposeUrl(
-                  post.id,
-                  post as Parameters<typeof getShortDraftComposeUrl>[1]
-                );
+                const preview = buildDraftRowPreview(post);
+                const typeLabel = draftTypeLabel(post);
+                const resumeUrl = getShortDraftComposeUrl(post.id, post);
                 const updatedIso = post.updatedAt ?? post.createdAt;
                 const combinedRow = combinedContent[rowIndex];
                 const p = post as Post & {
@@ -642,16 +635,8 @@ export function DraftsTable({
                             onResumeDraft={() =>
                               onResume(item.originalData as unknown as Post)
                             }
-                            deleteFetcher={
-                              deleteFetcher as Parameters<
-                                typeof ContentListCard
-                              >[0]["deleteFetcher"]
-                            }
-                            draftsActionFetcher={
-                              draftsActionFetcher as Parameters<
-                                typeof ContentListCard
-                              >[0]["draftsActionFetcher"]
-                            }
+                            deleteFetcher={deleteFetcher}
+                            draftsActionFetcher={draftsActionFetcher}
                             onMenuOpenChange={(open) =>
                               setOpenMenuRowKey(open ? virtualRow.key : null)
                             }
@@ -711,16 +696,8 @@ export function DraftsTable({
                       onResumeDraft={() =>
                         onResume(item.originalData as unknown as Post)
                       }
-                      deleteFetcher={
-                        deleteFetcher as Parameters<
-                          typeof ContentListCard
-                        >[0]["deleteFetcher"]
-                      }
-                      draftsActionFetcher={
-                        draftsActionFetcher as Parameters<
-                          typeof ContentListCard
-                        >[0]["draftsActionFetcher"]
-                      }
+                      deleteFetcher={deleteFetcher}
+                      draftsActionFetcher={draftsActionFetcher}
                       onMenuOpenChange={(open) =>
                         setOpenMenuRowKey(open ? virtualRow.key : null)
                       }

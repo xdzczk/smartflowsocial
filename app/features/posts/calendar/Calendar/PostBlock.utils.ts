@@ -206,9 +206,7 @@ export function getQueueColorStyle(
   }
 
   if (token) {
-    const bundle = getQueueColorBundle(
-      token as Parameters<typeof getQueueColorBundle>[0]
-    );
+    const bundle = getQueueColorBundle(token);
     return {
       backgroundColor: bundle.surface,
       color: bundle.accent,

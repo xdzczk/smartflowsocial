@@ -413,7 +413,7 @@ describe("API: Payment Status", () => {
 
   describe("Loader Handler", () => {
     it("should return method not allowed for GET requests", async () => {
-      const loaderFn = loader as () => Promise<Response>;
+      const loaderFn = loader;
       const response = await loaderFn();
       const dataRaw: unknown = await response.json();
       const data =

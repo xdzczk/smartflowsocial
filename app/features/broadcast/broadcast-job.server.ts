@@ -60,7 +60,7 @@ export async function runBroadcastDmJob(
     },
   });
 
-  if (!row || row.campaign.userId !== userId) {
+  if (row?.campaign.userId !== userId) {
     logInfo("broadcast_dm_skip_missing_recipient", { recipientId, campaignId });
     return { success: true, skipped: true };
   }

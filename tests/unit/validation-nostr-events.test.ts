@@ -34,13 +34,9 @@ describe("Nostr Event Validation", () => {
     });
 
     it("should return null for non-object input", () => {
-      expect(
-        validateSignedEvent("string" as unknown as Prisma.JsonValue)
-      ).toBeNull();
-      expect(
-        validateSignedEvent(123 as unknown as Prisma.JsonValue)
-      ).toBeNull();
-      expect(validateSignedEvent([] as unknown as Prisma.JsonValue)).toBeNull();
+      expect(validateSignedEvent("string")).toBeNull();
+      expect(validateSignedEvent(123)).toBeNull();
+      expect(validateSignedEvent([])).toBeNull();
     });
 
     it("should return validated SignedEvent for valid input", () => {
@@ -167,11 +163,9 @@ describe("Nostr Event Validation", () => {
     });
 
     it("should return null for non-object input", () => {
-      expect(
-        validateNostrEvent("string" as unknown as Prisma.JsonValue)
-      ).toBeNull();
-      expect(validateNostrEvent(123 as unknown as Prisma.JsonValue)).toBeNull();
-      expect(validateNostrEvent([] as unknown as Prisma.JsonValue)).toBeNull();
+      expect(validateNostrEvent("string")).toBeNull();
+      expect(validateNostrEvent(123)).toBeNull();
+      expect(validateNostrEvent([])).toBeNull();
     });
 
     it("should return validated NostrEvent for valid input", () => {

@@ -118,8 +118,7 @@ function parseLoaderData(loaderData: unknown) {
           colorToken: colorToken ?? undefined,
           description: undefined,
           scheduleType,
-          scheduleConfig:
-            scheduleConfig as unknown as QueueType["scheduleConfig"],
+          scheduleConfig: scheduleConfig,
           isEnabled,
           userId: userIdVal,
         };

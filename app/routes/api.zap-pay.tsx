@@ -68,7 +68,7 @@ export async function action({ request }: ActionFunctionArgs) {
     typeof body === "object" &&
     body !== null &&
     "invoice" in body &&
-    typeof (body as { invoice: unknown }).invoice === "string"
+    typeof body.invoice === "string"
       ? (body as { invoice: string }).invoice.trim()
       : "";
 

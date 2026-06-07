@@ -1,9 +1,9 @@
-import { useRouteLoaderData } from "@remix-run/react";
 import { Laptop, Moon, Sun } from "lucide-react";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
 import { Button } from "~/components/ui/button";
 import { INLINE_ICON_SIZE_CLASS } from "~/lib/icon-constants";
+import { useOptionalUser } from "~/lib/remix-utils";
 import {
   applyThemePreferenceToDocument,
   getSessionThemeOverride,
@@ -41,10 +41,7 @@ function readSessionSnapshot(): StoredThemePreference | null {
 }
 
 export function ThemeToggle() {
-  const rootData = useRouteLoaderData("root") as
-    | { user?: RootLoaderUser }
-    | undefined;
-  const user = rootData?.user ?? null;
+  const user = useOptionalUser();
   const accountTheme = useMemo(() => normalizeAccountTheme(user), [user]);
 
   const [stored, setStored] = useLocalStorage<StoredThemePreference>(

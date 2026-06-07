@@ -194,12 +194,8 @@ export async function getPublishedDashboardData({
         typeof postObj["queueType"] === "object" &&
         "id" in postObj["queueType"] &&
         "name" in postObj["queueType"] &&
-        typeof (postObj["queueType"] as { id: unknown; name: unknown })[
-          "id"
-        ] === "string" &&
-        typeof (postObj["queueType"] as { id: unknown; name: unknown })[
-          "name"
-        ] === "string"
+        typeof postObj["queueType"]["id"] === "string" &&
+        typeof postObj["queueType"]["name"] === "string"
           ? (postObj["queueType"] as {
               id: string;
               name: string;

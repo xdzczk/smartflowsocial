@@ -56,8 +56,7 @@ export class TemplateFactory {
       updatedAt: this.options.updatedAt ?? new Date(),
       postId: this.options.postId ?? null,
       longFormPostId: this.options.longFormPostId ?? null,
-      templateType: (this.options.templateType ??
-        "POST") as Template["templateType"],
+      templateType: this.options.templateType ?? "POST",
     };
     return template;
   }

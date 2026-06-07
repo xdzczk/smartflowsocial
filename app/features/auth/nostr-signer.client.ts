@@ -59,8 +59,7 @@ export class Nip07Signer implements NostrSigner {
     if (!window.nostr) {
       throw new Error("SIGNER_NOT_FOUND");
     }
-    const signed = await window.nostr.signEvent(event);
-    return signed as SignedEvent;
+    return await window.nostr.signEvent(event);
   }
 
   async nip04Encrypt(
@@ -594,11 +593,11 @@ export class Nip46Signer implements NostrSigner {
 
   async signEvent(event: NostrEvent): Promise<SignedEvent> {
     this.status = "ready";
-    return (await this.rpc(
+    return await this.rpc(
       () => this.inner.signEvent(event),
       NIP46_RPC_TIMEOUTS.signEvent,
       "sign_event"
-    )) as SignedEvent;
+    );
   }
 
   async nip04Encrypt(

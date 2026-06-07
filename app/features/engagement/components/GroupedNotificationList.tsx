@@ -1,4 +1,4 @@
-import { Link, useRouteLoaderData } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import {
   Bell,
   Heart,
@@ -29,12 +29,9 @@ import {
   INLINE_ICON_SIZE_CLASS,
   INLINE_ICON_STROKE,
 } from "~/lib/icon-constants";
-import {
-  eventUrl,
-  getNostrClientConfig,
-  getNostrClientDisplayName,
-} from "~/lib/nostr-client-urls";
+import { eventUrl, getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
 import type { NostrClientConfig } from "~/lib/nostr-client-urls";
+import { useOptionalUser } from "~/lib/remix-utils";
 
 import type { Notification } from "../engagement.server";
 import type { ReplyTemplate } from "../hooks/useReplyTemplates";
@@ -148,27 +145,10 @@ export default function GroupedNotificationList({
   setActiveNotificationEventId,
 }: GroupedNotificationListProps) {
   const { userTimezone } = useFormattedDate();
-  const rootData = useRouteLoaderData("root") as
-    | {
-        user?: {
-          preferredNostrClient?: string;
-          customNostrClientBaseUrl?: string | null;
-        } | null;
-      }
-    | undefined;
-  const nostrClientConfig = useMemo(
-    () =>
-      getNostrClientConfig(
-        rootData?.user?.preferredNostrClient,
-        rootData?.user?.customNostrClientBaseUrl
-      ),
-    [
-      rootData?.user?.preferredNostrClient,
-      rootData?.user?.customNostrClientBaseUrl,
-    ]
-  );
-  const viewEventLabel = getNostrClientDisplayName(
-    rootData?.user?.preferredNostrClient
+  const user = useOptionalUser();
+  const { config: nostrClientConfig, viewEventLabel } = useMemo(
+    () => getNostrClientUrlsFromUser(user),
+    [user]
   );
 
   if (groupedNotifications.length === 0) {

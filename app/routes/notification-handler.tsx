@@ -29,7 +29,7 @@ export default function NotificationHandler() {
       handleDeepLink({
         postId,
         publishAttemptId: publishAttemptId ?? undefined,
-        action: action as "publish_success" | "publish_failure",
+        action: action,
       });
     } else {
       // No post ID, redirect to dashboard

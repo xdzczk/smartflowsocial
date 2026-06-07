@@ -6,8 +6,7 @@ import { cn } from "~/lib/utils";
 function getParsedNostrProfile(user: User): Record<string, unknown> | null {
   const raw = user.nostrProfile;
   if (raw == null) return null;
-  if (typeof raw === "object" && !Array.isArray(raw))
-    return raw as Record<string, unknown>;
+  if (typeof raw === "object" && !Array.isArray(raw)) return raw;
   if (typeof raw === "string") {
     try {
       const parsed = JSON.parse(raw) as unknown;

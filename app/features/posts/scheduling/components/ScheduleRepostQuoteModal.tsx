@@ -98,7 +98,7 @@ function validateScheduleInput(
       ? "Repost/quote must be scheduled at or after the original post's scheduled time."
       : "Please select a date and time in the future.";
   }
-  const signed = originalSignedEvent as SignedEventShape;
+  const signed = originalSignedEvent;
   return { scheduledForUnix, signed };
 }
 

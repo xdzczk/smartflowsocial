@@ -266,10 +266,7 @@ export function useEngagementData() {
     typeof rawData.engagementItemStates === "object" &&
     rawData.engagementItemStates !== null && // eslint-disable-line @typescript-eslint/no-unnecessary-condition -- defensive guard for loader
     !Array.isArray(rawData.engagementItemStates)
-      ? (rawData.engagementItemStates as Record<
-          string,
-          EngagementItemStateValue
-        >)
+      ? rawData.engagementItemStates
       : {};
   const engagementLinkedActions: Record<string, EngagementLinkedAction[]> =
     rawData.engagementLinkedActions ?? {};

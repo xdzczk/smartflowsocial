@@ -120,12 +120,9 @@ function isValidHashTagPreset(preset: unknown): preset is {
     "id" in preset &&
     "name" in preset &&
     "tags" in preset &&
-    typeof (preset as { id: unknown; name: unknown; tags: unknown }).id ===
-      "string" &&
-    typeof (preset as { id: unknown; name: unknown; tags: unknown }).name ===
-      "string" &&
-    typeof (preset as { id: unknown; name: unknown; tags: unknown }).tags ===
-      "string"
+    typeof preset.id === "string" &&
+    typeof preset.name === "string" &&
+    typeof preset.tags === "string"
   );
 }
 

@@ -88,10 +88,7 @@ export async function getWindowNostrLikeSigner(): Promise<{
     };
   }
   if (typeof window !== "undefined" && window.nostr) {
-    return window.nostr as {
-      getPublicKey: () => Promise<string>;
-      signEvent: (event: NostrEvent) => Promise<SignedEvent>;
-    };
+    return window.nostr;
   }
   return null;
 }

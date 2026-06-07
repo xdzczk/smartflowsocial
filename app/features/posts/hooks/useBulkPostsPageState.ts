@@ -197,6 +197,20 @@ export function useBulkPostsPageState({
   }, [posts]);
 
   const bulkLocalRestoredAppliedRef = useRef(false);
+  const bulkDraftPersistSuppressedRef = useRef(false);
+
+  const clearBulkComposerWorkspace = useCallback(() => {
+    bulkLocalRestoredAppliedRef.current = true;
+    bulkDraftPersistSuppressedRef.current = false;
+    clearBulkLocalSnapshot();
+    void clearAllBulkPendingFiles();
+    setPosts([]);
+    setPreparedEvents([]);
+    setBulkComposerStage("build");
+    setFocusPostIndex(null);
+    setFirstItemTimeManuallyChanged(false);
+  }, [clearBulkLocalSnapshot]);
+
   useEffect(() => {
     interface Restored {
       rows: Array<{
@@ -209,6 +223,11 @@ export function useBulkPostsPageState({
       }>;
     }
     const restored = bulkLocalRestored as Restored | undefined | null;
+    if (searchParams.get("bulkScheduled") === "true") {
+      clearBulkLocalSnapshot();
+      bulkLocalRestoredAppliedRef.current = true;
+      return;
+    }
     if (
       !restored ||
       restored.rows.length === 0 ||
@@ -240,10 +259,10 @@ export function useBulkPostsPageState({
       );
       setPosts(initialPosts);
     })();
-  }, [bulkLocalRestored, groupId]);
+  }, [bulkLocalRestored, groupId, searchParams, clearBulkLocalSnapshot]);
 
   useEffect(() => {
-    if (groupId) return;
+    if (groupId || bulkDraftPersistSuppressedRef.current) return;
     saveBulkLocalSnapshot({
       rows: posts.map((p) => ({
         clientId: p.clientId,
@@ -270,7 +289,7 @@ export function useBulkPostsPageState({
   }, [groupId, posts]);
 
   const flushBulkDraftPersist = useCallback(() => {
-    if (groupId) return;
+    if (groupId || bulkDraftPersistSuppressedRef.current) return;
     flushBulkLocalSnapshot({
       rows: postsRef.current.map((p) => ({
         clientId: p.clientId,
@@ -300,10 +319,18 @@ export function useBulkPostsPageState({
 
   useEffect(() => {
     if (fetcher.state === "submitting") {
+      bulkDraftPersistSuppressedRef.current = true;
       clearBulkLocalSnapshot();
       void clearAllBulkPendingFiles();
+      return;
     }
-  }, [fetcher.state, clearBulkLocalSnapshot]);
+    if (
+      fetcher.state === "idle" &&
+      searchParams.get("bulkScheduled") !== "true"
+    ) {
+      bulkDraftPersistSuppressedRef.current = false;
+    }
+  }, [fetcher.state, searchParams, clearBulkLocalSnapshot]);
 
   useEffect(() => {
     if (bulkDraftGroupPosts.length > 0) {
@@ -368,6 +395,7 @@ export function useBulkPostsPageState({
       !modalPostId &&
       !showPublishModal
     ) {
+      clearBulkComposerWorkspace();
       const postCount = count ? parseInt(count, 10) : null;
       setBulkPostCount(postCount);
       setBulkSuccessLastAt(lastScheduledAt ?? null);
@@ -421,7 +449,13 @@ export function useBulkPostsPageState({
         }
       })();
     }
-  }, [searchParams, modalPostId, showPublishModal, setSearchParams]);
+  }, [
+    searchParams,
+    modalPostId,
+    showPublishModal,
+    setSearchParams,
+    clearBulkComposerWorkspace,
+  ]);
 
   const state = {
     posts,
@@ -827,6 +861,7 @@ export function useBulkPostsPageState({
     handleIncludeHashtagsInNoteBodyChange,
     duplicatePost,
     handleReorderBulkPost,
+    clearBulkComposerWorkspace,
   };
 
   return { state, handlers };

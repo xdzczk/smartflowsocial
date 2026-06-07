@@ -186,7 +186,7 @@ describe("Published Posts Sort", () => {
       const sorted = sortPublishedPosts(
         posts,
         { key: "likes", direction: "desc" },
-        stats as never
+        stats
       );
       const first: PostData = sorted[0]!;
       expect(first.id).toBe("1");

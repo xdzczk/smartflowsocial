@@ -38,10 +38,7 @@ function rootUserFromData(
   if (!data || typeof data !== "object") return null;
   const u = (data as { user?: unknown }).user;
   if (!u || typeof u !== "object") return null;
-  return u as {
-    preferredNostrClient?: string | null;
-    customNostrClientBaseUrl?: string | null;
-  };
+  return u;
 }
 
 function headerToneClassForStatus(status: string): string {

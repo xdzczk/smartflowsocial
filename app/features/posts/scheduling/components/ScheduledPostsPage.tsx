@@ -600,12 +600,8 @@ export default function ScheduledPostsPage() {
               userTimezone={userTimezone}
               userTimeFormat={userTimeFormat}
               onPostClick={(post) => setSelectedPost(post)}
-              onEditPost={(post) =>
-                handleEditPost(post as PostData | LongFormPostData)
-              }
-              onReschedulePost={(post) =>
-                handleReschedulePost(post as PostData | LongFormPostData)
-              }
+              onEditPost={(post) => handleEditPost(post)}
+              onReschedulePost={(post) => handleReschedulePost(post)}
               onMediaClick={handleMediaClick}
               bulkDeleteState={bulkDeleteFetcher.state}
               onScheduleRepost={(post) =>
@@ -724,16 +720,7 @@ export default function ScheduledPostsPage() {
           onConfirm={handleModalSuccess}
           user={user ? (validateUserData(user) ?? undefined) : undefined}
           queueTypes={queueTypes}
-          hashTagPresets={
-            Array.isArray(hashTagPresets)
-              ? (hashTagPresets as Array<{
-                  id: string;
-                  name: string;
-                  tags: string;
-                  description?: string | null;
-                }>)
-              : []
-          }
+          hashTagPresets={Array.isArray(hashTagPresets) ? hashTagPresets : []}
         />
       ) : null}
 
@@ -781,13 +768,7 @@ export default function ScheduledPostsPage() {
           }}
           queueTypes={queueTypes}
           hashTagPresets={
-            Array.isArray(hashTagPresets)
-              ? (hashTagPresets as Array<{
-                  id: string;
-                  name: string;
-                  tags: string;
-                }>)
-              : undefined
+            Array.isArray(hashTagPresets) ? hashTagPresets : undefined
           }
         />
       ) : null}

@@ -368,7 +368,7 @@ async function handleNewPostActionImpl(
       return json({ error: "Missing draftId for update." }, { status: 400 });
     }
     const existingDraft = await getPostById({ id: draftId, userId });
-    if (!existingDraft || existingDraft.currentState !== "DRAFT") {
+    if (existingDraft?.currentState !== "DRAFT") {
       return json(
         { error: "Draft no longer exists or is not editable." },
         { status: 404 }

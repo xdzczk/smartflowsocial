@@ -273,11 +273,7 @@ export default function PublishedPostsPage() {
   // Memoize sorted posts to prevent unnecessary re-sorting on every render
   // Must be called before any early returns to follow React Hooks rules
   const sortedPosts = useMemo(() => {
-    return sortPublishedPosts(
-      posts,
-      sortConfig,
-      stats as Record<string, unknown> | undefined
-    );
+    return sortPublishedPosts(posts, sortConfig, stats);
   }, [posts, sortConfig, stats]);
 
   // Memoize filtered posts by tab (Posts = original only, Reposts = repost only) and search

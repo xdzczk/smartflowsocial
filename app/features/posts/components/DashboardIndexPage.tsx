@@ -54,6 +54,7 @@ import {
   extractPostData,
 } from "~/lib/validation/combined-content";
 import { validateUserData } from "~/lib/validation/user-data";
+import type { loader as dashboardLoader } from "~/routes/dashboard";
 
 function getUserTimezone(user: unknown): string | undefined {
   if (
@@ -632,12 +633,8 @@ export default function DashboardIndexPage() {
   const [queueDialogEditing, setQueueDialogEditing] =
     useState<QueueType | null>(null);
 
-  const dashboardRouteData = useRouteLoaderData("routes/dashboard") as
-    | {
-        nip88PollsEnabled?: boolean;
-        planUsage?: { queuesUsed: number; queuesLimit: number | null };
-      }
-    | undefined;
+  const dashboardRouteData =
+    useRouteLoaderData<typeof dashboardLoader>("routes/dashboard");
   const nip88PollsEnabled = Boolean(dashboardRouteData?.nip88PollsEnabled);
   const planUsage = dashboardRouteData?.planUsage;
   const queuesLimit = planUsage?.queuesLimit ?? null;
@@ -723,7 +720,7 @@ export default function DashboardIndexPage() {
   }, [showSuccessMessage]);
 
   const queueTypesFiltered: QueueType[] = Array.isArray(queueTypes)
-    ? (queueTypes as QueueType[])
+    ? queueTypes
     : [];
   const hasAnyQueue = queueTypesFiltered.length > 0;
 

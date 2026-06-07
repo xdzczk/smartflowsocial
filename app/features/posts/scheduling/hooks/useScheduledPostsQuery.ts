@@ -418,14 +418,12 @@ function parsePagePosts(pageData: Record<string, unknown>) {
       ? pageData["longformPosts"]
       : [];
   const pagePosts: PostData[] = Array.isArray(pagePostsRaw)
-    ? fromPostDTOArray(pagePostsRaw as unknown as PostDTO[])
+    ? fromPostDTOArray(pagePostsRaw)
     : [];
   const pageLongformPosts: LongFormPostData[] = Array.isArray(
     pageLongformPostsRaw
   )
-    ? fromLongFormPostDTOArray(
-        pageLongformPostsRaw as unknown as LongFormPostDTO[]
-      )
+    ? fromLongFormPostDTOArray(pageLongformPostsRaw)
     : [];
   return { pagePosts, pageLongformPosts };
 }
@@ -465,9 +463,7 @@ export function useScheduledPostsInfiniteData() {
 
   // Process each page
   for (const pageData of allPages) {
-    const { pagePosts, pageLongformPosts } = parsePagePosts(
-      pageData as Record<string, unknown>
-    );
+    const { pagePosts, pageLongformPosts } = parsePagePosts(pageData);
     allPostsUnsorted.push(...pagePosts);
     allLongformPosts.push(...pageLongformPosts);
   }

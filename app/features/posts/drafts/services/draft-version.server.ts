@@ -95,7 +95,7 @@ export async function createShortDraftVersion(
   await createDraftVersionShort({
     postId,
     version,
-    snapshot: snapshot as unknown as object,
+    snapshot: snapshot,
     createdBy: userId,
   });
   await deleteOldVersionsBeyondLimit(postId, null, VERSION_LIMIT);

@@ -1,4 +1,4 @@
-import { Form, useFetcher, Link, useRouteLoaderData } from "@remix-run/react";
+import { Form, useFetcher, Link } from "@remix-run/react";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { toast } from "react-hot-toast";
 
@@ -33,6 +33,7 @@ import { InvoiceModal } from "~/features/payments/components/InvoiceModal";
 import { usePaymentPolling } from "~/features/payments/hooks/usePaymentPolling";
 import { BRAND_NAME, poweredByBrand } from "~/lib/brand";
 import { getNostrClientUrlsFromUser } from "~/lib/nostr-client-urls";
+import { useOptionalUser } from "~/lib/remix-utils";
 import { cn } from "~/lib/utils";
 
 import { giveawayStatusPillClass } from "../giveaway-status-ui";
@@ -139,18 +140,8 @@ export function GiveawayDetailPage({
   receiptSummaryLine = null,
   publicSummaryText = null,
 }: GiveawayDetailPageProps) {
-  const rootData = useRouteLoaderData("root") as
-    | {
-        user?: {
-          preferredNostrClient?: string;
-          customNostrClientBaseUrl?: string | null;
-        } | null;
-      }
-    | undefined;
-  const nostrUrls = useMemo(
-    () => getNostrClientUrlsFromUser(rootData?.user),
-    [rootData?.user]
-  );
+  const user = useOptionalUser();
+  const nostrUrls = useMemo(() => getNostrClientUrlsFromUser(user), [user]);
   const previewFetcher = useFetcher<{
     winners?: GiveawayWinnerEntry[];
     error?: string;

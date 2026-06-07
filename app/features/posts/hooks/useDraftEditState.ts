@@ -249,15 +249,7 @@ export function useDraftEditState({
           formData.append("useHashtagPresets", "on");
         }
 
-        const mainSigned = result.signedEvent as {
-          id: string;
-          pubkey: string;
-          created_at: number;
-          kind: number;
-          tags: string[][];
-          content: string;
-          sig: string;
-        };
+        const mainSigned = result.signedEvent;
 
         const mainScheduledUnix = result.scheduledForUnix;
         if (alsoScheduleRepost && repostDelayList.length > 0) {

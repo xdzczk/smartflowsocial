@@ -326,7 +326,7 @@ export async function loadPlansData(request: Request) {
     currentSubscription != null
       ? isSubscriptionPeriodExpired({
           planId: currentSubscription.planId ?? "",
-          status: currentSubscription.status as string,
+          status: currentSubscription.status,
           currentPeriodEnd: currentSubscription.currentPeriodEnd,
           Plan: currentSubscription.Plan
             ? {

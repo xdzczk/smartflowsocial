@@ -102,14 +102,9 @@ export async function createPlanInvoice({
     }>;
   };
   try {
-    const request = (await withOwnerWalletInvoiceRequestTimeout(
+    const request = await withOwnerWalletInvoiceRequestTimeout(
       ln.requestPayment(USD(amountUsd) as unknown as { amount: number })
-    )) as unknown as {
-      onPaid: (callback: () => void) => {
-        onTimeout: (seconds: number, callback: () => void) => void;
-      };
-      onTimeout: (seconds: number, callback: () => void) => void;
-    };
+    );
 
     const paymentId = `${planId}_${Date.now()}_${userId}`;
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
@@ -131,7 +126,7 @@ export async function createPlanInvoice({
           paymentHashString,
           requestStructure: Object.keys(
             typeof request === "object" && !Array.isArray(request)
-              ? (request as Record<string, unknown>)
+              ? request
               : {}
           ),
         }

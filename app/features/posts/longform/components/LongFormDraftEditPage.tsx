@@ -80,7 +80,7 @@ export default function LongFormDraftEditPage() {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime type guard for Remix serialized data
     post != null &&
     "id" in post &&
-    typeof (post as { id: unknown }).id === "string"
+    typeof post.id === "string"
       ? (post as {
           id: string;
           title?: string;
@@ -108,8 +108,8 @@ export default function LongFormDraftEditPage() {
         qt !== null &&
         "id" in qt &&
         "name" in qt &&
-        typeof (qt as { id: unknown; name: unknown }).id === "string" &&
-        typeof (qt as { id: unknown; name: unknown }).name === "string"
+        typeof qt.id === "string" &&
+        typeof qt.name === "string"
     )
     .map((qt) => {
       const inc = (qt as { includeHashtagsInNoteBody?: unknown })
@@ -200,12 +200,9 @@ export default function LongFormDraftEditPage() {
       "id" in preset &&
       "name" in preset &&
       "tags" in preset &&
-      typeof (preset as { id: unknown; name: unknown; tags: unknown }).id ===
-        "string" &&
-      typeof (preset as { id: unknown; name: unknown; tags: unknown }).name ===
-        "string" &&
-      typeof (preset as { id: unknown; name: unknown; tags: unknown }).tags ===
-        "string"
+      typeof preset.id === "string" &&
+      typeof preset.name === "string" &&
+      typeof preset.tags === "string"
   );
 
   const navigate = useNavigate();

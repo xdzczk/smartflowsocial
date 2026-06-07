@@ -3,7 +3,6 @@
  * Centralized action processing for draft edit page
  */
 
-import type { SignedEvent } from "~/features/nostr/types";
 import {
   assertScheduleCapacity,
   ScheduleCapExceededError,
@@ -267,7 +266,7 @@ async function createRepostAndQuotePostsFromResume(
         isQuotedPost: false,
         repostOfPostId: postId,
         postKind: "REPOST",
-        signedEvent: item.signedEvent as SignedEvent,
+        signedEvent: item.signedEvent,
         ...(isAttachableParent
           ? {
               parentScheduledActionId: postId,
@@ -315,7 +314,7 @@ async function createRepostAndQuotePostsFromResume(
         isQuotedPost: true,
         quoteOfPostId: postId,
         postKind: "QUOTE",
-        signedEvent: item.signedEvent as SignedEvent,
+        signedEvent: item.signedEvent,
         ...(isAttachableParent
           ? {
               parentScheduledActionId: postId,
@@ -448,11 +447,7 @@ function parseQuoteListFromResume(resumeData: {
             caption: p.caption,
           }))
           .filter((p) => p.signedEvent != null);
-        list = mapped as Array<{
-          scheduledFor: number;
-          signedEvent: NonNullable<ReturnType<typeof parseSignedEvent>>;
-          caption?: string;
-        }>;
+        list = mapped;
       }
     } catch {
       list = [];

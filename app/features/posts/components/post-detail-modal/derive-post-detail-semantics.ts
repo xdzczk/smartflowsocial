@@ -75,7 +75,7 @@ export function isQuoteLikeKind1(
   targetETag: string[] | undefined
 ): boolean {
   if (!targetETag) return false;
-  const marker = targetETag[3] as string | undefined;
+  const marker = targetETag[3];
   if (marker !== "mention") return false;
   const eventContent = event.content ?? "";
   const quotedId = targetETag[1];

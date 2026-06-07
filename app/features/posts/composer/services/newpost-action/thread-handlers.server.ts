@@ -4,7 +4,7 @@
 
 import { json, redirect } from "@remix-run/node";
 
-import type { NostrEvent, SignedEvent } from "~/features/nostr/types";
+import type { SignedEvent } from "~/features/nostr/types";
 import { resolveQueueTypeId } from "~/features/posts/server";
 import { PublishNowUseCase } from "~/features/posts/server/publishing";
 import { assertMediaUrlsReady } from "~/features/upload/services/media-readiness.server";
@@ -278,7 +278,7 @@ export async function handleThreadAction(
       hashTagPresetId: hashTagPresetIdResolved,
       isRecyclable: false,
       signedEvent,
-      nostrEvent: signedEvent as unknown as NostrEvent,
+      nostrEvent: signedEvent,
       scheduledFor: scheduledForUnix,
       nominalScheduledFor:
         i === 0 && nominalFirstUnix != null ? nominalFirstUnix : undefined,

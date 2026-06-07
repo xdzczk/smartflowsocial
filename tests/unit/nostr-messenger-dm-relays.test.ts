@@ -97,9 +97,7 @@ describe("sendNostrDirectMessage relay targeting", () => {
     vi.clearAllMocks();
     process.env["NOSTR_PUBLISHER_URL"] = "https://publisher.example/publish";
     process.env["NOSTR_NSEC"] = "nsec1test";
-    global.fetch = vi
-      .fn()
-      .mockResolvedValue({ ok: true }) as unknown as typeof fetch;
+    global.fetch = vi.fn().mockResolvedValue({ ok: true });
   });
 
   it("falls back to DEFAULT_USER_WRITE_RELAYS when no NIP-65 relay list found", async () => {
@@ -189,7 +187,7 @@ describe("sendNostrDirectMessage relay targeting", () => {
         text: async () => "relay error",
       })
       .mockResolvedValueOnce({ ok: true });
-    global.fetch = fetchMock as unknown as typeof fetch;
+    global.fetch = fetchMock;
 
     const result = await sendNostrDirectMessage("f".repeat(64), "hello");
 

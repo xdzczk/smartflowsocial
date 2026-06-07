@@ -40,7 +40,7 @@ export async function runAdaptiveUploadQueue<T>(
   async function processTask(task: QueueTask<T>): Promise<void> {
     const startedAt = Date.now();
     const result = await task.run();
-    results[task.index] = result as T;
+    results[task.index] = result;
     const latency = Date.now() - startedAt;
     latencies.push(latency);
     const res = result as { success?: boolean; error?: string };

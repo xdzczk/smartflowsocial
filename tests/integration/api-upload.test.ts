@@ -323,7 +323,7 @@ describe("API: Upload", () => {
         method: "GET",
       });
 
-      const loaderFn = loader as () => Promise<Response>;
+      const loaderFn = loader;
       const response = await loaderFn();
       const dataRaw: unknown = await response.json();
       const data =

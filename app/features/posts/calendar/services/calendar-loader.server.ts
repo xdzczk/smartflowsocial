@@ -207,11 +207,7 @@ export async function loadCalendarData(userId: string, queueType: string) {
             | "INTERVAL"
             | "FIXED_SLOTS"
             | "WEEKLY_SLOTS"
-            | undefined = queueType.scheduleType as
-            | "INTERVAL"
-            | "FIXED_SLOTS"
-            | "WEEKLY_SLOTS"
-            | undefined;
+            | undefined = queueType.scheduleType;
           return {
             id: queueType.id,
             name: queueType.name,
@@ -278,11 +274,7 @@ export async function loadCalendarData(userId: string, queueType: string) {
             | "INTERVAL"
             | "FIXED_SLOTS"
             | "WEEKLY_SLOTS"
-            | undefined = queueType.scheduleType as
-            | "INTERVAL"
-            | "FIXED_SLOTS"
-            | "WEEKLY_SLOTS"
-            | undefined;
+            | undefined = queueType.scheduleType;
           return {
             id: queueType.id,
             name: queueType.name,
@@ -550,11 +542,7 @@ export async function loadCalendarQueueData(userId: string, queueType: string) {
             | "INTERVAL"
             | "FIXED_SLOTS"
             | "WEEKLY_SLOTS"
-            | undefined = queueType.scheduleType as
-            | "INTERVAL"
-            | "FIXED_SLOTS"
-            | "WEEKLY_SLOTS"
-            | undefined;
+            | undefined = queueType.scheduleType;
           return {
             id: queueType.id,
             name: queueType.name,

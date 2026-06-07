@@ -146,10 +146,7 @@ export function RelaysSettings({
   const { fields, append, remove } = useZodFieldArray<
     z.infer<typeof updateRelaysClientSchema>,
     "relays"
-  >(
-    form as unknown as UseFormReturn<z.infer<typeof updateRelaysClientSchema>>,
-    "relays"
-  );
+  >(form, "relays");
 
   const isSubmitting = fetcher.state === "submitting";
   const watchedRelays = form.watch("relays");

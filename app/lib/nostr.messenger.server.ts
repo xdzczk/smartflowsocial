@@ -526,10 +526,7 @@ async function tryPublishNip17DirectMessages(params: {
         recipientInboxRelays,
         senderHexLower,
       });
-      const pubResult = await publishEventToRelays(
-        gw as unknown as Record<string, unknown>,
-        relaysForWrap
-      );
+      const pubResult = await publishEventToRelays(gw, relaysForWrap);
       if (!pubResult.success) {
         meta.errors?.push(
           pubResult.error ?? `NIP-17 publish failed (kind ${String(gw.kind)})`

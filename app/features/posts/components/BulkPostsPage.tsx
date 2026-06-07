@@ -209,6 +209,16 @@ export default function BulkPostsPage() {
     setFocusPostIndex(index);
   };
 
+  const dismissBulkSuccessModal = () => {
+    setShowPublishModal(false);
+    setModalPostId(null);
+    setModalPost(null);
+    setModalLongFormPost(null);
+    setBulkPostCount(null);
+    setBulkSuccessLastAt(null);
+    setBulkSuccessQueueSummary(null);
+  };
+
   const headerActions = (
     <>
       {showActions ? (
@@ -494,38 +504,20 @@ export default function BulkPostsPage() {
           lastScheduledAt={bulkSuccessLastAt}
           queueSummary={bulkSuccessQueueSummary ?? undefined}
           onCreateNew={() => {
-            setShowPublishModal(false);
-            setModalPostId(null);
-            setModalPost(null);
-            setModalLongFormPost(null);
-            setBulkPostCount(null);
-            setBulkSuccessLastAt(null);
-            setBulkSuccessQueueSummary(null);
-            setPosts([]);
-            setPreparedEvents([]);
-            setBulkComposerStage("build");
+            dismissBulkSuccessModal();
+            handlers.clearBulkComposerWorkspace();
             navigate(`/dashboard/bulkposts${mode ? `?mode=${mode}` : ""}`, {
               replace: true,
             });
           }}
           onViewPage={() => {
-            setShowPublishModal(false);
-            setModalPostId(null);
-            setModalPost(null);
-            setModalLongFormPost(null);
-            setBulkPostCount(null);
-            setBulkSuccessLastAt(null);
-            setBulkSuccessQueueSummary(null);
+            dismissBulkSuccessModal();
+            handlers.clearBulkComposerWorkspace();
             navigate("/dashboard/scheduled");
           }}
           onGoToDashboard={() => {
-            setShowPublishModal(false);
-            setModalPostId(null);
-            setModalPost(null);
-            setModalLongFormPost(null);
-            setBulkPostCount(null);
-            setBulkSuccessLastAt(null);
-            setBulkSuccessQueueSummary(null);
+            dismissBulkSuccessModal();
+            handlers.clearBulkComposerWorkspace();
             navigate("/dashboard");
           }}
         />

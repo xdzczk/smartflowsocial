@@ -140,7 +140,7 @@ function processThreadViewResponse(
             )
           : undefined;
       if (eTag) {
-        events.push(event as RelatedEvent);
+        events.push(event);
       }
     }
 

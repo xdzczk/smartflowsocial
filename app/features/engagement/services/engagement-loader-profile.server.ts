@@ -27,10 +27,7 @@ export async function fetchUserProfile(pubkey: string): Promise<User | null> {
         Array.isArray(rawEventData)
       )
         continue;
-      const event: { kind?: number; content?: string } = rawEventData as {
-        kind?: number;
-        content?: string;
-      };
+      const event: { kind?: number; content?: string } = rawEventData;
 
       if (event.kind === 0) {
         profileEvent = event;

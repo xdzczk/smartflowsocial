@@ -36,7 +36,7 @@ function flattenPayload(raw: unknown): LooseNostrEvent[] {
   const obj = raw as Record<string, unknown>;
   const ev = obj["event"];
   if (ev != null && typeof ev === "object") {
-    return [ev as LooseNostrEvent];
+    return [ev];
   }
   const data = obj["data"];
   const events = obj["events"];
@@ -51,12 +51,12 @@ function flattenPayload(raw: unknown): LooseNostrEvent[] {
     );
   }
   if (data != null && typeof data === "object" && !Array.isArray(data)) {
-    return [data as LooseNostrEvent];
+    return [data];
   }
   if (events != null && typeof events === "object" && !Array.isArray(events)) {
-    return [events as LooseNostrEvent];
+    return [events];
   }
-  return [raw as LooseNostrEvent];
+  return [raw];
 }
 
 /**

@@ -211,8 +211,8 @@ export function findUserThemePreferenceRow(
   // We intentionally cast to keep the feature forward-compatible.
   return prisma.user.findUnique({
     where: { id: userId },
-    select: { themePreference: true } as unknown as Prisma.UserSelect,
-  }) as unknown as Promise<{ themePreference: string | null } | null>;
+    select: { themePreference: true },
+  });
 }
 
 export function updateUserThemePreferenceRow(
@@ -222,7 +222,7 @@ export function updateUserThemePreferenceRow(
   // Same forward-compat casting as above: column may not exist yet.
   return prisma.user.update({
     where: { id: userId },
-    data: { themePreference } as unknown as Prisma.UserUpdateInput,
+    data: { themePreference },
   });
 }
 
