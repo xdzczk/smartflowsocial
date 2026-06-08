@@ -1,7 +1,12 @@
 import { Link } from "@remix-run/react";
 
 import { Badge } from "~/components/ui/badge";
+import { BannerDismissButton } from "~/components/ui/BannerDismissButton";
 import { Button } from "~/components/ui/button";
+import {
+  sessionDismissStorageKey,
+  useSessionDismissedBanner,
+} from "~/lib/hooks/useSessionDismissedBanner";
 import { cn } from "~/lib/utils";
 
 import type { PlanType } from "../types";
@@ -25,10 +30,18 @@ export function PlanStatusBanner({
   ctaTo: string;
   variant?: "neutral" | "muted";
 }) {
+  const dismissStorageKey = sessionDismissStorageKey(
+    "plan-status-banner",
+    `${planType}:${ctaTo}:${headline}`
+  );
+  const { isDismissed, dismiss } = useSessionDismissedBanner(dismissStorageKey);
+
   const surface =
     variant === "muted"
       ? "border-border bg-surface-hover/30 text-text-secondary"
       : "border-border bg-surface text-text";
+
+  if (isDismissed) return null;
 
   return (
     <div className="w-full min-w-0 px-4 pt-4 sm:px-6 lg:px-8">
@@ -66,12 +79,16 @@ export function PlanStatusBanner({
           ) : null}
         </div>
 
-        <div className="shrink-0 sm:pt-0.5">
+        <div className="cluster-tight.5 shrink-0 sm:pt-0.5">
           <Button asChild className="w-full sm:w-auto">
             <Link to={ctaTo} prefetch="intent">
               {ctaLabel}
             </Link>
           </Button>
+          <BannerDismissButton
+            ariaLabel="Dismiss plan status banner"
+            onClick={dismiss}
+          />
         </div>
       </section>
     </div>

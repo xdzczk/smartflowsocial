@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
+import { BannerDismissButton } from "~/components/ui/BannerDismissButton";
 import { formatNpubShort } from "~/lib/nostr-conversion";
 
 const REFERRAL_THANKYOU_COOKIE = "referral_thankyou_shown";
@@ -70,14 +71,10 @@ export function ReferredByBanner({
             View profile
           </a>
         </p>
-        <button
-          type="button"
+        <BannerDismissButton
+          ariaLabel="Dismiss referral banner"
           onClick={dismiss}
-          className="text-text-secondary hover:text-text shrink-0 rounded-xs p-1"
-          aria-label="Dismiss"
-        >
-          ×
-        </button>
+        />
       </div>
     </div>
   );

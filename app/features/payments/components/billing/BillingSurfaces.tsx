@@ -1,12 +1,27 @@
 import { Link } from "@remix-run/react";
 
+import { BannerDismissButton } from "~/components/ui/BannerDismissButton";
 import type { BillingContext } from "~/features/payments/types/subscription-billing.types";
+import {
+  sessionDismissStorageKey,
+  useSessionDismissedBanner,
+} from "~/lib/hooks/useSessionDismissedBanner";
 
 import {
   billingContextPrimaryCta,
   billingModeLabel,
   formatBillingPaidUntil,
 } from "./billing-overview-helpers";
+
+function billingAlertDismissStorageKey(ctx: BillingContext): string {
+  const periodKey = ctx.paidUntil
+    ? new Date(ctx.paidUntil).toISOString()
+    : "none";
+  return sessionDismissStorageKey(
+    "billing-alert",
+    `${ctx.bannerVariant}:${periodKey}`
+  );
+}
 
 function bannerCopy(
   ctx: BillingContext
@@ -78,25 +93,38 @@ export function BillingAlertBanner({
 }: {
   billingContext: BillingContext | null | undefined;
 }) {
+  const dismissStorageKey = billingContext
+    ? billingAlertDismissStorageKey(billingContext)
+    : "smartflowsocial:dismissed-billing-alert:none";
+  const { isDismissed, dismiss } = useSessionDismissedBanner(dismissStorageKey);
+
   if (!billingContext) return null;
   const copy = bannerCopy(billingContext);
   if (!copy) return null;
+  if (isDismissed) return null;
+
   const { label, to } = billingContextPrimaryCta(billingContext.primaryCta);
 
   return (
     <div className="w-full min-w-0 px-4 pt-4 sm:px-6 lg:px-8">
       <div className="border-border bg-surface-hover text-text-secondary mb-4 flex items-start justify-between gap-3 rounded-lg border p-4">
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="font-medium">{copy.title}</p>
           <p className="text-sm opacity-90">{copy.description}</p>
         </div>
-        <Link
-          prefetch="intent"
-          to={to}
-          className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-flex shrink-0 items-center rounded-md px-3 py-2 text-sm font-medium"
-        >
-          {label}
-        </Link>
+        <div className="cluster-tight.5 self-start md:ml-4 md:shrink-0">
+          <Link
+            prefetch="intent"
+            to={to}
+            className="focus-ring-offset bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-flex items-center rounded-md px-3 py-2 text-sm font-medium"
+          >
+            {label}
+          </Link>
+          <BannerDismissButton
+            ariaLabel="Dismiss billing alert banner"
+            onClick={dismiss}
+          />
+        </div>
       </div>
     </div>
   );
