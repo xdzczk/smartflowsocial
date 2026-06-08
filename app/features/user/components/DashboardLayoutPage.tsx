@@ -3,12 +3,10 @@ import {
   useLoaderData,
   useRouteLoaderData,
   Link,
-  Form,
   useLocation,
   useNavigation,
 } from "@remix-run/react";
-import { X } from "lucide-react";
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { BroadcastAudiencesPageSkeleton } from "~/components/broadcast/BroadcastAudiencesPageSkeleton";
@@ -24,6 +22,7 @@ import {
 } from "~/components/layout/page-layout-constants";
 import { ComposerSkeleton } from "~/components/skeletons/ComposerSkeleton";
 import { DashboardSkeleton } from "~/components/skeletons/DashboardSkeleton";
+import { BannerDismissButton } from "~/components/ui/BannerDismissButton";
 import { Skeleton } from "~/components/ui/skeleton";
 import { AdminAnalyticsPageSkeleton } from "~/features/admin/components/AdminAnalyticsPageSkeleton";
 import { AdminOperationsPageSkeleton } from "~/features/admin/components/AdminOperationsPageSkeleton";
@@ -52,10 +51,8 @@ import { ReferredByBanner } from "~/features/referral/components/ReferredByBanne
 import { MediaSettingsPageSkeleton } from "~/features/settings/components/MediaSettingsPageSkeleton";
 import { SettingsPageSkeleton } from "~/features/settings/components/SettingsPageSkeleton";
 import { TemplatesPageSkeleton } from "~/features/templates/components/TemplatesPageSkeleton";
-import {
-  INLINE_ICON_SIZE_CLASS,
-  INLINE_ICON_STROKE,
-} from "~/lib/icon-constants";
+import { PendingParentRequestBanner } from "~/features/user/components/PendingParentRequestBanner";
+import { useSessionDismissedBanner } from "~/lib/hooks/useSessionDismissedBanner";
 import { useProductSessionTelemetry } from "~/lib/telemetry/product-session";
 import type { loader as dashboardLoader } from "~/routes/dashboard";
 
@@ -64,29 +61,7 @@ const DASHBOARD_INDEX_PATH = "/dashboard";
 const DASHBOARD_BROADCASTS_PATH = "/dashboard/broadcasts";
 const SUBSCRIPTION_EXPIRED_BANNER_DISMISSED_KEY =
   "smartflowsocial:dismissed-subscription-expired-banner";
-const subscribeNoop = () => () => {};
-const getClientMountedSnapshot = () => true;
-const getServerMountedSnapshot = () => false;
 
-function ProfileBits({ nostrProfile }: { nostrProfile: unknown }): ReactNode {
-  let name: string | undefined;
-  let display_name: string | undefined;
-  try {
-    const p =
-      typeof nostrProfile === "string"
-        ? (JSON.parse(nostrProfile) as { name?: string; display_name?: string })
-        : (nostrProfile as
-            | { name?: string; display_name?: string }
-            | undefined);
-    name = p?.name;
-    display_name = p?.display_name;
-  } catch {
-    /* ignore parse errors */
-  }
-  return <>{name ?? display_name ?? "Unknown User"}</>;
-}
-
-/** Dashboard index is the only route that should not scroll vertically on large screens; other dashboard pages need to scroll. */
 function isDashboardIndexPath(pathname: string): boolean {
   const normalized = pathname.replace(/\/$/, "") || "/";
   return normalized === DASHBOARD_INDEX_PATH;
@@ -333,39 +308,12 @@ export function DashboardLayoutPage(): ReactNode {
     return localStorage.getItem(DESKTOP_SIDEBAR_OPEN_KEY) !== "false";
   });
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const isClientMounted = useSyncExternalStore(
-    subscribeNoop,
-    getClientMountedSnapshot,
-    getServerMountedSnapshot
-  );
-  const [
-    isSubscriptionExpiredBannerDismissedLocally,
-    setIsSubscriptionExpiredBannerDismissedLocally,
-  ] = useState(false);
-  const isSubscriptionExpiredBannerDismissed = useMemo(() => {
-    if (!isClientMounted) return false;
-    try {
-      return (
-        sessionStorage.getItem(SUBSCRIPTION_EXPIRED_BANNER_DISMISSED_KEY) ===
-        "1"
-      );
-    } catch {
-      return false;
-    }
-  }, [isClientMounted]);
+  const {
+    isDismissed: isSubscriptionExpiredBannerDismissed,
+    dismiss: dismissSubscriptionExpiredBanner,
+  } = useSessionDismissedBanner(SUBSCRIPTION_EXPIRED_BANNER_DISMISSED_KEY);
   const shouldShowSubscriptionExpiredBanner =
-    isSubscriptionExpired &&
-    !isSubscriptionExpiredBannerDismissed &&
-    !isSubscriptionExpiredBannerDismissedLocally;
-
-  const handleDismissSubscriptionExpiredBanner = () => {
-    try {
-      sessionStorage.setItem(SUBSCRIPTION_EXPIRED_BANNER_DISMISSED_KEY, "1");
-    } catch {
-      // Ignore storage access errors.
-    }
-    setIsSubscriptionExpiredBannerDismissedLocally(true);
-  };
+    isSubscriptionExpired && !isSubscriptionExpiredBannerDismissed;
 
   const handleDesktopSidebarToggle = () => {
     setDesktopSidebarOpen((prev) => {
@@ -417,59 +365,15 @@ export function DashboardLayoutPage(): ReactNode {
                   navAction === "respond_child_request" &&
                   navParentNpub === p.npub;
                 return (
-                  <div
+                  <PendingParentRequestBanner
                     key={p.npub}
-                    className="border-warning/40 bg-warning/12 text-warning-text dark:border-warning/40 dark:bg-warning/15 dark:text-warning mb-4 flex items-start justify-between gap-3 rounded-lg border p-4"
-                  >
-                    <div>
-                      <p className="font-medium">
-                        <ProfileBits nostrProfile={p.nostrProfile} /> wants to
-                        manage your account
-                      </p>
-                      <p className="text-sm opacity-90">
-                        Approve to link your account as a child, or reject this
-                        request.
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Form method="post">
-                        <input
-                          type="hidden"
-                          name="_action"
-                          value="respond_child_request"
-                        />
-                        <input type="hidden" name="parentNpub" value={p.npub} />
-                        <input type="hidden" name="decision" value="reject" />
-                        <button
-                          className="bg-surface-hover text-text hover:bg-surface-active inline-flex items-center rounded-md px-3 py-2 text-sm font-medium disabled:opacity-70"
-                          type="submit"
-                          disabled={isThisSubmitting}
-                        >
-                          {isThisSubmitting && navDecision === "reject"
-                            ? "Rejecting..."
-                            : "Reject"}
-                        </button>
-                      </Form>
-                      <Form method="post">
-                        <input
-                          type="hidden"
-                          name="_action"
-                          value="respond_child_request"
-                        />
-                        <input type="hidden" name="parentNpub" value={p.npub} />
-                        <input type="hidden" name="decision" value="accept" />
-                        <button
-                          className="focus-ring bg-action-primary text-action-primary-foreground hover:bg-action-primary/90 inline-flex items-center rounded-md px-3 py-2 text-sm font-medium disabled:opacity-70"
-                          type="submit"
-                          disabled={isThisSubmitting}
-                        >
-                          {isThisSubmitting && navDecision === "accept"
-                            ? "Approving..."
-                            : "Approve"}
-                        </button>
-                      </Form>
-                    </div>
-                  </div>
+                    parentNpub={p.npub}
+                    nostrProfile={p.nostrProfile}
+                    isSubmitting={isThisSubmitting}
+                    submitDecision={
+                      isThisSubmitting ? (navDecision ?? null) : null
+                    }
+                  />
                 );
               })}
             </div>
@@ -495,18 +399,10 @@ export function DashboardLayoutPage(): ReactNode {
                   >
                     Restore plan
                   </Link>
-                  <button
-                    type="button"
-                    aria-label="Dismiss subscription expired banner"
-                    onClick={handleDismissSubscriptionExpiredBanner}
-                    className="focus-ring-offset text-text-secondary hover:text-text hover:bg-surface-hover motion-fast tap-target inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md"
-                  >
-                    <X
-                      className={INLINE_ICON_SIZE_CLASS}
-                      strokeWidth={INLINE_ICON_STROKE}
-                      aria-hidden="true"
-                    />
-                  </button>
+                  <BannerDismissButton
+                    ariaLabel="Dismiss subscription expired banner"
+                    onClick={dismissSubscriptionExpiredBanner}
+                  />
                 </div>
               </div>
             </div>
