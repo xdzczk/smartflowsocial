@@ -31,5 +31,6 @@ export {
   cascadeAttachedReschedule,
   cascadeCancelAttachedFollowups,
   cascadeDeleteAttachedFollowups,
+  discardScheduledPost,
   resyncAttachedChildrenAfterParentMutation,
 } from "./services/attached-followups.server";

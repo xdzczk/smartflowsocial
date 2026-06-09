@@ -5,16 +5,25 @@ const {
   mockAcquireLease,
   mockReleaseLease,
   mockRecordJobSkipped,
+  mockDiscardScheduledPost,
 } = vi.hoisted(() => ({
   mockFindPostUnique: vi.fn(),
   mockAcquireLease: vi.fn(),
   mockReleaseLease: vi.fn(),
   mockRecordJobSkipped: vi.fn(),
+  mockDiscardScheduledPost: vi.fn(),
 }));
 
 vi.mock("~/features/posts/repositories/post-queries-data.server", () => ({
   findPostUnique: mockFindPostUnique,
 }));
+
+vi.mock(
+  "~/features/posts/scheduling/services/attached-followups.server",
+  () => ({
+    discardScheduledPost: mockDiscardScheduledPost,
+  })
+);
 
 vi.mock("~/infra/publishing/publish-lease.server", () => ({
   acquirePostPublishLease: mockAcquireLease,
@@ -92,9 +101,10 @@ describe("runScheduledPostJob attached guards", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockAcquireLease.mockResolvedValue({ lockId: "lease-1" });
+    mockDiscardScheduledPost.mockResolvedValue(true);
   });
 
-  it("skips publish when attached child signingState is not signed", async () => {
+  it("discards follow-up when attached child signingState is not signed", async () => {
     mockFindPostUnique
       .mockResolvedValueOnce({
         scheduledAtUtc: new Date(),
@@ -140,6 +150,11 @@ describe("runScheduledPostJob attached guards", () => {
       postId: "child-1",
       userId: "user-1",
       lockId: "lease-1",
+    });
+    expect(mockDiscardScheduledPost).toHaveBeenCalledWith({
+      postId: "child-1",
+      userId: "user-1",
+      reason: "Follow-up discarded: Attached child signing state is not signed",
     });
     expect(mockRecordJobSkipped).toHaveBeenCalledWith(
       "scheduled-posts",

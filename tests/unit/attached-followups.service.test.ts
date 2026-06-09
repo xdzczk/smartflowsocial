@@ -7,6 +7,8 @@ const {
   mockUpdateMany,
   mockCreateMany,
   mockUpdate,
+  mockCreate,
+  mockFindFirst,
   mockPrisma,
 } = vi.hoisted(() => {
   const mockCancelPostJob = vi.fn();
@@ -15,6 +17,8 @@ const {
   const mockUpdateMany = vi.fn();
   const mockCreateMany = vi.fn();
   const mockUpdate = vi.fn();
+  const mockCreate = vi.fn();
+  const mockFindFirst = vi.fn();
   const mockTx = {
     post: {
       findMany: mockFindMany,
@@ -24,6 +28,7 @@ const {
     },
     postStateTransition: {
       createMany: mockCreateMany,
+      create: mockCreate,
     },
   };
   const mockPrisma = {
@@ -32,6 +37,7 @@ const {
     ),
     post: {
       findMany: vi.fn(),
+      findFirst: mockFindFirst,
     },
   };
   return {
@@ -41,6 +47,8 @@ const {
     mockUpdateMany,
     mockCreateMany,
     mockUpdate,
+    mockCreate,
+    mockFindFirst,
     mockPrisma,
   };
 });
@@ -57,12 +65,41 @@ import {
   cascadeAttachedReschedule,
   cascadeCancelAttachedFollowups,
   cascadeDeleteAttachedFollowups,
+  discardScheduledPost,
   resyncAttachedChildrenAfterParentMutation,
 } from "~/features/posts/scheduling/services/attached-followups.server";
 
 describe("attached-followups service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("discardScheduledPost cancels scheduled post and clears schedule metadata", async () => {
+    mockFindFirst.mockResolvedValue({ currentState: "SCHEDULED" });
+
+    const discarded = await discardScheduledPost({
+      postId: "child-1",
+      userId: "user-1",
+      reason: "Repost skipped: engagement conditions not met",
+    });
+
+    expect(discarded).toBe(true);
+    expect(mockUpdate).toHaveBeenCalled();
+    expect(mockCreate).toHaveBeenCalled();
+    expect(mockCancelPostJob).toHaveBeenCalledWith("child-1");
+  });
+
+  it("discardScheduledPost is a no-op when post is not scheduled", async () => {
+    mockFindFirst.mockResolvedValue({ currentState: "PUBLISHED" });
+
+    const discarded = await discardScheduledPost({
+      postId: "child-1",
+      userId: "user-1",
+      reason: "noop",
+    });
+
+    expect(discarded).toBe(false);
+    expect(mockCancelPostJob).not.toHaveBeenCalled();
   });
 
   it("cascadeDeleteAttachedFollowups deletes descendants and cancels jobs", async () => {
