@@ -71,6 +71,52 @@ export async function cascadeDeleteAttachedFollowups(input: {
   return descendantIds;
 }
 
+/**
+ * Remove a scheduled post that can no longer be published (e.g. engagement
+ * conditions not met). Clears schedule metadata so it disappears from Scheduled.
+ */
+export async function discardScheduledPost(input: {
+  postId: string;
+  userId: string;
+  reason: string;
+}): Promise<boolean> {
+  const post = await prisma.post.findFirst({
+    where: { id: input.postId, userId: input.userId },
+    select: { currentState: true },
+  });
+  if (post?.currentState !== "SCHEDULED") {
+    return false;
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.post.update({
+      where: { id: input.postId, userId: input.userId },
+      data: {
+        scheduledAtUtc: null,
+        signingState: "invalidated",
+        signedEvent: Prisma.DbNull,
+        nostrEvent: Prisma.DbNull,
+        signedChildEventId: null,
+      },
+    });
+    await tx.postStateTransition.create({
+      data: {
+        postId: input.postId,
+        fromState: post.currentState,
+        toState: "CANCELLED",
+        reason: input.reason,
+      },
+    });
+    await tx.post.update({
+      where: { id: input.postId, userId: input.userId },
+      data: { currentState: "CANCELLED" },
+    });
+  });
+
+  await cancelPostJob(input.postId);
+  return true;
+}
+
 export async function cascadeCancelAttachedFollowups(input: {
   rootPostId: string;
   userId: string;

@@ -52,12 +52,52 @@ import { nowMillis } from "~/lib/temporal";
 import { validateSignedEventCryptographically } from "~/lib/validation/nostr-cryptographic.server";
 
 import { findPostUnique } from "../repositories/post-queries-data.server";
+import { discardScheduledPost } from "../scheduling/services/attached-followups.server";
+
+const ATTACHED_PARENT_PUBLISH_GRACE_SECONDS = 3600;
+const ATTACHED_PARENT_DEFER_SECONDS = 60;
 
 function eventIdFromUnknown(value: unknown): string | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   if (!("id" in value)) return null;
   const id = (value as { id?: unknown }).id;
   return typeof id === "string" && id.length > 0 ? id : null;
+}
+
+function readSignedEvent(value: unknown): SignedEvent | undefined {
+  if (value == null || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+  return value as SignedEvent;
+}
+
+async function resolveSignedEventForEnqueue(
+  postId: string,
+  userId: string,
+  fromJob: SignedEvent | undefined
+): Promise<SignedEvent | undefined> {
+  const fromJobEvent = readSignedEvent(fromJob);
+  if (fromJobEvent) return fromJobEvent;
+  const row = await findPostUnique(
+    { id: postId, userId },
+    { select: { signedEvent: true } }
+  );
+  return readSignedEvent(row?.signedEvent);
+}
+
+async function deferAttachedChildPublish(input: {
+  postId: string;
+  userId: string;
+  signedEvent: SignedEvent;
+}): Promise<void> {
+  const { enqueuePostJob } = await import("~/infra/queue");
+  const { nowSeconds } = await import("~/lib/temporal");
+  await enqueuePostJob(
+    input.postId,
+    input.userId,
+    input.signedEvent,
+    nowSeconds() + ATTACHED_PARENT_DEFER_SECONDS
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -527,6 +567,13 @@ export async function runScheduledPostJob(input: {
     if (invalidReason) {
       await releasePostPublishLease({ postId, userId, lockId: lease.lockId });
       input.ctx.lease = null;
+      if (repostMeta.currentState === "SCHEDULED") {
+        await discardScheduledPost({
+          postId,
+          userId,
+          reason: `Follow-up discarded: ${invalidReason}`,
+        });
+      }
       logInfo("Skipping attached child publish due to dependency guard", {
         postId,
         userId,
@@ -545,14 +592,60 @@ export async function runScheduledPostJob(input: {
     );
     const parentEventId =
       parentPost?.nostrEventId ?? eventIdFromUnknown(parentPost?.signedEvent);
-    const dependencyInvalid =
-      parentPost?.currentState !== "PUBLISHED" ||
-      !parentEventId ||
-      (repostMeta.expectedParentEventId != null &&
-        parentEventId !== repostMeta.expectedParentEventId);
-    if (dependencyInvalid) {
+    const parentState = parentPost?.currentState;
+    const parentEventMismatch =
+      parentState === "PUBLISHED" &&
+      parentEventId != null &&
+      repostMeta.expectedParentEventId != null &&
+      parentEventId !== repostMeta.expectedParentEventId;
+    const parentNotPublished =
+      parentState !== "PUBLISHED" || parentEventId == null;
+    if (parentNotPublished || parentEventMismatch) {
       await releasePostPublishLease({ postId, userId, lockId: lease.lockId });
       input.ctx.lease = null;
+
+      const parentTerminal =
+        parentState === "CANCELLED" ||
+        parentState === "FAILED" ||
+        parentState === "DRAFT";
+      const latenessSeconds = Math.floor(Date.now() / 1000) - scheduledForUnix;
+
+      if (parentEventMismatch) {
+        await discardScheduledPost({
+          postId,
+          userId,
+          reason: "Follow-up discarded: parent signing changed",
+        });
+        recordJobSkipped(queueName, "attached_parent_event_mismatch");
+      } else if (
+        parentTerminal ||
+        latenessSeconds > ATTACHED_PARENT_PUBLISH_GRACE_SECONDS
+      ) {
+        await discardScheduledPost({
+          postId,
+          userId,
+          reason: "Parent post did not publish; follow-up discarded",
+        });
+        recordJobSkipped(
+          queueName,
+          parentTerminal ? "attached_parent_failed" : "attached_parent_timeout"
+        );
+      } else {
+        const signedEventForDefer = await resolveSignedEventForEnqueue(
+          postId,
+          userId,
+          signedEventFromJob
+        );
+        if (signedEventForDefer) {
+          await deferAttachedChildPublish({
+            postId,
+            userId,
+            signedEvent: signedEventForDefer,
+          });
+        }
+        recordJobSkipped(queueName, "attached_parent_not_ready");
+      }
+
       logInfo("Skipping attached child publish due to parent guard", {
         postId,
         userId,
@@ -560,8 +653,8 @@ export async function runScheduledPostJob(input: {
         parentScheduledActionId: repostMeta.parentScheduledActionId,
         expectedParentEventId: repostMeta.expectedParentEventId,
         parentEventId,
+        parentState,
       });
-      recordJobSkipped(queueName, "attached_parent_not_ready");
       return { success: true, postId, skipped: true };
     }
   }
@@ -590,53 +683,72 @@ export async function runScheduledPostJob(input: {
       typeof (sourcePost.signedEvent as { id: string }).id === "string"
         ? (sourcePost.signedEvent as { id: string }).id
         : null);
-    if (sourceEventId) {
-      const statsRecord = await getPostStats([sourceEventId]);
-      const stats = statsRecord[sourceEventId];
-      const cond = conditions as Record<string, number>;
-      const mapping: Record<
-        string,
-        "likes" | "zaps" | "replies" | "reposts" | "satszapped"
-      > = {
-        minReactions: "likes",
-        minZaps: "zaps",
-        minComments: "replies",
-        minReposts: "reposts",
-        minSats: "satszapped",
-      };
-      const conditionsMet = (() => {
-        if (stats === undefined) return false;
-        for (const [k, minVal] of Object.entries(cond)) {
-          const statsKey = mapping[k];
-          if (!statsKey || typeof minVal !== "number") continue;
-          const actual = stats[statsKey];
-          if (actual < minVal) return false;
-        }
-        return true;
-      })();
-      if (!conditionsMet) {
-        await releasePostPublishLease({
-          postId,
-          userId,
-          lockId: lease.lockId,
-        });
-        input.ctx.lease = null;
-        await stateMachine.transition(
-          postId,
-          userId,
-          "CANCELLED",
-          "Repost skipped: engagement conditions not met"
-        );
-        logInfo("Repost skipped: engagement conditions not met", {
-          postId,
-          userId,
-          correlationId,
-          queueName,
-          sourceEventId,
-        });
-        recordJobSkipped(queueName, "repost_conditions_not_met");
-        return { success: true, postId, skipped: true };
+    if (!sourceEventId) {
+      await releasePostPublishLease({
+        postId,
+        userId,
+        lockId: lease.lockId,
+      });
+      input.ctx.lease = null;
+      await discardScheduledPost({
+        postId,
+        userId,
+        reason: "Repost skipped: could not verify engagement conditions",
+      });
+      logInfo("Repost skipped: could not verify engagement conditions", {
+        postId,
+        userId,
+        correlationId,
+        queueName,
+      });
+      recordJobSkipped(queueName, "repost_conditions_unverifiable");
+      return { success: true, postId, skipped: true };
+    }
+
+    const statsRecord = await getPostStats([sourceEventId]);
+    const stats = statsRecord[sourceEventId];
+    const cond = conditions as Record<string, number>;
+    const mapping: Record<
+      string,
+      "likes" | "zaps" | "replies" | "reposts" | "satszapped"
+    > = {
+      minReactions: "likes",
+      minZaps: "zaps",
+      minComments: "replies",
+      minReposts: "reposts",
+      minSats: "satszapped",
+    };
+    const conditionsMet = (() => {
+      if (stats === undefined) return false;
+      for (const [k, minVal] of Object.entries(cond)) {
+        const statsKey = mapping[k];
+        if (!statsKey || typeof minVal !== "number") continue;
+        const actual = stats[statsKey];
+        if (actual < minVal) return false;
       }
+      return true;
+    })();
+    if (!conditionsMet) {
+      await releasePostPublishLease({
+        postId,
+        userId,
+        lockId: lease.lockId,
+      });
+      input.ctx.lease = null;
+      await discardScheduledPost({
+        postId,
+        userId,
+        reason: "Repost skipped: engagement conditions not met",
+      });
+      logInfo("Repost skipped: engagement conditions not met", {
+        postId,
+        userId,
+        correlationId,
+        queueName,
+        sourceEventId,
+      });
+      recordJobSkipped(queueName, "repost_conditions_not_met");
+      return { success: true, postId, skipped: true };
     }
   }
 
