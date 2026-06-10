@@ -113,6 +113,8 @@ export default function LongFormPost({
   const [bodyView, setBodyView] = useState<"edit" | "preview">("edit");
   const isTemplateMode = mode === "template";
   const [quoteEntries, setQuoteEntries] = useState<LongformQuoteEntry[]>([]);
+  const [scheduleRandomWindowMinutes, setScheduleRandomWindowMinutes] =
+    useState<number>(0);
 
   // Initialize form with React Hook Form
   const form = useZodForm(longformPostClientSchema, {
@@ -441,6 +443,25 @@ export default function LongFormPost({
   }, [formQueueType, schedulingQueueType, updateDisplayedHashtags]);
 
   const selectedQueueType = schedulingQueueType;
+
+  // Mirror the selected queue's randomization default so scheduling applies the
+  // queue's configured ± window (matches Unified/Poll composer behavior).
+  useEffect(() => {
+    const qt = queueTypes.find(
+      (q) => (typeof q === "string" ? q : q.name) === selectedQueueType
+    );
+    const window =
+      typeof qt === "object" &&
+      qt.scheduleConfig &&
+      typeof qt.scheduleConfig === "object" &&
+      "scheduleRandomWindowMinutes" in qt.scheduleConfig
+        ? (qt.scheduleConfig.scheduleRandomWindowMinutes ?? 0)
+        : 0;
+    setScheduleRandomWindowMinutes(
+      typeof window === "number" && window >= 0 && window <= 15 ? window : 0
+    );
+  }, [selectedQueueType, queueTypes]);
+
   const longformDraftFingerprint = useMemo(
     () =>
       JSON.stringify({
@@ -566,6 +587,7 @@ export default function LongFormPost({
       calculateQueueScheduleTime,
       relayOverride,
       includeHashtagsInNoteBody: Boolean(includeHashtagsInNoteBody),
+      scheduleRandomWindowMinutes,
       onPublishIntent,
     });
   const { signAttempt, signElapsedSeconds } = useSignAttemptProgress(isSigning);
@@ -1063,6 +1085,8 @@ export default function LongFormPost({
           scheduleIntervals={scheduleIntervals}
           handleScheduleIntervalClick={handleScheduleIntervalClick}
           calculateQueueScheduleTime={calculateQueueScheduleTime}
+          scheduleRandomWindowMinutes={scheduleRandomWindowMinutes}
+          onScheduleRandomWindowMinutesChange={setScheduleRandomWindowMinutes}
           hashTagPresets={hashTagPresets}
           useHashtagPresets={useHashtagPresets}
           selectedHashtagPresetId={selectedHashtagPresetId}

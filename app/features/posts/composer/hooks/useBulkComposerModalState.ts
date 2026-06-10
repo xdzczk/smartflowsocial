@@ -467,6 +467,18 @@ export function useBulkComposerModalState({
     [posts, firstItemTimeManuallyChanged]
   );
 
+  const resolveQueueScheduleRandomWindow = useCallback(
+    (queueTypeName: string): 0 | 5 | 10 | 15 => {
+      if (!queueTypeName || queueTypeName === "unassigned") return 0;
+      const qt = queueTypes.find((q) => q.name === queueTypeName) as
+        | { scheduleConfig?: { scheduleRandomWindowMinutes?: number } }
+        | undefined;
+      const window = qt?.scheduleConfig?.scheduleRandomWindowMinutes ?? 0;
+      return window === 5 || window === 10 || window === 15 ? window : 0;
+    },
+    [queueTypes]
+  );
+
   const handleBulkQueueUpdate = useCallback(
     async (queueType: string) => {
       const userDeps = user
@@ -486,6 +498,11 @@ export function useBulkComposerModalState({
         setSelectedQueueType: () => {},
         firstItemTimeManuallyChanged,
       });
+      // Mirror the selected queue's randomization default so queueing applies
+      // the queue's configured ± window (matches Unified/Poll composer).
+      setBulkScheduleRandomWindowMinutes(
+        resolveQueueScheduleRandomWindow(queueType)
+      );
     },
     [
       posts,
@@ -494,6 +511,7 @@ export function useBulkComposerModalState({
       tags,
       firstItemTimeManuallyChanged,
       scheduleIntervals,
+      resolveQueueScheduleRandomWindow,
     ]
   );
 

@@ -540,6 +540,20 @@ export async function handleScheduleLongform(
     }
   }
 
+  // Nominal queue slot (unix sec) when a random window jittered the actual
+  // publish time, so queue "next slot" cadence ignores the jitter.
+  const nominalScheduledForRaw = formData.get("nominalScheduledFor");
+  const nominalScheduledForParsed =
+    nominalScheduledForRaw != null &&
+    String(nominalScheduledForRaw).trim() !== ""
+      ? parseInt(String(nominalScheduledForRaw), 10)
+      : undefined;
+  const nominalScheduledFor =
+    nominalScheduledForParsed != null &&
+    Number.isFinite(nominalScheduledForParsed)
+      ? nominalScheduledForParsed
+      : undefined;
+
   const quoteSchedules = parseQuoteSchedulesFromForm(formData);
 
   try {
@@ -566,6 +580,7 @@ export async function handleScheduleLongform(
     signedEvent: signedEventJson,
     nostrEvent: nostrEventJson,
     scheduledFor: scheduledForTimestamp,
+    nominalScheduledFor,
     isPublished: false,
   });
 

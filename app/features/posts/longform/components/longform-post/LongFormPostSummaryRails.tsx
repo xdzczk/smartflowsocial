@@ -4,6 +4,7 @@ import { PublishingSummaryRail } from "~/features/posts/components/ConfidencePan
 import type { ComposerStatus } from "~/features/posts/components/NewPostHeader";
 import type { ComposerContext } from "~/features/posts/composer";
 import {
+  ComposerScheduleRandomWindowField,
   formatPublishSummaryOptionsLine,
   getPrimaryCtaLabelForMode,
   getPrimaryCtaPendingLabelForMode,
@@ -55,6 +56,8 @@ export interface LongFormPostSummaryRailsProps {
   calculateQueueScheduleTime: (
     queueName: string
   ) => void | Promise<void> | Promise<string | null>;
+  scheduleRandomWindowMinutes: number;
+  onScheduleRandomWindowMinutesChange: (value: number) => void;
   hashTagPresets: LongFormHashTagPreset[];
   useHashtagPresets: boolean;
   selectedHashtagPresetId: string | null;
@@ -123,6 +126,8 @@ export function LongFormPostSummaryRails(props: LongFormPostSummaryRailsProps) {
     scheduleIntervals,
     handleScheduleIntervalClick,
     calculateQueueScheduleTime,
+    scheduleRandomWindowMinutes,
+    onScheduleRandomWindowMinutesChange,
     hashTagPresets,
     useHashtagPresets,
     selectedHashtagPresetId,
@@ -224,48 +229,65 @@ export function LongFormPostSummaryRails(props: LongFormPostSummaryRailsProps) {
                     ]
                   : [],
               controls: (
-                <LongFormPublishingOptions
-                  layout="rail"
-                  queueTypes={queueTypes}
-                  selectedQueueType={selectedQueueType}
-                  onQueueTypeChange={(name) => {
-                    updateDisplayedHashtags(name);
-                  }}
-                  scheduledFor={scheduledFor}
-                  onScheduledForChange={setScheduledFor}
-                  scheduleIntervals={scheduleIntervals}
-                  onScheduleIntervalClick={(intervalHours) => {
-                    handleScheduleIntervalClick(
-                      typeof intervalHours === "number"
-                        ? intervalHours
-                        : Number(intervalHours)
-                    );
-                  }}
-                  onNextSlotClick={() => {
-                    const run = calculateQueueScheduleTime(selectedQueueType);
-                    void run;
-                  }}
-                  hashTagPresets={hashTagPresets}
-                  useHashtagPresets={useHashtagPresets}
-                  selectedHashtagPresetId={selectedHashtagPresetId}
-                  selectedHashtags={selectedHashtags}
-                  onHashtagPresetChange={
-                    onHashtagPresetChange ??
-                    ((_presetId, _hashtags) => {
-                      /* no-op default */
-                    })
-                  }
-                  onUseHashtagPresetsChange={
-                    onUseHashtagPresetsChange ??
-                    (() => {
-                      void 0;
-                    })
-                  }
-                  userTimezone={userTimezone}
-                  showHashtagPresets={false}
-                  hideScheduleControls={publishMode === "queue"}
-                  hideQueueControls={publishMode === "schedule"}
-                />
+                <div className="space-y-3">
+                  <LongFormPublishingOptions
+                    layout="rail"
+                    queueTypes={queueTypes}
+                    selectedQueueType={selectedQueueType}
+                    onQueueTypeChange={(name) => {
+                      updateDisplayedHashtags(name);
+                    }}
+                    scheduledFor={scheduledFor}
+                    onScheduledForChange={setScheduledFor}
+                    scheduleIntervals={scheduleIntervals}
+                    onScheduleIntervalClick={(intervalHours) => {
+                      handleScheduleIntervalClick(
+                        typeof intervalHours === "number"
+                          ? intervalHours
+                          : Number(intervalHours)
+                      );
+                    }}
+                    onNextSlotClick={() => {
+                      const run = calculateQueueScheduleTime(selectedQueueType);
+                      void run;
+                    }}
+                    hashTagPresets={hashTagPresets}
+                    useHashtagPresets={useHashtagPresets}
+                    selectedHashtagPresetId={selectedHashtagPresetId}
+                    selectedHashtags={selectedHashtags}
+                    onHashtagPresetChange={
+                      onHashtagPresetChange ??
+                      ((_presetId, _hashtags) => {
+                        /* no-op default */
+                      })
+                    }
+                    onUseHashtagPresetsChange={
+                      onUseHashtagPresetsChange ??
+                      (() => {
+                        void 0;
+                      })
+                    }
+                    userTimezone={userTimezone}
+                    showHashtagPresets={false}
+                    hideScheduleControls={publishMode === "queue"}
+                    hideQueueControls={publishMode === "schedule"}
+                  />
+                  <ComposerScheduleRandomWindowField
+                    scheduleRandomWindowMinutes={scheduleRandomWindowMinutes}
+                    onScheduleRandomWindowMinutesChange={
+                      onScheduleRandomWindowMinutesChange
+                    }
+                    disabled={fetcherState !== "idle" || isSigning}
+                    windowOptions={[5, 10, 15]}
+                    label="Randomize publish time"
+                    idPrefix="longform"
+                    description={
+                      publishMode === "queue"
+                        ? "Prefilled from the selected queue's randomization setting."
+                        : undefined
+                    }
+                  />
+                </div>
               ),
             }
       }

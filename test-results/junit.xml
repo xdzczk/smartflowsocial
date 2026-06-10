@@ -1,23 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="8" failures="0" errors="0" time="0.00701125">
-    <testsuite name="tests/unit/attached-followups.service.test.ts" timestamp="2026-06-09T15:02:46.411Z" hostname="Ivans-MacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.0045485">
-        <testcase classname="tests/unit/attached-followups.service.test.ts" name="attached-followups service &gt; discardScheduledPost cancels scheduled post and clears schedule metadata" time="0.001674166">
+<testsuites name="vitest tests" tests="5" failures="0" errors="0" time="0.004026709">
+    <testsuite name="tests/unit/use-cases/create-longform-post.use-case.test.ts" timestamp="2026-06-10T13:54:00.405Z" hostname="Ivans-MacBook-Pro.local" tests="5" failures="0" errors="0" skipped="0" time="0.004026709">
+        <testcase classname="tests/unit/use-cases/create-longform-post.use-case.test.ts" name="CreateLongFormPostUseCase &gt; execute &gt; should create a draft longform post successfully" time="0.001685417">
         </testcase>
-        <testcase classname="tests/unit/attached-followups.service.test.ts" name="attached-followups service &gt; discardScheduledPost is a no-op when post is not scheduled" time="0.000192709">
+        <testcase classname="tests/unit/use-cases/create-longform-post.use-case.test.ts" name="CreateLongFormPostUseCase &gt; execute &gt; should create a scheduled longform post with outbox event" time="0.000914833">
         </testcase>
-        <testcase classname="tests/unit/attached-followups.service.test.ts" name="attached-followups service &gt; cascadeDeleteAttachedFollowups deletes descendants and cancels jobs" time="0.000361959">
+        <testcase classname="tests/unit/use-cases/create-longform-post.use-case.test.ts" name="CreateLongFormPostUseCase &gt; execute &gt; should resolve queue type when queueType name is provided" time="0.000164292">
         </testcase>
-        <testcase classname="tests/unit/attached-followups.service.test.ts" name="attached-followups service &gt; cascadeCancelAttachedFollowups invalidates signed payloads and transitions state" time="0.000302083">
+        <testcase classname="tests/unit/use-cases/create-longform-post.use-case.test.ts" name="CreateLongFormPostUseCase &gt; execute &gt; should not create outbox event if isPublished is true" time="0.000147083">
         </testcase>
-        <testcase classname="tests/unit/attached-followups.service.test.ts" name="attached-followups service &gt; cascadeAttachedReschedule clamps fixed_datetime child to parent time" time="0.000872875">
-        </testcase>
-        <testcase classname="tests/unit/attached-followups.service.test.ts" name="attached-followups service &gt; cascadeAttachedReschedule recomputes offset_from_parent child time" time="0.000187459">
-        </testcase>
-        <testcase classname="tests/unit/attached-followups.service.test.ts" name="attached-followups service &gt; resyncAttachedChildrenAfterParentMutation marks children stale/invalidated" time="0.000234375">
-        </testcase>
-    </testsuite>
-    <testsuite name="tests/unit/run-scheduled-post-job-attached.test.ts" timestamp="2026-06-09T15:02:46.412Z" hostname="Ivans-MacBook-Pro.local" tests="1" failures="0" errors="0" skipped="0" time="0.00246275">
-        <testcase classname="tests/unit/run-scheduled-post-job-attached.test.ts" name="runScheduledPostJob attached guards &gt; discards follow-up when attached child signingState is not signed" time="0.001938083">
+        <testcase classname="tests/unit/use-cases/create-longform-post.use-case.test.ts" name="CreateLongFormPostUseCase &gt; execute &gt; should create the post as DRAFT when isPublished is true so PublishLongFormNowUseCase owns the publish lifecycle (regression: must not pre-mark PUBLISHED)" time="0.000228708">
         </testcase>
     </testsuite>
 </testsuites>

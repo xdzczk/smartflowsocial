@@ -37,6 +37,10 @@ export class CreateLongFormPostUseCase {
       const scheduledAtUtc = toPrismaDate(
         fromUnixTimestamp(input.scheduledFor, "UTC")
       );
+      const nominalScheduledAtUtc =
+        input.nominalScheduledFor != null
+          ? toPrismaDate(fromUnixTimestamp(input.nominalScheduledFor, "UTC"))
+          : null;
       const scheduledForStr = input.scheduledFor.toString();
 
       // Calculate status using business logic
@@ -62,6 +66,7 @@ export class CreateLongFormPostUseCase {
           status,
           publishedAt: publishedAt ?? undefined,
           scheduledAtUtc,
+          ...(nominalScheduledAtUtc != null ? { nominalScheduledAtUtc } : {}),
           currentState: "SCHEDULED",
         },
         {

@@ -253,12 +253,19 @@ export function useBulkPostEvents({
           scheduledForValue,
           userTimezone
         );
+        // When a random window is applied, `scheduledTime` becomes the jittered
+        // (actual) publish time while `nominalScheduledFor` keeps the original
+        // queue slot so queue cadence ("next slot") ignores the jitter.
+        let nominalScheduledFor: number | undefined;
         if (scheduleRandomWindowMinutes > 0) {
           const nominalUnix = Math.floor(scheduledTime / 1000);
           const actualUnix = applyRandomScheduleWindow(
             nominalUnix,
             scheduleRandomWindowMinutes
           );
+          if (actualUnix !== nominalUnix) {
+            nominalScheduledFor = nominalUnix;
+          }
           scheduledTime = actualUnix * 1000;
         }
 
@@ -267,23 +274,30 @@ export function useBulkPostEvents({
 
         // Handle kind 6 reposts differently
         if (post.isKind6Repost) {
-          return createKind6RepostEvent(post, scheduledTime);
+          const repostEvent = createKind6RepostEvent(post, scheduledTime);
+          return nominalScheduledFor != null
+            ? { ...repostEvent, nominalScheduledFor }
+            : repostEvent;
         }
 
         if (post.isQuotePost) {
-          return createQuotePostEvent(
+          const quoteEvent = createQuotePostEvent(
             post,
             addTags,
             tagArray,
             scheduledTime,
             fileUrl[0] ?? ""
           );
+          return nominalScheduledFor != null
+            ? { ...quoteEvent, nominalScheduledFor }
+            : quoteEvent;
         }
 
         // Regular post
         return {
           fileUrl,
           scheduledFor: Math.floor(scheduledTime / 1000),
+          ...(nominalScheduledFor != null ? { nominalScheduledFor } : {}),
           caption: post.caption,
           queueType: post.queueType,
           isRecyclable: post.isRecyclable,

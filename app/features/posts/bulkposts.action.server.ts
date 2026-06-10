@@ -171,6 +171,7 @@ export async function handleSignAndSchedule(
     const isRecyclableFlags = validatedData.isRecyclable;
     const repostSchedulesRaw = validatedData.repostSchedules;
     const quoteSchedulesRaw = validatedData.quoteSchedules;
+    const nominalScheduledForRaw = validatedData.nominalScheduledFor;
     const originalPostIds = validatedData.originalPostId.filter(
       (id: string) => id && id !== ""
     );
@@ -293,6 +294,22 @@ export async function handleSignAndSchedule(
         const originalPostId =
           index < originalPostIds.length ? originalPostIds[index] : undefined;
 
+        // Nominal slot time (unix sec) when a random window jittered the actual
+        // publish time. Persisted so queue "next slot" cadence ignores jitter.
+        const nominalScheduledForStr =
+          index < nominalScheduledForRaw.length
+            ? nominalScheduledForRaw[index]
+            : "";
+        const nominalScheduledForParsed =
+          nominalScheduledForStr && nominalScheduledForStr.trim() !== ""
+            ? Number(nominalScheduledForStr)
+            : undefined;
+        const nominalScheduledFor =
+          nominalScheduledForParsed != null &&
+          Number.isFinite(nominalScheduledForParsed)
+            ? nominalScheduledForParsed
+            : undefined;
+
         // Use CreatePostUseCase for bulk post creation
         const createPostUseCase = new CreatePostUseCase();
         const result = await createPostUseCase.execute({
@@ -307,6 +324,7 @@ export async function handleSignAndSchedule(
           signedEvent: signedEvent,
           nostrEvent: nostrEvents[index],
           scheduledFor: signedEvent.created_at, // Schedule for the timestamp in the event
+          nominalScheduledFor, // Original queue slot time when jittered
           repost: signedEvent.kind === 6, // Mark as repost if it's kind 6
           isQuotedPost: isQuotePost, // Mark as quoted post
           repostOfPostId:

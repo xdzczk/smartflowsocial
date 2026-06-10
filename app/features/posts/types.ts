@@ -647,6 +647,12 @@ export interface ArticleDraftPayload {
 export interface PreparedEvent {
   fileUrl: string[];
   scheduledFor: number;
+  /**
+   * Nominal (user/queue) schedule time in Unix seconds, set when a random
+   * schedule window was applied so `scheduledFor` is jittered. Persisted as
+   * `nominalScheduledAtUtc` so queue "next slot" cadence ignores the jitter.
+   */
+  nominalScheduledFor?: number;
   caption: string;
   queueType: string;
   isRecyclable: boolean;

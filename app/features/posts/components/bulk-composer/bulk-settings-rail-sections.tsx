@@ -35,6 +35,7 @@ import {
   railFieldClassNames,
   railSelectTriggerClassNames,
 } from "~/features/posts/components/publishing-rail";
+import { ComposerScheduleRandomWindowField } from "~/features/posts/composer/components/composer/ComposerScheduleRandomWindowField";
 import type { BulkPost, RepostConditions } from "~/features/posts/types";
 import {
   INLINE_ICON_SIZE_CLASS,
@@ -170,6 +171,17 @@ export function BulkSettingsRailBuildDefaultsBlock({
             >
               Clear all queues
             </Button>
+            <ComposerScheduleRandomWindowField
+              scheduleRandomWindowMinutes={bulkScheduleRandomWindowMinutes}
+              onScheduleRandomWindowMinutesChange={(v) =>
+                setBulkScheduleRandomWindowMinutes(v as 0 | 5 | 10 | 15)
+              }
+              disabled={isProcessing}
+              windowOptions={[5, 10, 15]}
+              label="Randomize publish time"
+              idPrefix="bulk-queue"
+              description="Prefilled from the selected queue's randomization setting."
+            />
           </div>
         )}
       </div>
