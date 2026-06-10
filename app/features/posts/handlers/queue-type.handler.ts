@@ -242,9 +242,13 @@ function calculateWeeklySlotsScheduleTime(
     .filter((s): s is ParsedWeeklySlot => s !== null);
   if (parsedSlots.length === 0) return fallbackTime;
 
-  // For all indices (including 0), use the next available weekly slot from baseDate.
-  // Search from 1ms before baseDate so a slot exactly at baseDate is included.
-  const searchFrom = index === 0 ? new Date(baseDate.getTime() - 1) : baseDate;
+  // `baseDate` is post index 0's slot. To place the post at `index` on the slot
+  // `index` positions after `baseDate`, the loop must count `baseDate` itself as
+  // its first step. Always search from 1ms before `baseDate` so the first
+  // iteration can land on `baseDate` for every index; using `baseDate`
+  // (exclusive) for index > 0 advanced one slot too far and skipped the second
+  // eligible slot (off-by-one).
+  const searchFrom = new Date(baseDate.getTime() - 1);
   let current = searchFrom;
   let next: Date | null = null;
   for (let i = 0; i <= index; i++) {
