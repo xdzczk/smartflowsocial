@@ -22,6 +22,8 @@ export interface CreateLongFormPostInput {
   signedEvent?: SignedEvent;
   nostrEvent?: NostrEvent;
   scheduledFor?: number; // Unix timestamp in seconds
+  /** When a random schedule window jittered `scheduledFor`: the nominal queue slot (unix seconds). */
+  nominalScheduledFor?: number;
   isPublished?: boolean; // If true, publish immediately
 }
 

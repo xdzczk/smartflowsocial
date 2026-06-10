@@ -7,6 +7,7 @@ export interface LongFormQueueType {
   color?: string | null;
   hashtags?: string | null;
   scheduleType?: string;
+  scheduleConfig?: unknown;
   isEnabled?: boolean;
   includeHashtagsInNoteBody?: boolean;
 }

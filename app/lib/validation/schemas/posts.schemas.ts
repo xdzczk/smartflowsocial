@@ -383,6 +383,9 @@ export const signAndScheduleSchema = z.object({
   originalPostId: z.array(z.string()).optional().default([]),
   repostSchedules: z.array(z.string()).optional().default([]),
   quoteSchedules: z.array(z.string()).optional().default([]),
+  // Per-post nominal slot time (unix sec) used when a random schedule window
+  // jittered the actual publish time. Empty strings mean "no randomization".
+  nominalScheduledFor: z.array(z.string()).optional().default([]),
 });
 
 /**

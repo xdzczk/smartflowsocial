@@ -150,6 +150,15 @@ export function useBulkPostSigning({
           data.isRecyclable ? "true" : "false"
         );
         finalFormData.append("originalPostId", data.originalPostId ?? "");
+        // Nominal slot time (unix sec) when a random window jittered the actual
+        // publish time. Empty string when no randomization was applied. Kept in
+        // the same per-entry order as `signedEvents` so the server can align it.
+        const nominalScheduledFor =
+          preparedEvents[data.originalIndex]?.nominalScheduledFor;
+        finalFormData.append(
+          "nominalScheduledFor",
+          nominalScheduledFor != null ? String(nominalScheduledFor) : ""
+        );
       }
       for (const signedEntry of signedEntries) {
         const i = signedEntry.originalIndex;

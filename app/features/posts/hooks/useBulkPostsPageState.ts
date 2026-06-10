@@ -666,6 +666,18 @@ export function useBulkPostsPageState({
     );
   };
 
+  const resolveQueueScheduleRandomWindow = useCallback(
+    (queueTypeName: string): 0 | 5 | 10 | 15 => {
+      if (!queueTypeName || queueTypeName === "unassigned") return 0;
+      const qt = queueTypes.find((q) => q.name === queueTypeName) as
+        | { scheduleConfig?: { scheduleRandomWindowMinutes?: number } }
+        | undefined;
+      const window = qt?.scheduleConfig?.scheduleRandomWindowMinutes ?? 0;
+      return window === 5 || window === 10 || window === 15 ? window : 0;
+    },
+    [queueTypes]
+  );
+
   const handleQueueTypeChange = async (index: number, value: string) => {
     await handleQueueTypeChangeHandler(index, value, {
       posts,
@@ -703,6 +715,11 @@ export function useBulkPostsPageState({
       setSelectedQueueType,
       firstItemTimeManuallyChanged,
     });
+    // Mirror the selected queue's randomization default so queueing applies the
+    // queue's configured ± window (matches Unified/Poll composer behavior).
+    setBulkScheduleRandomWindowMinutes(
+      resolveQueueScheduleRandomWindow(queueType)
+    );
     setToast({
       type: "success",
       message: `Applied ${queueType} to ${count} post${count !== 1 ? "s" : ""}`,

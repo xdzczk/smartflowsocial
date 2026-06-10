@@ -23,6 +23,7 @@ import {
   generateSummaryFromMarkdown,
 } from "~/lib/markdown-utils";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import { applyRandomScheduleWindow } from "~/lib/schedule-random";
 import {
   fromDate,
   fromISOString,
@@ -236,6 +237,8 @@ interface UseLongFormSubmissionProps {
   /** When set (user picked relays in composer), sent as `relays` JSON on submit. */
   relayOverride?: string[] | null;
   includeHashtagsInNoteBody: boolean;
+  /** Publish at a random time within ±N minutes of the nominal schedule (0 = off). */
+  scheduleRandomWindowMinutes?: number;
   /** Fires immediately on publish-now intent before signing. */
   onPublishIntent?: () => void;
 }
@@ -258,6 +261,7 @@ export function useLongFormSubmission({
   calculateQueueScheduleTime,
   relayOverride = null,
   includeHashtagsInNoteBody,
+  scheduleRandomWindowMinutes = 0,
   onPublishIntent,
 }: UseLongFormSubmissionProps) {
   const [isSigning, setIsSigning] = useState(false);
@@ -298,18 +302,39 @@ export function useLongFormSubmission({
           calculateQueueScheduleTime,
         });
 
-        const scheduledTimestamp =
+        const nominalScheduledTimestamp =
           actionType === "schedule" && effectiveScheduled
             ? await parseScheduledTimestamp(effectiveScheduled)
             : undefined;
 
         if (
           actionType === "schedule" &&
-          scheduledTimestamp !== undefined &&
-          scheduledTimestamp * 1000 < getMinScheduleTimestampMs(userTimezone)
+          nominalScheduledTimestamp !== undefined &&
+          nominalScheduledTimestamp * 1000 <
+            getMinScheduleTimestampMs(userTimezone)
         ) {
           setSigningError("Schedule time must be in the future.");
           return;
+        }
+
+        // Apply random schedule window: `scheduledTimestamp` becomes the actual
+        // (jittered) publish time, while `nominalScheduledForToSend` keeps the
+        // original queue slot so queue "next slot" cadence ignores the jitter.
+        let scheduledTimestamp = nominalScheduledTimestamp;
+        let nominalScheduledForToSend: number | undefined;
+        if (
+          actionType === "schedule" &&
+          nominalScheduledTimestamp !== undefined &&
+          scheduleRandomWindowMinutes > 0
+        ) {
+          const actual = applyRandomScheduleWindow(
+            nominalScheduledTimestamp,
+            scheduleRandomWindowMinutes
+          );
+          if (actual !== nominalScheduledTimestamp) {
+            scheduledTimestamp = actual;
+            nominalScheduledForToSend = nominalScheduledTimestamp;
+          }
         }
 
         const uniqueTags = getEffectiveHashtagsAndUniqueTags(
@@ -379,6 +404,12 @@ export function useLongFormSubmission({
           [
             "scheduledFor",
             scheduledTimestamp ? scheduledTimestamp.toString() : "",
+          ],
+          [
+            "nominalScheduledFor",
+            nominalScheduledForToSend != null
+              ? nominalScheduledForToSend.toString()
+              : "",
           ],
           ["signedEvent", JSON.stringify(signedEvent)],
           ["nostrEvent", JSON.stringify(nostrEvent)],
