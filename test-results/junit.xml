@@ -1,15 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="5" failures="0" errors="0" time="0.004026709">
-    <testsuite name="tests/unit/use-cases/create-longform-post.use-case.test.ts" timestamp="2026-06-10T13:54:00.405Z" hostname="Ivans-MacBook-Pro.local" tests="5" failures="0" errors="0" skipped="0" time="0.004026709">
-        <testcase classname="tests/unit/use-cases/create-longform-post.use-case.test.ts" name="CreateLongFormPostUseCase &gt; execute &gt; should create a draft longform post successfully" time="0.001685417">
+<testsuites name="vitest tests" tests="3" failures="0" errors="0" time="0.021418292">
+    <testsuite name="tests/integration/handlers/queue-type-weekly-slots.test.ts" timestamp="2026-06-10T19:43:32.781Z" hostname="Ivans-MacBook-Pro.local" tests="3" failures="0" errors="0" skipped="0" time="0.021418292">
+        <testcase classname="tests/integration/handlers/queue-type-weekly-slots.test.ts" name="Queue Type Handler - WEEKLY_SLOTS Logic &gt; should calculate WEEKLY_SLOTS schedule times correctly" time="0.009657708">
         </testcase>
-        <testcase classname="tests/unit/use-cases/create-longform-post.use-case.test.ts" name="CreateLongFormPostUseCase &gt; execute &gt; should create a scheduled longform post with outbox event" time="0.000914833">
+        <testcase classname="tests/integration/handlers/queue-type-weekly-slots.test.ts" name="Queue Type Handler - WEEKLY_SLOTS Logic &gt; should assign consecutive weekly slots without skipping (off-by-one regression)" time="0.010925458">
         </testcase>
-        <testcase classname="tests/unit/use-cases/create-longform-post.use-case.test.ts" name="CreateLongFormPostUseCase &gt; execute &gt; should resolve queue type when queueType name is provided" time="0.000164292">
-        </testcase>
-        <testcase classname="tests/unit/use-cases/create-longform-post.use-case.test.ts" name="CreateLongFormPostUseCase &gt; execute &gt; should not create outbox event if isPublished is true" time="0.000147083">
-        </testcase>
-        <testcase classname="tests/unit/use-cases/create-longform-post.use-case.test.ts" name="CreateLongFormPostUseCase &gt; execute &gt; should create the post as DRAFT when isPublished is true so PublishLongFormNowUseCase owns the publish lifecycle (regression: must not pre-mark PUBLISHED)" time="0.000228708">
+        <testcase classname="tests/integration/handlers/queue-type-weekly-slots.test.ts" name="Queue Type Handler - WEEKLY_SLOTS Logic &gt; should use fallback when WEEKLY_SLOTS config has invalid entries" time="0.00023075">
         </testcase>
     </testsuite>
 </testsuites>

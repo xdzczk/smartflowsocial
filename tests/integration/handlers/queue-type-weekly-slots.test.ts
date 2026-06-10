@@ -96,12 +96,72 @@ describe("Queue Type Handler - WEEKLY_SLOTS Logic", () => {
     }
     const updatedPosts = callArgs as BulkPost[];
     expect(updatedPosts).toHaveLength(2);
-    expect(updatedPosts[0]?.scheduledFor).toMatch(
-      /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/
+    // Slots: Mon 09:00, Wed 14:00, Fri 18:00. Base = Mon 2024-12-23T09:00.
+    // Post 0 takes the base slot; post 1 must take the very next slot (Wed),
+    // not skip it. (Regression guard for the off-by-one that skipped slot 2.)
+    expect(updatedPosts[0]?.scheduledFor).toBe("2024-12-23T09:00");
+    expect(updatedPosts[1]?.scheduledFor).toBe("2024-12-25T14:00");
+  });
+
+  it("should assign consecutive weekly slots without skipping (off-by-one regression)", async () => {
+    const posts: BulkPost[] = Array.from({ length: 4 }, (_, i) => ({
+      clientId: `post-${i + 1}`,
+      files: [],
+      caption: "",
+      queueType: "Weekly",
+      scheduledFor: "",
+      isRecyclable: false,
+    }));
+
+    const queueTypes: QueueType[] = [
+      {
+        id: "queue-weekly",
+        name: "Weekly",
+        scheduleType: "WEEKLY_SLOTS" as const,
+        scheduleConfig: {
+          weeklySlots: [
+            { dayOfWeek: 1, time: "09:00" },
+            { dayOfWeek: 3, time: "14:00" },
+            { dayOfWeek: 5, time: "18:00" },
+          ],
+        },
+      },
+    ];
+
+    const user = { id: TEST_USER_ID, timezone: "UTC" };
+    const setPosts = vi.fn();
+    const setDisplayedHashtags = vi.fn();
+    const setSelectedQueueType = vi.fn();
+
+    // Next slot is Monday 2024-12-23 09:00 UTC.
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ scheduledTime: "2024-12-23T09:00" }),
+    });
+
+    (resolveQueueTypeId as ReturnType<typeof vi.fn>).mockResolvedValue(
+      "queue-weekly"
     );
-    expect(updatedPosts[1]?.scheduledFor).toMatch(
-      /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/
-    );
+
+    await handleBulkQueueUpdate("Weekly", {
+      posts,
+      setPosts,
+      queueTypes,
+      tags: [],
+      user,
+      setDisplayedHashtags,
+      setSelectedQueueType,
+      firstItemTimeManuallyChanged: false,
+    });
+
+    const updatedPosts = setPosts.mock.calls[0]?.[0] as BulkPost[];
+    // Mon 09:00 → Wed 14:00 → Fri 18:00 → next Mon 09:00, every slot filled.
+    expect(updatedPosts.map((p) => p.scheduledFor)).toEqual([
+      "2024-12-23T09:00",
+      "2024-12-25T14:00",
+      "2024-12-27T18:00",
+      "2024-12-30T09:00",
+    ]);
   });
 
   it("should use fallback when WEEKLY_SLOTS config has invalid entries", async () => {
