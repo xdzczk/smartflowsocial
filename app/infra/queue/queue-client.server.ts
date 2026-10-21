@@ -55,8 +55,8 @@ function getQueue(queueName: QueueType): Queue {
 
     const queue = new Queue(queueName, {
       // BullMQ accepts ioredis instances at runtime, but TypeScript types don't reflect this
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment -- BullMQ runtime accepts ioredis instance
-      connection: redis as any,
+
+      connection: redis,
       defaultJobOptions: {
         removeOnComplete: queueName === "post-checker" ? 10 : 100,
         removeOnFail: false, // Keep failed jobs for dead letter queue

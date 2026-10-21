@@ -43,7 +43,7 @@ export function RenderedPollPreview({
               >
                 {i + 1}
               </span>
-              <span className="wrap-break-word leading-snug">{opt}</span>
+              <span className="leading-snug wrap-break-word">{opt}</span>
             </li>
           ))}
         </ul>

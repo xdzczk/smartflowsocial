@@ -3,11 +3,7 @@
  * Used by getActiveSigner; side effects go through options callbacks for testability.
  */
 
-import {
-  BunkerSigner,
-  createNostrConnectURI,
-  parseNostrConnectURI,
-} from "nostr-tools/nip46";
+import { BunkerSigner, createNostrConnectURI } from "nostr-tools/nip46";
 
 import {
   Nip46Signer,
@@ -29,6 +25,7 @@ import {
 } from "./connection-relay-utils.client";
 import { hexToBytes } from "./nostr-signer-keys.client";
 import type { ActiveSignerConfig } from "./nostr-signer-storage.client";
+import { parseNostrConnectURI } from "./nostrconnect-uri";
 import type { RemoteSignerConnection } from "./remote-signer-sessions-types";
 import type { ConnectionEvent } from "./remote-signer-status.client";
 

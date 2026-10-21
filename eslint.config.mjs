@@ -213,11 +213,13 @@ const postsSubmoduleBoundaries = [];
 for (const subA of POSTS_SUBMODULES) {
   for (const subB of POSTS_SUBMODULES) {
     if (subA === subB) continue;
+    // `except` globs are matched relative to `from` (eslint-module-utils >= 2.14
+    // enforces this; older versions also accepted repo-rooted globs).
     const indexExcept = [
-      `**/app/features/posts/${subB}/**/index.{ts,tsx}`,
-      `**/app/features/posts/${subB}/**/index.server.ts`,
-      `**/app/features/posts/${subB}/**/state-machine/**`,
-      `**/app/features/posts/${subB}/**/hooks/**`,
+      "**/index.{ts,tsx}",
+      "**/index.server.ts",
+      "**/state-machine/**",
+      "**/hooks/**",
     ];
     postsSubmoduleBoundaries.push({
       target: `app/features/posts/${subA}/**/*`,
