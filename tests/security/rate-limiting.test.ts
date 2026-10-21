@@ -14,6 +14,7 @@ import {
   createUserRateLimiter,
   createIPRateLimiter,
   getRateLimitInfo,
+  isAuthPageLoad,
 } from "~/lib/rate-limit.server";
 
 describe("Rate Limiting", () => {
@@ -68,6 +69,28 @@ describe("Rate Limiting", () => {
     it("should be defined", () => {
       expect(authLimiter).toBeDefined();
       expect(typeof authLimiter).toBe("function");
+    });
+
+    describe("isAuthPageLoad (skip predicate)", () => {
+      it("skips GET and HEAD page loads of / and /login", () => {
+        expect(isAuthPageLoad({ method: "GET", path: "/" })).toBe(true);
+        expect(isAuthPageLoad({ method: "GET", path: "/login" })).toBe(true);
+        // HEAD / is the /healthcheck loader's self-probe; it must never be
+        // counted or the container health check starts failing with 429.
+        expect(isAuthPageLoad({ method: "HEAD", path: "/" })).toBe(true);
+        expect(isAuthPageLoad({ method: "HEAD", path: "/login" })).toBe(true);
+      });
+
+      it("still counts actual authentication attempts and other paths", () => {
+        expect(isAuthPageLoad({ method: "POST", path: "/" })).toBe(false);
+        expect(isAuthPageLoad({ method: "POST", path: "/login" })).toBe(false);
+        expect(isAuthPageLoad({ method: "GET", path: "/auth/nostr" })).toBe(
+          false
+        );
+        expect(isAuthPageLoad({ method: "HEAD", path: "/auth/nostr" })).toBe(
+          false
+        );
+      });
     });
   });
 
