@@ -34,6 +34,7 @@ import {
   pollingLimiter,
   broadcastUnsubscribeLimiter,
 } from "./app/lib/rate-limit.server";
+import { TRUSTED_PROXIES } from "./app/lib/trusted-proxies.server";
 
 // Only install in production or when explicitly enabled to avoid missing map file errors in dev
 if (env.NODE_ENV === "production" || env.ENABLE_SOURCE_MAPS === "true") {
@@ -157,9 +158,12 @@ async function run() {
   const app = express();
   const metricsApp = express();
 
-  // Trust proxy for accurate IP extraction (needed for Fly.io and other proxies)
-  // Trust 1 proxy (Coolify's reverse proxy) to prevent IP spoofing
-  app.set("trust proxy", 1);
+  // Trust proxy for accurate IP extraction. Production traffic arrives as
+  // client -> Cloudflare -> Traefik -> app, so both hops must be trusted for
+  // req.ip (and therefore per-IP rate limiting) to identify the real client.
+  // See app/lib/trusted-proxies.server.ts for the rationale and the matching
+  // Traefik `forwardedHeaders.trustedIPs` requirement.
+  app.set("trust proxy", [...TRUSTED_PROXIES]);
   metricsApp.set("trust proxy", 1);
 
   // Import query metrics to register them
