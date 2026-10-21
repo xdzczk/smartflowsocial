@@ -269,9 +269,9 @@ pnpm exec cypress run --spec "tests/e2e/smoke/critical-path.cy.ts"
 
 - **Full suite locally:** Run `pnpm test` before pushing (or `pnpm test:unit`,
   `pnpm test:integration`, `pnpm test:property`, `pnpm test:security` for subsets). CI runs
-  `pnpm test` and coverage in
-  [.github/workflows/pr-checks.yml](../../.github/workflows/pr-checks.yml) on every PR;
-  [.github/workflows/ci.yml](../../.github/workflows/ci.yml) runs on push/PR to main/develop.
+  lint/format/typecheck, `pnpm test:coverage` (all suites) and the production build in
+  [.github/workflows/ci.yml](../../.github/workflows/ci.yml) on every push/PR to main/develop;
+  Cypress runs in [.github/workflows/e2e.yml](../../.github/workflows/e2e.yml).
 - **CI must be green for merge:** Do not merge until PR checks pass. Fix any failing or flaky tests
   so the default run is green.
 - **Do not commit test output artifacts:** Do not commit `test-results/` or coverage reports as

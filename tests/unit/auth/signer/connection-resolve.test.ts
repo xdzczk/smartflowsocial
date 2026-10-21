@@ -66,10 +66,6 @@ vi.mock("nostr-tools/nip46", () => ({
   BunkerSigner: {
     fromURI: (...args: unknown[]) => mocks.bunkerFromURI(...args),
   },
-  parseNostrConnectURI: vi.fn(() => ({
-    clientPubkey: "c".repeat(64),
-    params: { secret: "secret", perms: ["sign_event"] },
-  })),
   createNostrConnectURI: vi.fn(() => "nostrconnect://rewritten"),
 }));
 

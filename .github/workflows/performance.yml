@@ -1,79 +1,37 @@
-name: Performance Tests
+name: Load Tests (k6)
+
+# The vitest performance suite runs in ci.yml on every push/PR. This workflow
+# only runs the k6 load tests against staging, nightly and on demand.
 
 on:
-  pull_request:
-    branches: [main, develop]
-  push:
-    branches: [main, develop]
   schedule:
-    # Run daily at 2 AM UTC
+    # Daily at 02:00 UTC
     - cron: "0 2 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  unit-performance:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 10
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Setup PostgreSQL
-        uses: ankane/setup-postgres@v1
-        with:
-          database: smartflow_test
-          user: postgres
-
-      - name: Setup test database
-        run: pnpm exec prisma db push
-        env:
-          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
-
-      - name: Run unit performance tests
-        run: pnpm test:performance
-        env:
-          NODE_ENV: test
-          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
-
   load-tests:
+    name: k6 load tests
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
-    strategy:
-      matrix:
-        staging_url_secret_name: [STAGING_URL]
+    timeout-minutes: 60
     env:
-      BASE_URL: ${{ secrets[matrix.staging_url_secret_name] || 'http://localhost:3000' }}
+      BASE_URL: ${{ secrets.STAGING_URL || 'http://localhost:3000' }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 10
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: "22"
-          cache: "pnpm"
+          node-version-file: .nvmrc
+          cache: pnpm
 
       - name: Install k6
         run: |
@@ -81,7 +39,7 @@ jobs:
           sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
           echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
           sudo apt-get update
-          sudo apt-get install k6
+          sudo apt-get install -y k6
 
       - name: Prepare performance results directory
         run: mkdir -p tests/performance/results
@@ -105,7 +63,7 @@ jobs:
         run: node scripts/check-performance-budgets.mjs --source=k6 --dir=tests/performance/results
 
       - name: Upload performance results
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: performance-results

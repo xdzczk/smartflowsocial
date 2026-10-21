@@ -32,6 +32,9 @@ vi.mock("@remix-run/react", async () => {
       </a>
     ),
     useRouteLoaderData: () => undefined,
+    // `useOptionalUser()` reads these; the modal is rendered without a data router here.
+    useMatches: () => [],
+    useNavigation: () => ({ state: "idle", location: undefined }),
   };
 });
 

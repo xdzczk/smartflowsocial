@@ -20,27 +20,43 @@ on:
         type: string
 
 jobs:
+  # GitHub expressions have no range(); build the [1..N] matrix in a shell step.
+  prepare-matrix:
+    name: Prepare run matrix
+    runs-on: ubuntu-latest
+    outputs:
+      runs: ${{ steps.matrix.outputs.runs }}
+    steps:
+      - name: Build run list
+        id: matrix
+        run: |
+          count="${{ inputs.runs }}"
+          if ! [[ "$count" =~ ^[0-9]+$ ]] || [ "$count" -lt 1 ]; then count=10; fi
+          if [ "$count" -gt 50 ]; then count=50; fi
+          runs=$(seq -s, 1 "$count")
+          echo "runs=[$runs]" >> "$GITHUB_OUTPUT"
+          echo "Will run ${{ inputs.test_suite }} tests $count times"
+
   detect-flaky-tests:
     name: Detect Flaky Tests (${{ inputs.test_suite }})
     runs-on: ubuntu-latest
+    needs: prepare-matrix
     strategy:
       fail-fast: false
       matrix:
-        run: ${{ fromJSON(format('[{0}]', join(range(1, fromJSON(inputs.runs || '10') + 1), ','))) }}
+        run: ${{ fromJSON(needs.prepare-matrix.outputs.runs) }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: 10
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: "22"
+          node-version-file: .nvmrc
           cache: "pnpm"
 
       - name: Install dependencies
@@ -51,7 +67,6 @@ jobs:
         with:
           database: smartflow_test
           user: postgres
-          password: postgres
 
       - name: Setup test database
         run: pnpm exec prisma db push
@@ -92,7 +107,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: flaky-test-results-${{ inputs.test_suite }}-run-${{ matrix.run }}
           path: flaky-test-results
@@ -106,10 +121,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Download all test results
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           pattern: "flaky-test-results-*"
           merge-multiple: true
@@ -122,9 +137,10 @@ jobs:
           echo "Analyzing test results for ${{ inputs.test_suite }} tests..." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          total_runs=$(ls flaky-test-results/*.txt 2>/dev/null | wc -l || echo "0")
-          success_count=$(grep -c "success" flaky-test-results/*.txt 2>/dev/null || echo "0")
-          failure_count=$(grep -c "failure" flaky-test-results/*.txt 2>/dev/null || echo "0")
+          # Concatenate first: `grep -c` over several files prints one count per file.
+          total_runs=$(ls flaky-test-results/*.txt 2>/dev/null | wc -l | tr -d ' ')
+          success_count=$(cat flaky-test-results/*.txt 2>/dev/null | grep -c "success" || true)
+          failure_count=$(cat flaky-test-results/*.txt 2>/dev/null | grep -c "failure" || true)
 
           echo "Total runs: $total_runs" >> $GITHUB_STEP_SUMMARY
           echo "Successful: $success_count" >> $GITHUB_STEP_SUMMARY

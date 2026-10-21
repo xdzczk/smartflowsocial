@@ -47,3 +47,6 @@ pnpm-debug.log*
 
 # Tailwind (generated)
 /app/styles/tailwind.css
+
+# Lockfile is machine-written by pnpm; do not reformat it
+pnpm-lock.yaml

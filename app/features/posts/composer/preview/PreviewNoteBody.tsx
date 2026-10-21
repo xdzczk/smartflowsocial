@@ -85,7 +85,7 @@ export function PreviewNoteBody({
   return (
     <div
       className={cn(
-        "text-text wrap-break-word text-[15px] leading-[1.55] whitespace-pre-wrap",
+        "text-text text-[15px] leading-[1.55] wrap-break-word whitespace-pre-wrap",
         className
       )}
     >

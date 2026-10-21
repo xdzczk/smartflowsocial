@@ -50,7 +50,7 @@ export function RailSegmentedTabGroup({
                 "motion-fast flex items-center justify-center rounded-md px-1 text-center text-xs",
                 disabled && "pointer-events-none opacity-90",
                 active
-                  ? "bg-surface text-text ring-border-subtle/55 dark:ring-border-subtle/40 font-semibold ring-1 shadow-sm dark:shadow-none"
+                  ? "bg-surface text-text ring-border-subtle/55 dark:ring-border-subtle/40 font-semibold shadow-sm ring-1 dark:shadow-none"
                   : "text-text-secondary hover:bg-surface-hover/55 hover:text-text border border-transparent font-medium"
               )}
               onClick={() => {

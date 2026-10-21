@@ -97,8 +97,8 @@ export const scheduledPostsWorker = new Worker<PostJobData>(
   },
   {
     // BullMQ accepts ioredis instances at runtime, but TypeScript types don't reflect this
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment -- BullMQ runtime accepts ioredis instance
-    connection: redis as any,
+
+    connection: redis,
     concurrency: 5,
   }
 );
@@ -146,8 +146,8 @@ export const scheduledLongFormPostsWorker = new Worker<LongFormPostJobData>(
   },
   {
     // BullMQ accepts ioredis instances at runtime, but TypeScript types don't reflect this
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment -- BullMQ runtime accepts ioredis instance
-    connection: redis as any,
+
+    connection: redis,
     concurrency: 5,
   }
 );
@@ -189,8 +189,7 @@ export const broadcastDmWorker = new Worker<BroadcastJobData>(
     }
   },
   {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment -- BullMQ runtime accepts ioredis instance
-    connection: redis as any,
+    connection: redis,
     concurrency: 3,
   }
 );
@@ -225,8 +224,8 @@ export const postCheckerWorker = new Worker(
   },
   {
     // BullMQ accepts ioredis instances at runtime, but TypeScript types don't reflect this
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment -- BullMQ runtime accepts ioredis instance
-    connection: redis as any,
+
+    connection: redis,
     concurrency: 1,
   }
 );

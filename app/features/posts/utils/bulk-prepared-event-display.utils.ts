@@ -68,26 +68,39 @@ export function parseContentForRegularPost(
       mediaUrls.push(line);
       continue;
     }
-    captionLines.push(line);
+    if (line !== "null") {
+      captionLines.push(line);
+    }
   }
 
-  if (mediaUrls.length > 0 || captionLines.length > 0) {
+  const [firstMediaUrl] = mediaUrls;
+  if (firstMediaUrl) {
     return {
       caption:
         captionLines.length > 0 ? captionLines.join("\n") : fallbackCaption,
-      mediaUrl: mediaUrls[0] ?? fallbackFileUrl,
+      mediaUrl: firstMediaUrl,
     };
   }
 
   // Legacy space-separated content (caption and URL on one line).
-  const contentParts = trimmed.split(/\s+/);
-  const mediaUrl =
-    contentParts.find((part) => isHttpUrlToken(part))?.trim() ?? "";
-  const captionParts = contentParts.filter((part) => !isHttpUrlToken(part));
+  const contentParts = trimmed
+    .split(/\s+/)
+    .filter((part) => part !== "" && part !== "null");
+  const inlineMediaUrl = contentParts.find((part) => isHttpUrlToken(part));
+
+  if (inlineMediaUrl) {
+    const captionParts = contentParts.filter((part) => !isHttpUrlToken(part));
+    return {
+      caption:
+        captionParts.length > 0 ? captionParts.join(" ") : fallbackCaption,
+      mediaUrl: inlineMediaUrl,
+    };
+  }
 
   return {
-    caption: captionParts.length > 0 ? captionParts.join(" ") : fallbackCaption,
-    mediaUrl: mediaUrl || fallbackFileUrl,
+    caption:
+      captionLines.length > 0 ? captionLines.join("\n") : fallbackCaption,
+    mediaUrl: fallbackFileUrl,
   };
 }
 
