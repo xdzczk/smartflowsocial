@@ -1,5 +1,8 @@
 [phases.setup]
-nixPkgs = ["nodejs", "python3", "gcc", "gnumake"]
+# Pin the Node major explicitly: the bare "nodejs" attribute resolves to
+# whatever nixpkgs ships at build time, so production could silently change
+# majors between deploys. Keep in sync with .nvmrc and the CI node-version.
+nixPkgs = ["nodejs_22", "python3", "gcc", "gnumake"]
 
 [phases.install]
 cmds = ["corepack enable", "pnpm install --frozen-lockfile"]
