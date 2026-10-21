@@ -572,6 +572,8 @@ export async function runScheduledPostJob(input: {
           postId,
           userId,
           reason: `Follow-up discarded: ${invalidReason}`,
+          // This job *is* the post's job; it is locked and will complete on its own.
+          cancelJob: false,
         });
       }
       logInfo("Skipping attached child publish due to dependency guard", {
@@ -615,6 +617,8 @@ export async function runScheduledPostJob(input: {
           postId,
           userId,
           reason: "Follow-up discarded: parent signing changed",
+          // This job *is* the post's job; it is locked and will complete on its own.
+          cancelJob: false,
         });
         recordJobSkipped(queueName, "attached_parent_event_mismatch");
       } else if (
@@ -625,6 +629,8 @@ export async function runScheduledPostJob(input: {
           postId,
           userId,
           reason: "Parent post did not publish; follow-up discarded",
+          // This job *is* the post's job; it is locked and will complete on its own.
+          cancelJob: false,
         });
         recordJobSkipped(
           queueName,
@@ -694,6 +700,8 @@ export async function runScheduledPostJob(input: {
         postId,
         userId,
         reason: "Repost skipped: could not verify engagement conditions",
+        // This job *is* the post's job; it is locked and will complete on its own.
+        cancelJob: false,
       });
       logInfo("Repost skipped: could not verify engagement conditions", {
         postId,
@@ -739,6 +747,8 @@ export async function runScheduledPostJob(input: {
         postId,
         userId,
         reason: "Repost skipped: engagement conditions not met",
+        // This job *is* the post's job; it is locked and will complete on its own.
+        cancelJob: false,
       });
       logInfo("Repost skipped: engagement conditions not met", {
         postId,

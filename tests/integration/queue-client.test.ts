@@ -191,6 +191,7 @@ describe("Queue Client", () => {
       const mockJob = {
         id: "post-123",
         data: { postId: "post-123" },
+        isActive: vi.fn().mockResolvedValue(false),
         remove: vi.fn().mockResolvedValue(undefined),
       } as unknown as Job;
 
@@ -204,6 +205,50 @@ describe("Queue Client", () => {
       expect(mockQueue.getJob).toHaveBeenCalledWith("post-123");
       expect(mockJob.remove).toHaveBeenCalled();
       expect(result).toBe(true);
+    });
+
+    it("should not remove a job that is actively being processed", async () => {
+      const mockJob = {
+        id: "post-123",
+        data: { postId: "post-123" },
+        isActive: vi.fn().mockResolvedValue(true),
+        remove: vi.fn().mockResolvedValue(undefined),
+      } as unknown as Job;
+
+      mockQueue.getJob.mockResolvedValue(mockJob);
+
+      const result = await queueClient.cancelByJobId(
+        "scheduled-posts",
+        "post-123"
+      );
+
+      expect(mockJob.remove).not.toHaveBeenCalled();
+      expect(result).toBe(false);
+    });
+
+    it("should treat BullMQ lock errors as a benign skip, not an error", async () => {
+      const mockJob = {
+        id: "post-123",
+        data: { postId: "post-123" },
+        // Became active between the isActive() check and remove()
+        isActive: vi.fn().mockResolvedValue(false),
+        remove: vi
+          .fn()
+          .mockRejectedValue(
+            new Error(
+              "Job post-123 could not be removed because it is locked by another worker"
+            )
+          ),
+      } as unknown as Job;
+
+      mockQueue.getJob.mockResolvedValue(mockJob);
+
+      const result = await queueClient.cancelByJobId(
+        "scheduled-posts",
+        "post-123"
+      );
+
+      expect(result).toBe(false);
     });
 
     it("should return false when job not found", async () => {

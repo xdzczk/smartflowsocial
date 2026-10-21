@@ -89,6 +89,28 @@ describe("attached-followups service", () => {
     expect(mockCancelPostJob).toHaveBeenCalledWith("child-1");
   });
 
+  it("discardScheduledPost skips queue cancellation when cancelJob is false", async () => {
+    mockFindFirst.mockResolvedValue({ currentState: "SCHEDULED" });
+
+    const discarded = await discardScheduledPost({
+      postId: "child-1",
+      userId: "user-1",
+      reason: "Follow-up discarded from inside its own job",
+      cancelJob: false,
+    });
+
+    expect(discarded).toBe(true);
+    // State is still transitioned to CANCELLED...
+    expect(mockUpdate).toHaveBeenCalledTimes(2);
+    expect(mockCreate).toHaveBeenCalledTimes(1);
+    const transition = mockCreate.mock.calls[0]?.[0] as {
+      data: { toState: string };
+    };
+    expect(transition.data.toState).toBe("CANCELLED");
+    // ...but the (locked, in-flight) BullMQ job is left alone
+    expect(mockCancelPostJob).not.toHaveBeenCalled();
+  });
+
   it("discardScheduledPost is a no-op when post is not scheduled", async () => {
     mockFindFirst.mockResolvedValue({ currentState: "PUBLISHED" });
 

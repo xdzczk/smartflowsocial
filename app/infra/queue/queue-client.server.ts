@@ -7,7 +7,7 @@ import { Queue } from "bullmq";
 import Redis from "ioredis";
 
 import { env } from "~/lib/env.server";
-import { logError } from "~/lib/error-logger.server";
+import { logError, logInfo } from "~/lib/error-logger.server";
 
 import type {
   QueueClient,
@@ -19,6 +19,11 @@ import type {
   LongFormPostJobData,
 } from "./queue-types";
 import { getBullMQRetryConfig } from "./retry-policy.server";
+
+/** Matches BullMQ's error when removing a job that a worker currently holds a lock on. */
+function isLockedJobError(error: Error): boolean {
+  return /could not be removed because it is locked/i.test(error.message);
+}
 
 // Redis connection with BullMQ required config
 const isTestEnv = env.NODE_ENV === "test";
@@ -121,14 +126,39 @@ class BullMQClient implements QueueClient {
       const queue = getQueue(queueName);
       const job = await queue.getJob(jobId);
 
-      if (job) {
-        await job.remove();
-        return true;
+      if (!job) {
+        return false;
       }
 
-      return false;
+      // A job that is currently being processed holds a BullMQ lock and cannot
+      // be removed; `job.remove()` would throw "could not be removed because it
+      // is locked by another worker". The processor owns its lifecycle (it will
+      // complete or fail on its own), so skip removal instead of erroring.
+      if (await job.isActive()) {
+        logInfo("Skipping queue cancellation: job is actively processing", {
+          queueName,
+          jobId,
+        });
+        return false;
+      }
+
+      await job.remove();
+      return true;
     } catch (error) {
-      logError(error instanceof Error ? error : new Error(String(error)), {
+      const err = error instanceof Error ? error : new Error(String(error));
+      // Race between the isActive() check and remove(): the job became active
+      // in between. Same outcome as above; not an error condition.
+      if (isLockedJobError(err)) {
+        logInfo(
+          "Skipping queue cancellation: job became active during cancel",
+          {
+            queueName,
+            jobId,
+          }
+        );
+        return false;
+      }
+      logError(err, {
         queueName,
         jobId,
         message: "Error canceling job by ID",

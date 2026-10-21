@@ -74,11 +74,17 @@ export async function cascadeDeleteAttachedFollowups(input: {
 /**
  * Remove a scheduled post that can no longer be published (e.g. engagement
  * conditions not met). Clears schedule metadata so it disappears from Scheduled.
+ *
+ * `cancelJob` (default `true`) controls whether the BullMQ job for this post is
+ * cancelled. Pass `false` when calling from inside the job processor for this
+ * very post: that job is already executing (and locked), so there is nothing to
+ * cancel and attempting it would only produce a "locked by another worker" error.
  */
 export async function discardScheduledPost(input: {
   postId: string;
   userId: string;
   reason: string;
+  cancelJob?: boolean;
 }): Promise<boolean> {
   const post = await prisma.post.findFirst({
     where: { id: input.postId, userId: input.userId },
@@ -113,7 +119,9 @@ export async function discardScheduledPost(input: {
     });
   });
 
-  await cancelPostJob(input.postId);
+  if (input.cancelJob ?? true) {
+    await cancelPostJob(input.postId);
+  }
   return true;
 }
 
