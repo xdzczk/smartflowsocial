@@ -3,6 +3,7 @@
  * Handles sending push notifications to subscribed users
  */
 
+import * as webpush from "web-push";
 import type { PushSubscription as WebPushSubscription } from "web-push";
 
 import { getRunwaySettings } from "~/features/user/services/user-settings.server";
@@ -23,9 +24,6 @@ import {
 import { initWebPush } from "./web-push-config.server";
 
 const RUNWAY_LOW_THROTTLE_MS = 24 * 60 * 60 * 1000; // 24 hours
-
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- web-push uses CommonJS
-const webpush = require("web-push");
 
 const DEFAULT_ICON = "/icon-192.png";
 const NOTIFICATION_BODY_PREVIEW_MAX_LENGTH = 100;
@@ -148,6 +146,54 @@ function notificationAssetUrl(picture: string): string {
 export type SendPushResult = { sent: true } | { sent: false; expired: boolean };
 
 /**
+ * HTTP status codes from a push service that mean the subscription is gone for
+ * good and must be removed (RFC 8030 §5 / Web Push protocol): 404 Not Found and
+ * 410 Gone. Anything else (429, 5xx, network errors) is treated as transient.
+ */
+const EXPIRED_PUSH_STATUS_CODES: ReadonlySet<number> = new Set([404, 410]);
+
+interface WebPushErrorShape {
+  statusCode?: unknown;
+  body?: unknown;
+  endpoint?: unknown;
+}
+
+/**
+ * Extract the push-service HTTP status and response body from a `web-push`
+ * error. `WebPushError` always uses the generic message
+ * "Received unexpected response code" and carries the real status in
+ * `statusCode`, so the message alone cannot be used to detect expiry.
+ */
+export function classifyWebPushError(error: unknown): {
+  statusCode: number | null;
+  body: string | null;
+  expired: boolean;
+} {
+  const shape: WebPushErrorShape =
+    typeof error === "object" && error !== null ? error : {};
+
+  const statusCode =
+    typeof shape.statusCode === "number" && Number.isFinite(shape.statusCode)
+      ? shape.statusCode
+      : null;
+  const body =
+    typeof shape.body === "string" && shape.body.length > 0
+      ? shape.body.slice(0, 500)
+      : null;
+
+  const message = error instanceof Error ? error.message : String(error);
+  const expired =
+    (statusCode !== null && EXPIRED_PUSH_STATUS_CODES.has(statusCode)) ||
+    // Fallback for non-WebPushError shapes that encode expiry in the message
+    (statusCode === null &&
+      (message.includes("410") ||
+        message.includes("Gone") ||
+        message.includes("expired")));
+
+  return { statusCode, body, expired };
+}
+
+/**
  * Send push notification to a single subscription.
  * Returns whether it was sent and, if not, whether the subscription is expired (should be removed).
  */
@@ -168,7 +214,6 @@ export async function sendPushNotification(
       },
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call -- web-push is a CommonJS module without proper TypeScript types
     await webpush.sendNotification(
       webPushSubscription,
       JSON.stringify(payload),
@@ -181,25 +226,46 @@ export async function sendPushNotification(
     return { sent: true };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    const isExpired =
-      errorMessage.includes("410") ||
-      errorMessage.includes("Gone") ||
-      errorMessage.includes("expired");
+    const { statusCode, body, expired } = classifyWebPushError(error);
 
-    if (isExpired) {
-      logError(error instanceof Error ? error : new Error(errorMessage), {
-        message: "Push notification failed: subscription expired",
-        endpoint: subscription.endpoint,
+    if (expired) {
+      // Expected lifecycle event (user revoked permission / browser dropped the
+      // subscription). Not an error: the caller will prune the subscription.
+      logInfo("Push subscription expired, pruning", {
+        statusCode,
+        endpointHost: safeEndpointHost(subscription.endpoint),
+        action: payload.data?.action,
       });
       return { sent: false, expired: true };
     }
 
-    logError(error instanceof Error ? error : new Error(errorMessage), {
+    // Surface the real push-service status in the error message itself: the
+    // structured logger only emits `statusCode` for AppError instances, so the
+    // generic WebPushError would otherwise be reported as an opaque 500.
+    const detailed = new Error(
+      `Push notification failed (push service status ${statusCode ?? "unknown"}): ${errorMessage}${
+        body ? ` — ${body}` : ""
+      }`
+    );
+    detailed.name = error instanceof Error ? error.name : "PushError";
+    if (error instanceof Error && error.stack) {
+      detailed.stack = error.stack;
+    }
+    logError(detailed, {
       message: "Push notification failed",
-      endpoint: subscription.endpoint,
+      statusCode,
+      endpointHost: safeEndpointHost(subscription.endpoint),
       action: payload.data?.action,
     });
     return { sent: false, expired: false };
+  }
+}
+
+function safeEndpointHost(endpoint: string): string | null {
+  try {
+    return new URL(endpoint).host;
+  } catch {
+    return null;
   }
 }
 
