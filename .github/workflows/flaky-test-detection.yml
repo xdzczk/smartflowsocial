@@ -20,13 +20,31 @@ on:
         type: string
 
 jobs:
+  # GitHub expressions have no range(); build the [1..N] matrix in a shell step.
+  prepare-matrix:
+    name: Prepare run matrix
+    runs-on: ubuntu-latest
+    outputs:
+      runs: ${{ steps.matrix.outputs.runs }}
+    steps:
+      - name: Build run list
+        id: matrix
+        run: |
+          count="${{ inputs.runs }}"
+          if ! [[ "$count" =~ ^[0-9]+$ ]] || [ "$count" -lt 1 ]; then count=10; fi
+          if [ "$count" -gt 50 ]; then count=50; fi
+          runs=$(seq -s, 1 "$count")
+          echo "runs=[$runs]" >> "$GITHUB_OUTPUT"
+          echo "Will run ${{ inputs.test_suite }} tests $count times"
+
   detect-flaky-tests:
     name: Detect Flaky Tests (${{ inputs.test_suite }})
     runs-on: ubuntu-latest
+    needs: prepare-matrix
     strategy:
       fail-fast: false
       matrix:
-        run: ${{ fromJSON(format('[{0}]', join(range(1, fromJSON(inputs.runs || '10') + 1), ','))) }}
+        run: ${{ fromJSON(needs.prepare-matrix.outputs.runs) }}
 
     steps:
       - name: Checkout code
@@ -122,9 +140,10 @@ jobs:
           echo "Analyzing test results for ${{ inputs.test_suite }} tests..." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          total_runs=$(ls flaky-test-results/*.txt 2>/dev/null | wc -l || echo "0")
-          success_count=$(grep -c "success" flaky-test-results/*.txt 2>/dev/null || echo "0")
-          failure_count=$(grep -c "failure" flaky-test-results/*.txt 2>/dev/null || echo "0")
+          # Concatenate first: `grep -c` over several files prints one count per file.
+          total_runs=$(ls flaky-test-results/*.txt 2>/dev/null | wc -l | tr -d ' ')
+          success_count=$(cat flaky-test-results/*.txt 2>/dev/null | grep -c "success" || true)
+          failure_count=$(cat flaky-test-results/*.txt 2>/dev/null | grep -c "failure" || true)
 
           echo "Total runs: $total_runs" >> $GITHUB_STEP_SUMMARY
           echo "Successful: $success_count" >> $GITHUB_STEP_SUMMARY
