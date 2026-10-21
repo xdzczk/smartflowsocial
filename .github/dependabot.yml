@@ -1,14 +1,21 @@
 version: 2
 updates:
   # Enable version updates for npm (pnpm)
+  # npm (pnpm). PRs target develop so they go through staging before main.
+  # Direct dependencies only: transitive bumps generated most of the noise and
+  # multi-thousand-line lockfile diffs. Cooldown skips releases younger than a
+  # week so we are not the first to hit a broken publish.
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-    open-pull-requests-limit: 15
-    target-branch: "main"
+      timezone: "Europe/Sofia"
+    open-pull-requests-limit: 5
+    target-branch: "develop"
+    cooldown:
+      default-days: 7
     reviewers:
       - "xdzczk"
     assignees:
@@ -16,7 +23,6 @@ updates:
     labels:
       - "dependencies"
       - "automated"
-    milestone: "Dependencies"
     commit-message:
       prefix: "chore"
       include: "scope"
@@ -26,7 +32,6 @@ updates:
     versioning-strategy: "increase"
     allow:
       - dependency-type: "direct"
-      - dependency-type: "indirect"
     # Group updates for better PR management
     groups:
       # Group all ESLint-related packages
@@ -146,12 +151,11 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-    open-pull-requests-limit: 8
-    target-branch: "main"
+    open-pull-requests-limit: 5
+    target-branch: "develop"
     labels:
       - "github-actions"
       - "automated"
-    milestone: "Dependencies"
     commit-message:
       prefix: "ci"
       include: "scope"
@@ -166,12 +170,11 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "09:00"
-    open-pull-requests-limit: 5
-    target-branch: "main"
+    open-pull-requests-limit: 2
+    target-branch: "develop"
     labels:
       - "docker"
       - "automated"
-    milestone: "Dependencies"
     commit-message:
       prefix: "chore"
       include: "scope"
