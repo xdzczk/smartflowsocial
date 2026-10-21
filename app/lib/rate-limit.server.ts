@@ -131,10 +131,25 @@ export const authLimiter = rateLimit({
       ),
     });
   },
-  skip: (req: Request) =>
-    isTestEnvironment() ||
-    (req.method === "GET" && (req.path === "/" || req.path === "/login")),
+  skip: (req: Request) => isTestEnvironment() || isAuthPageLoad(req),
 });
+
+/**
+ * True for requests that merely load an auth page and cannot be an
+ * authentication attempt (which are POSTs). These must not consume the auth
+ * limiter's small budget.
+ *
+ * `HEAD /` in particular is issued by the `/healthcheck` loader's self-probe
+ * on every container health check. Counting it against the 20-per-15-minutes
+ * budget made the health check fail with 429 for ~5 of every 15 minutes,
+ * which marked the container unhealthy and took it out of proxy rotation.
+ */
+export function isAuthPageLoad(req: Pick<Request, "method" | "path">): boolean {
+  return (
+    (req.method === "GET" || req.method === "HEAD") &&
+    (req.path === "/" || req.path === "/login")
+  );
+}
 
 /**
  * Public broadcast unsubscribe (capability URLs in DMs).

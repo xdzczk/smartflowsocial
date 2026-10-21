@@ -155,6 +155,8 @@ describe("runScheduledPostJob attached guards", () => {
       postId: "child-1",
       userId: "user-1",
       reason: "Follow-up discarded: Attached child signing state is not signed",
+      // Must not try to cancel the job that is currently executing (it is locked)
+      cancelJob: false,
     });
     expect(mockRecordJobSkipped).toHaveBeenCalledWith(
       "scheduled-posts",
