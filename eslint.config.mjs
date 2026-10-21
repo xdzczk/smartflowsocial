@@ -286,17 +286,13 @@ const qualityRules = {
 // ============================================================================
 
 export default (async () => {
-  const [
-    importModule,
-    unicornModule,
-    sonarjsModule,
-    cypressModule,
-  ] = await Promise.all([
-    import("eslint-plugin-import"),
-    import("eslint-plugin-unicorn"),
-    import("eslint-plugin-sonarjs"),
-    import("eslint-plugin-cypress").catch(() => null),
-  ]);
+  const [importModule, unicornModule, sonarjsModule, cypressModule] =
+    await Promise.all([
+      import("eslint-plugin-import"),
+      import("eslint-plugin-unicorn"),
+      import("eslint-plugin-sonarjs"),
+      import("eslint-plugin-cypress").catch(() => null),
+    ]);
   const importPlugin = importModule.default;
   const unicorn = unicornModule.default;
   const sonarjs = sonarjsModule.default;

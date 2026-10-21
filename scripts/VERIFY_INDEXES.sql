@@ -20,14 +20,15 @@ WHERE tablename = 'LongFormPost'
 ORDER BY indexname;
 
 \echo '=== Index size snapshot ==='
+-- pg_stat_user_indexes exposes relname/indexrelname (not tablename/indexname).
 SELECT
   schemaname,
-  tablename,
-  indexname,
+  relname AS tablename,
+  indexrelname AS indexname,
   pg_size_pretty(pg_relation_size(indexrelid)) AS index_size
 FROM pg_stat_user_indexes
-WHERE tablename IN ('Post', 'LongFormPost')
-ORDER BY tablename, indexname;
+WHERE relname IN ('Post', 'LongFormPost')
+ORDER BY relname, indexrelname;
 
 DO $$
 DECLARE

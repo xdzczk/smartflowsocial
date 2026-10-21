@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   mockQueueTypeFindFirst,
@@ -114,6 +114,10 @@ import {
 const CADENCE_PROBE_EPSILON_MS = 50;
 
 describe("queue pause/resume service", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockLoadNeedsResignItemsForQueue.mockResolvedValue({ items: [] });
@@ -308,6 +312,10 @@ describe("queue pause/resume service", () => {
   });
 
   it("keeps original scheduled time when still on cadence so signature reuse matches signed event", async () => {
+    // The service only reuses the original slot when it is still in the future
+    // relative to `new Date()`, so pin the clock before the fixed slot.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-06-10T12:00:00.000Z"));
     const slot = new Date("2026-06-10T14:00:00.000Z");
     mockQueueTypeFindFirst.mockResolvedValue({
       id: "queue-1",

@@ -381,7 +381,7 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/smartflow_test
 
       - name: Verify critical indexes
-        run: psql postgresql://postgres:postgres@localhost:5432/smartflow_test -f scripts/VERIFY_INDEXES.sql
+        run: psql -v ON_ERROR_STOP=1 postgresql://postgres:postgres@localhost:5432/smartflow_test -f scripts/VERIFY_INDEXES.sql
 
   # Test summary
   test-summary:

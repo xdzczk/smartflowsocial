@@ -684,7 +684,6 @@ body.has-btcpay-confirmation-bar {
     --chrome-shell-shadow-footer:
       0 -5px 26px hsl(220 14% 3% / 0.2), 0 -2px 9px hsl(220 12% 3% / 0.13);
   }
-
 }
 
 /* TODO: Dashboard shell chrome could co-locate with layout when splitting global CSS. */

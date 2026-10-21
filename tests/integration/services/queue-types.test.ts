@@ -72,6 +72,7 @@ describe("Queue Types Service", () => {
           name: "Updated Queue",
           scheduleType: "INTERVAL",
         }),
+        include: { hashTagPreset: true },
       });
       expect(result).toEqual(mockQueueType);
     });
@@ -98,6 +99,7 @@ describe("Queue Types Service", () => {
           name: "New Queue",
           scheduleType: "FIXED_SLOTS",
         }),
+        include: { hashTagPreset: true },
       });
       expect(result).toEqual(mockQueueType);
     });
