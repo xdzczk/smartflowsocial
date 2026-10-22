@@ -31,13 +31,20 @@ function prunePageData(page: unknown, deletedIds: Set<string>): unknown {
     return page;
   }
 
-  return {
-    ...page,
-    posts: filterRowsByDeletedIds(page["posts"], deletedIds),
-    longformPosts: filterRowsByDeletedIds(page["longformPosts"], deletedIds),
-    allContent: filterRowsByDeletedIds(page["allContent"], deletedIds),
-    scheduledPosts: filterRowsByDeletedIds(page["scheduledPosts"], deletedIds),
-  };
+  const next: Record<string, unknown> = { ...page };
+  for (const key of [
+    "posts",
+    "longformPosts",
+    "allContent",
+    "scheduledPosts",
+    "pastPosts",
+    "pastLongFormPosts",
+  ]) {
+    if (Array.isArray(next[key])) {
+      next[key] = filterRowsByDeletedIds(next[key], deletedIds);
+    }
+  }
+  return next;
 }
 
 export function prunePostListQueryData(

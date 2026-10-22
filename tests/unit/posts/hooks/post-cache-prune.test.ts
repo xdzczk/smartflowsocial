@@ -9,6 +9,8 @@ describe("prunePostListQueryData", () => {
       longformPosts: [{ id: "keep-2" }, { id: "remove-2" }],
       allContent: [{ id: "remove-1" }, { id: "keep-3" }],
       scheduledPosts: [{ id: "remove-2" }, { id: "keep-4" }],
+      pastPosts: [{ id: "remove-1" }, { id: "keep-5" }],
+      pastLongFormPosts: [{ id: "keep-6" }, { id: "remove-2" }],
     };
 
     const next = prunePostListQueryData(
@@ -20,6 +22,8 @@ describe("prunePostListQueryData", () => {
     expect(next.longformPosts.map((row) => row.id)).toEqual(["keep-2"]);
     expect(next.allContent.map((row) => row.id)).toEqual(["keep-3"]);
     expect(next.scheduledPosts.map((row) => row.id)).toEqual(["keep-4"]);
+    expect(next.pastPosts.map((row) => row.id)).toEqual(["keep-5"]);
+    expect(next.pastLongFormPosts.map((row) => row.id)).toEqual(["keep-6"]);
   });
 
   it("prunes deleted ids across paginated payload pages", () => {

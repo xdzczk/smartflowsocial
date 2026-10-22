@@ -632,6 +632,11 @@ export type DashboardLoaderData = z.infer<typeof dashboardLoaderDataSchema>;
  * Schema for CalendarLoaderData
  * Note: allContent is removed - reconstruct on client from posts
  */
+const calendarPastWindowSchema = z.object({
+  start: z.string().min(1),
+  end: z.string().min(1),
+});
+
 export const calendarLoaderDataSchema = z.object({
   scheduledPosts: z.array(postDTOSchema),
   scheduledLongFormPosts: z.array(longFormPostDTOSchema),
@@ -643,9 +648,23 @@ export const calendarLoaderDataSchema = z.object({
   scheduleIntervals: z.array(z.union([z.string(), z.number()])).optional(),
   scheduledPostsPagination: paginationSchema.optional(),
   scheduledLongFormPostsPagination: paginationSchema.optional(),
+  /** Published posts already loaded, as inclusive instants. */
+  pastWindow: calendarPastWindowSchema.optional(),
 });
 
 export type CalendarLoaderData = z.infer<typeof calendarLoaderDataSchema>;
+
+/** Published posts for one visible calendar range. */
+export const calendarPastRangeLoaderDataSchema = z.object({
+  pastPosts: z.array(postDTOSchema),
+  pastLongFormPosts: z.array(longFormPostDTOSchema),
+  from: z.string().min(1),
+  to: z.string().min(1),
+});
+
+export type CalendarPastRangeLoaderData = z.infer<
+  typeof calendarPastRangeLoaderDataSchema
+>;
 
 /**
  * Flow item: post or longform DTO with type discriminator

@@ -39,6 +39,8 @@ export const calendarKeys = {
   all: ["calendar"] as const,
   lists: () => [...calendarKeys.all, "list"] as const,
   list: (queueType?: string) => [...calendarKeys.lists(), queueType] as const,
+  pastRange: (queueType: string, start: string, end: string) =>
+    [...calendarKeys.all, "past-range", queueType, start, end] as const,
 };
 
 // CalendarLoaderData is now exported from schemas
@@ -125,6 +127,7 @@ export function useCalendarData() {
       scheduledLongFormPosts: [] as LongFormPostData[],
       pastPosts: [] as PostData[],
       pastLongFormPosts: [] as LongFormPostData[],
+      pastWindow: null as { start: string; end: string } | null,
       allContent: [] as Array<{
         type: "post" | "longform";
         [key: string]: unknown;
@@ -280,6 +283,7 @@ export function useCalendarData() {
     scheduledLongFormPosts,
     pastPosts,
     pastLongFormPosts,
+    pastWindow: typedData.pastWindow ?? null,
     allContent,
     user,
     queueTypes,

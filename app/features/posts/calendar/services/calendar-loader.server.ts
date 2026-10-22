@@ -34,63 +34,106 @@ import {
 } from "~/lib/validation/nostr-events.server";
 
 import type { PostType, Prisma } from "../../data/posts-prisma-types.server";
+import { CALENDAR_PAST_LOOKBACK_DAYS } from "../calendar-past-range";
 
 /** Max scheduled items to load for calendar (needs all, not just first page). */
 const CALENDAR_SCHEDULED_LIMIT = 5000;
 
 /**
- * Load calendar data for main calendar route
- * Includes scheduled and past posts (30 days back)
+ * Load calendar data for the main calendar route.
+ * Published posts in the response are a recent seed. Older days load
+ * through loadCalendarPublishedRange for the grid on screen.
  */
-export async function loadCalendarData(userId: string, queueType: string) {
-  // Calculate date range for past posts (30 days back for better performance)
-  // Use Temporal for date arithmetic
+export async function loadCalendarData(
+  userId: string,
+  queueType: string,
+  options?: {
+    pastStart?: Date;
+    pastEnd?: Date;
+    /** Skip scheduled posts, the user, and queues. Used by the visible-range endpoint. */
+    publishedOnly?: boolean;
+  }
+) {
   const nowZoned = nowUTC();
-  const thirtyDaysAgoZoned = addDays(nowZoned, -30);
+  const lookbackZoned = addDays(nowZoned, -CALENDAR_PAST_LOOKBACK_DAYS);
   const now = toPrismaDate(nowZoned);
-  const thirtyDaysAgo = toPrismaDate(thirtyDaysAgoZoned);
+  const lookback = toPrismaDate(lookbackZoned);
 
-  if (!now || !thirtyDaysAgo) {
+  if (!now || !lookback) {
     throw new Error("Failed to convert Temporal dates to Date");
   }
 
-  const [
-    allScheduledPosts,
-    allScheduledLongFormPosts,
-    allPastPosts,
-    allPastLongFormPosts,
-    user,
-    queueTypes,
-  ] = await Promise.all([
-    getScheduledPosts({
-      userId,
-      limit: CALENDAR_SCHEDULED_LIMIT,
-      queueType,
-      excludePausedQueueContent: true,
-    }),
-    getScheduledLongFormPosts({
-      userId,
-      limit: CALENDAR_SCHEDULED_LIMIT,
-      queueType,
-      excludePausedQueueContent: true,
-    }),
-    getPastPosts({
-      userId,
-      startDate: thirtyDaysAgo,
-      endDate: now,
-      queueType,
-      excludePausedQueueContent: true,
-    }),
-    getPastLongFormPosts({
-      userId,
-      startDate: thirtyDaysAgo,
-      endDate: now,
-      queueType,
-      excludePausedQueueContent: true,
-    }),
-    getUserById(userId),
-    getQueueTypes(userId),
-  ]);
+  const pastStart = options?.pastStart ?? lookback;
+  const pastEnd = options?.pastEnd ?? now;
+  const publishedOnly = options?.publishedOnly === true;
+
+  const pastPostsPromise = getPastPosts({
+    userId,
+    startDate: pastStart,
+    endDate: pastEnd,
+    queueType,
+    excludePausedQueueContent: true,
+  });
+  const pastLongFormPostsPromise = getPastLongFormPosts({
+    userId,
+    startDate: pastStart,
+    endDate: pastEnd,
+    queueType,
+    excludePausedQueueContent: true,
+  });
+
+  const emptyPagination = {
+    total: 0,
+    pages: 1,
+    currentPage: 1,
+    limit: 20,
+  };
+
+  let allScheduledPosts: Awaited<ReturnType<typeof getScheduledPosts>>;
+  let allScheduledLongFormPosts: Awaited<
+    ReturnType<typeof getScheduledLongFormPosts>
+  >;
+  let allPastPosts: Awaited<ReturnType<typeof getPastPosts>>;
+  let allPastLongFormPosts: Awaited<ReturnType<typeof getPastLongFormPosts>>;
+  let user: Awaited<ReturnType<typeof getUserById>>;
+  let queueTypes: Awaited<ReturnType<typeof getQueueTypes>>;
+
+  if (publishedOnly) {
+    allScheduledPosts = { posts: [], pagination: emptyPagination };
+    allScheduledLongFormPosts = { posts: [], pagination: emptyPagination };
+    [allPastPosts, allPastLongFormPosts] = await Promise.all([
+      pastPostsPromise,
+      pastLongFormPostsPromise,
+    ]);
+    user = null;
+    queueTypes = [];
+  } else {
+    [
+      allScheduledPosts,
+      allScheduledLongFormPosts,
+      allPastPosts,
+      allPastLongFormPosts,
+      user,
+      queueTypes,
+    ] = await Promise.all([
+      getScheduledPosts({
+        userId,
+        limit: CALENDAR_SCHEDULED_LIMIT,
+        queueType,
+        excludePausedQueueContent: true,
+      }),
+      getScheduledLongFormPosts({
+        userId,
+        limit: CALENDAR_SCHEDULED_LIMIT,
+        queueType,
+        excludePausedQueueContent: true,
+      }),
+      pastPostsPromise,
+      pastLongFormPostsPromise,
+      getUserById(userId),
+      getQueueTypes(userId),
+    ]);
+  }
 
   // Extract posts arrays and pagination from pagination results
   const scheduledPostsArray =
@@ -506,6 +549,34 @@ export async function loadCalendarData(userId: string, queueType: string) {
           ? scheduledLongFormPostsPagination.limit
           : 20,
     },
+    pastWindow: {
+      start: pastStart.toISOString(),
+      end: pastEnd.toISOString(),
+    },
+  };
+}
+
+/**
+ * Published posts and long-form posts for one visible calendar range.
+ * Paused queues stay excluded. Does not load scheduled posts.
+ */
+export async function loadCalendarPublishedRange(
+  userId: string,
+  queueType: string,
+  startDate: Date,
+  endDate: Date
+): Promise<{
+  pastPosts: PostDTO[];
+  pastLongFormPosts: LongFormPostDTO[];
+}> {
+  const data = await loadCalendarData(userId, queueType, {
+    pastStart: startDate,
+    pastEnd: endDate,
+    publishedOnly: true,
+  });
+  return {
+    pastPosts: data.pastPosts,
+    pastLongFormPosts: data.pastLongFormPosts,
   };
 }
 
