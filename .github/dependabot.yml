@@ -1,10 +1,11 @@
 version: 2
 updates:
-  # Enable version updates for npm (pnpm)
   # npm (pnpm). PRs target develop so they go through staging before main.
   # Direct dependencies only: transitive bumps generated most of the noise and
-  # multi-thousand-line lockfile diffs. Cooldown skips releases younger than a
-  # week so we are not the first to hit a broken publish.
+  # multi-thousand-line lockfile diffs.
+  # No cooldown: Dependabot forwards it to pnpm as minimumReleaseAge, and pnpm
+  # then refuses packages already in the lockfile (prisma 7.10.1 failed the
+  # whole npm update job because it was published 5 days earlier).
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
@@ -14,8 +15,6 @@ updates:
       timezone: "Europe/Sofia"
     open-pull-requests-limit: 5
     target-branch: "develop"
-    cooldown:
-      default-days: 7
     reviewers:
       - "xdzczk"
     assignees:
@@ -181,3 +180,8 @@ updates:
     pull-request-branch-name:
       separator: "/"
     rebase-strategy: "auto"
+    # Coolify builds with nixpacks nodejs_22 (.nvmrc). The Dockerfile base is
+    # the same pin and is not the production image; do not jump Node majors.
+    ignore:
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
