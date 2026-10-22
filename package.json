@@ -48,7 +48,7 @@
     "typecheck:app": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsc --noEmit",
     "typecheck:e2e": "cross-env NODE_OPTIONS=--max-old-space-size=4096 tsc -p tests/e2e/tsconfig.json --noEmit",
     "lint:ci": "cross-env NODE_OPTIONS=--max-old-space-size=4096 eslint . --format json --output-file eslint-report.json || exit 1",
-    "start": "cross-env NODE_ENV=production node ./build/server.js & cross-env NODE_ENV=production node ./build/worker.js & wait",
+    "start": "node scripts/start-prod.mjs",
     "start:server": "cross-env NODE_ENV=production node ./build/server.js",
     "start:worker": "cross-env NODE_ENV=production node ./build/worker.js",
     "db:seed": "prisma db seed",
