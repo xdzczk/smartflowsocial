@@ -610,9 +610,9 @@ Available as a hosted service or self-hostable open source software.
 
 **Is SmartFlowSocial free?**
 
-Yes! SmartFlowSocial is open-source (MIT License) and free to use. Self-hosting is completely free
-forever. The hosted version offers a free plan with basic features, and paid plans for advanced
-features.
+Yes! SmartFlowSocial is open-source (Unlicense, public domain) and free to use. Self-hosting is
+completely free forever. The hosted version offers a free plan with basic features, and paid plans
+for advanced features.
 
 **Is there a hosted version?**
 
