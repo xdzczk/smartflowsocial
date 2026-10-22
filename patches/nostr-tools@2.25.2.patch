@@ -1,0 +1,228 @@
+diff --git a/lib/cjs/abstract-pool.js b/lib/cjs/abstract-pool.js
+index 551a59d8b990cdfe008e980eedb853e496e7302d..fe51d9ce5e2662a5001881114ddd9b83ec0527c9 100644
+--- a/lib/cjs/abstract-pool.js
++++ b/lib/cjs/abstract-pool.js
+@@ -299,7 +299,13 @@ var AbstractRelay = class {
+         if (this.reconnectAttempts === 0) {
+           this.skipReconnection = true;
+         }
+-        this.ws?.close?.();
++        const socket = this.ws;
++        if (socket) {
++          socket.onopen = null;
++          socket.onerror = null;
++          socket.onclose = null;
++          socket.close?.();
++        }
+         this.handleHardClose("relay connection failed");
+       };
+       this.ws.onclose = (ev) => {
+diff --git a/lib/cjs/abstract-relay.js b/lib/cjs/abstract-relay.js
+index c61e752f610cf2e1612d3acba6cd94fa20a23421..0603b22de25ebe335fccd7d27d21be37c6237be7 100644
+--- a/lib/cjs/abstract-relay.js
++++ b/lib/cjs/abstract-relay.js
+@@ -301,7 +301,13 @@ var AbstractRelay = class {
+         if (this.reconnectAttempts === 0) {
+           this.skipReconnection = true;
+         }
+-        this.ws?.close?.();
++        const socket = this.ws;
++        if (socket) {
++          socket.onopen = null;
++          socket.onerror = null;
++          socket.onclose = null;
++          socket.close?.();
++        }
+         this.handleHardClose("relay connection failed");
+       };
+       this.ws.onclose = (ev) => {
+diff --git a/lib/cjs/index.js b/lib/cjs/index.js
+index 7157108583d5d35644d4be604b0a956d5f434d66..26c72452ee9f080a40927c7ed26a78b835a7e6f8 100644
+--- a/lib/cjs/index.js
++++ b/lib/cjs/index.js
+@@ -1034,7 +1034,13 @@ var AbstractRelay = class {
+         if (this.reconnectAttempts === 0) {
+           this.skipReconnection = true;
+         }
+-        this.ws?.close?.();
++        const socket = this.ws;
++        if (socket) {
++          socket.onopen = null;
++          socket.onerror = null;
++          socket.onclose = null;
++          socket.close?.();
++        }
+         this.handleHardClose("relay connection failed");
+       };
+       this.ws.onclose = (ev) => {
+diff --git a/lib/cjs/nip46.js b/lib/cjs/nip46.js
+index fd3c1bd554637dc1ddbc3c58b9a861a9dfe34774..06cbe5c95e9a0219fdcf94b5154962d1cbff826f 100644
+--- a/lib/cjs/nip46.js
++++ b/lib/cjs/nip46.js
+@@ -537,7 +537,13 @@ var AbstractRelay = class {
+         if (this.reconnectAttempts === 0) {
+           this.skipReconnection = true;
+         }
+-        this.ws?.close?.();
++        const socket = this.ws;
++        if (socket) {
++          socket.onopen = null;
++          socket.onerror = null;
++          socket.onclose = null;
++          socket.close?.();
++        }
+         this.handleHardClose("relay connection failed");
+       };
+       this.ws.onclose = (ev) => {
+diff --git a/lib/cjs/pool.js b/lib/cjs/pool.js
+index 039d2e948210b5c749c850afd411da9c40efdf7b..0e3680c88d4145ea4ea14805106fd0a4b0e6c8c5 100644
+--- a/lib/cjs/pool.js
++++ b/lib/cjs/pool.js
+@@ -396,7 +396,13 @@ var AbstractRelay = class {
+         if (this.reconnectAttempts === 0) {
+           this.skipReconnection = true;
+         }
+-        this.ws?.close?.();
++        const socket = this.ws;
++        if (socket) {
++          socket.onopen = null;
++          socket.onerror = null;
++          socket.onclose = null;
++          socket.close?.();
++        }
+         this.handleHardClose("relay connection failed");
+       };
+       this.ws.onclose = (ev) => {
+diff --git a/lib/cjs/relay.js b/lib/cjs/relay.js
+index fc8655ac747b4972934263d76df56a45f1eb59ec..7f64cdf6f0b90b5d1b9a494b7def5415e8c77444 100644
+--- a/lib/cjs/relay.js
++++ b/lib/cjs/relay.js
+@@ -398,7 +398,13 @@ var AbstractRelay = class {
+         if (this.reconnectAttempts === 0) {
+           this.skipReconnection = true;
+         }
+-        this.ws?.close?.();
++        const socket = this.ws;
++        if (socket) {
++          socket.onopen = null;
++          socket.onerror = null;
++          socket.onclose = null;
++          socket.close?.();
++        }
+         this.handleHardClose("relay connection failed");
+       };
+       this.ws.onclose = (ev) => {
+diff --git a/lib/esm/abstract-pool.js b/lib/esm/abstract-pool.js
+index 7dfbee984a376507d7645fb4cfd64be8b176079f..f6612c5eb219964e1633e8bf998619b253c019eb 100644
+--- a/lib/esm/abstract-pool.js
++++ b/lib/esm/abstract-pool.js
+@@ -273,7 +273,13 @@ var AbstractRelay = class {
+         if (this.reconnectAttempts === 0) {
+           this.skipReconnection = true;
+         }
+-        this.ws?.close?.();
++        const socket = this.ws;
++        if (socket) {
++          socket.onopen = null;
++          socket.onerror = null;
++          socket.onclose = null;
++          socket.close?.();
++        }
+         this.handleHardClose("relay connection failed");
+       };
+       this.ws.onclose = (ev) => {
+diff --git a/lib/esm/abstract-relay.js b/lib/esm/abstract-relay.js
+index cdd6096f58ec9425e2e0ec857efb909c753a93f5..fa64bfe5208610576d73561c8ce8d64fb9c0f046 100644
+--- a/lib/esm/abstract-relay.js
++++ b/lib/esm/abstract-relay.js
+@@ -273,7 +273,13 @@ var AbstractRelay = class {
+         if (this.reconnectAttempts === 0) {
+           this.skipReconnection = true;
+         }
+-        this.ws?.close?.();
++        const socket = this.ws;
++        if (socket) {
++          socket.onopen = null;
++          socket.onerror = null;
++          socket.onclose = null;
++          socket.close?.();
++        }
+         this.handleHardClose("relay connection failed");
+       };
+       this.ws.onclose = (ev) => {
+diff --git a/lib/esm/index.js b/lib/esm/index.js
+index 2eed2deaa8c93c17424200690de361589a8dd133..38c14ebfedab4ef212de23a672a6010600a9f9a4 100644
+--- a/lib/esm/index.js
++++ b/lib/esm/index.js
+@@ -972,7 +972,13 @@ var AbstractRelay = class {
+         if (this.reconnectAttempts === 0) {
+           this.skipReconnection = true;
+         }
+-        this.ws?.close?.();
++        const socket = this.ws;
++        if (socket) {
++          socket.onopen = null;
++          socket.onerror = null;
++          socket.onclose = null;
++          socket.close?.();
++        }
+         this.handleHardClose("relay connection failed");
+       };
+       this.ws.onclose = (ev) => {
+diff --git a/lib/esm/nip46.js b/lib/esm/nip46.js
+index f287f691ff3edf8990026aef3b3078cca3fd10f4..268bbd22c3d4e13ee70eb412e0eed7f5ec21e9c0 100644
+--- a/lib/esm/nip46.js
++++ b/lib/esm/nip46.js
+@@ -503,7 +503,13 @@ var AbstractRelay = class {
+         if (this.reconnectAttempts === 0) {
+           this.skipReconnection = true;
+         }
+-        this.ws?.close?.();
++        const socket = this.ws;
++        if (socket) {
++          socket.onopen = null;
++          socket.onerror = null;
++          socket.onclose = null;
++          socket.close?.();
++        }
+         this.handleHardClose("relay connection failed");
+       };
+       this.ws.onclose = (ev) => {
+diff --git a/lib/esm/pool.js b/lib/esm/pool.js
+index dd71ed0e16beb368c39259b7d18e937c9a883673..e79db973485c7f4d340858c7b117fa2e6bf1b279 100644
+--- a/lib/esm/pool.js
++++ b/lib/esm/pool.js
+@@ -368,7 +368,13 @@ var AbstractRelay = class {
+         if (this.reconnectAttempts === 0) {
+           this.skipReconnection = true;
+         }
+-        this.ws?.close?.();
++        const socket = this.ws;
++        if (socket) {
++          socket.onopen = null;
++          socket.onerror = null;
++          socket.onclose = null;
++          socket.close?.();
++        }
+         this.handleHardClose("relay connection failed");
+       };
+       this.ws.onclose = (ev) => {
+diff --git a/lib/esm/relay.js b/lib/esm/relay.js
+index 1474613c265a81eb7781479a3245d3d227ff77c3..8c5fc29797cb2c8eddb2bccb7afd7cbb04a1148b 100644
+--- a/lib/esm/relay.js
++++ b/lib/esm/relay.js
+@@ -368,7 +368,13 @@ var AbstractRelay = class {
+         if (this.reconnectAttempts === 0) {
+           this.skipReconnection = true;
+         }
+-        this.ws?.close?.();
++        const socket = this.ws;
++        if (socket) {
++          socket.onopen = null;
++          socket.onerror = null;
++          socket.onclose = null;
++          socket.close?.();
++        }
+         this.handleHardClose("relay connection failed");
+       };
+       this.ws.onclose = (ev) => {

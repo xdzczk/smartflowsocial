@@ -280,7 +280,8 @@
       ]
     },
     "patchedDependencies": {
-      "@remix-run/react@2.17.5": "patches/@remix-run__react@2.17.5.patch"
+      "@remix-run/react@2.17.5": "patches/@remix-run__react@2.17.5.patch",
+      "nostr-tools@2.25.2": "patches/nostr-tools@2.25.2.patch"
     }
   }
 }
