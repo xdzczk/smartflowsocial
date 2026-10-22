@@ -1099,15 +1099,17 @@ Supported `phase` values: `start`, `heartbeat`, `end`.
 
 ## Cron Endpoints
 
-### POST `/cron/checksubscription`
+### GET or POST `/cron/checksubscription`
 
-Check and update subscription statuses.
+Run the subscription renewal sweep once. The app worker already runs this on
+`SUBSCRIPTION_RENEWAL_INTERVAL_MINUTES` (default 60, `0` disables it). This route is a manual
+trigger for the same function.
 
-**Note:** This endpoint should be called periodically (e.g., daily) to:
+When `CRON_SECRET` is set, send it as `X-Cron-Secret` or `Authorization: Bearer <secret>`.
 
-- Mark expired subscriptions as inactive
-- Send renewal reminders
-- Process subscription updates
+The sweep charges a subscription only when the paid period has ended, the subscription is
+`nwc_auto_renew` / `auto_renew`, and the wallet is still connected. A one-time Lightning purchase is
+not charged again. Each charge uses the same confirmed invoice path as checkout.
 
 ---
 

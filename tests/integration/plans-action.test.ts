@@ -42,6 +42,7 @@ vi.mock("~/features/payments/btcpay.server", () => ({
 vi.mock("~/features/user", () => ({
   updateUserNWC: vi.fn(),
   getDecryptedUserNWC: vi.fn(),
+  touchUserNwcLastUsed: vi.fn(),
 }));
 
 vi.mock("@getalby/sdk", () => ({

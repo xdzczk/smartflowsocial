@@ -27,6 +27,7 @@ import {
 import { startOutboxWorker } from "./app/infra/outbox/outbox-worker.server";
 import { getQueueInstance } from "./app/infra/queue";
 import { runRunwayLowNotifications } from "./app/features/posts/runway/runway-low-notifications.server";
+import { checkAndRenewSubscriptions } from "./app/features/payments/services/subscription-renewal.server";
 import {
   expireBlossomReservations,
   getBlossomReservationDriftStats,
@@ -167,6 +168,60 @@ if (Number.isFinite(runwayLowIntervalMinutes) && runwayLowIntervalMinutes > 0) {
   logInfo("Runway-low scheduler disabled (RUNWAY_LOW_CRON_INTERVAL_MINUTES=0)");
 }
 
+const subscriptionRenewalIntervalMinutes = parseInt(
+  env.SUBSCRIPTION_RENEWAL_INTERVAL_MINUTES ?? "60",
+  10
+);
+let subscriptionRenewalInterval: ReturnType<typeof setInterval> | null = null;
+let subscriptionRenewalInFlight = false;
+const runSubscriptionRenewalSweep = () => {
+  if (subscriptionRenewalInFlight) return;
+  subscriptionRenewalInFlight = true;
+  void (async () => {
+    try {
+      const result = await checkAndRenewSubscriptions();
+      logInfo("Subscription renewal sweep completed", {
+        checked: result.checked,
+        expired: result.expired,
+        renewalAttempted: result.renewalAttempted,
+        renewalSuccess: result.renewalSuccess,
+        renewalFailed: result.renewalFailed,
+        disabled: result.disabled,
+        success: result.success,
+      });
+    } catch (error) {
+      logWarning("Subscription renewal sweep failed", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    } finally {
+      subscriptionRenewalInFlight = false;
+    }
+  })();
+};
+if (
+  Number.isFinite(subscriptionRenewalIntervalMinutes) &&
+  subscriptionRenewalIntervalMinutes > 0
+) {
+  const subscriptionRenewalIntervalMs =
+    subscriptionRenewalIntervalMinutes * 60_000;
+  const subscriptionRenewalStartupDelay = setTimeout(
+    runSubscriptionRenewalSweep,
+    90_000
+  );
+  subscriptionRenewalStartupDelay.unref?.();
+  subscriptionRenewalInterval = setInterval(
+    runSubscriptionRenewalSweep,
+    subscriptionRenewalIntervalMs
+  );
+  logInfo("Subscription renewal scheduler started", {
+    intervalMinutes: subscriptionRenewalIntervalMinutes,
+  });
+} else {
+  logInfo(
+    "Subscription renewal scheduler disabled (SUBSCRIPTION_RENEWAL_INTERVAL_MINUTES=0)"
+  );
+}
+
 logInfo("BullMQ worker started");
 logInfo("Workers initialized", {
   scheduledPostsWorker: !!scheduledPostsWorker,
@@ -291,6 +346,9 @@ process.on("SIGTERM", () => {
   if (runwayLowInterval) {
     clearInterval(runwayLowInterval);
   }
+  if (subscriptionRenewalInterval) {
+    clearInterval(subscriptionRenewalInterval);
+  }
   clearInterval(relayMetricsInterval);
   clearInterval(queueBacklogMetricsInterval);
   clearInterval(blossomReservationCleanupInterval);
@@ -309,6 +367,9 @@ process.on("SIGINT", () => {
   }
   if (runwayLowInterval) {
     clearInterval(runwayLowInterval);
+  }
+  if (subscriptionRenewalInterval) {
+    clearInterval(subscriptionRenewalInterval);
   }
   clearInterval(relayMetricsInterval);
   clearInterval(queueBacklogMetricsInterval);

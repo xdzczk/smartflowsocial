@@ -34,6 +34,18 @@ vi.mock(
       .mockResolvedValue(undefined),
     updateSubscriptionDunningState: vi.fn().mockResolvedValue(undefined),
     updateSubscriptionToCanceled: vi.fn().mockResolvedValue(undefined),
+    claimSubscriptionRenewalAttempt: vi.fn().mockResolvedValue(true),
+  })
+);
+
+vi.mock(
+  "~/features/payments/services/subscription-renewal-charge.server",
+  () => ({
+    chargeAutoRenewSubscription: vi.fn(async () => {
+      if (!process.env["OWNER_NWC"]) {
+        throw new Error("Owner NWC credentials not configured");
+      }
+    }),
   })
 );
 
@@ -74,7 +86,7 @@ vi.mock("~/features/payments/data/payment.queries.server", () => ({
   getUserSubscription: vi.fn().mockResolvedValue({
     id: "sub-123",
     planId: "plan-123",
-    currentPeriodEnd: new Date(Date.now() + 86400000),
+    currentPeriodEnd: new Date(Date.now() - 60 * 60 * 1000),
     gracePeriodEndsAt: null,
     paymentMethod: "nwc_auto_renew",
     renewalMode: "auto_renew",
@@ -122,6 +134,9 @@ import {
   createRenewalPayment,
   updateUserSubscription,
 } from "~/features/payments/data";
+import { NwcChargeError } from "~/features/payments/services/nwc-user-pay.server";
+import { deliverSubscriptionNotificationDm } from "~/features/payments/services/subscription-notification-delivery.server";
+import { chargeAutoRenewSubscription } from "~/features/payments/services/subscription-renewal-charge.server";
 import {
   getEnabledUsersWithSubscriptions,
   disableUserAccount,
@@ -137,6 +152,13 @@ describe("Cron Subscription Checker", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env["OWNER_NWC"] = "test-owner-nwc";
+    (
+      chargeAutoRenewSubscription as ReturnType<typeof vi.fn>
+    ).mockImplementation(() => {
+      if (!process.env["OWNER_NWC"]) {
+        throw new Error("Owner NWC credentials not configured");
+      }
+    });
     // Reset LN mock to default implementation - use function, not arrow, so it works as constructor
     const lnMock = LN as unknown as {
       mockImplementation: (
@@ -410,6 +432,7 @@ describe("Cron Subscription Checker", () => {
         TEST_PLAN_ID,
         expect.stringContaining("free_renewal_")
       );
+      expect(chargeAutoRenewSubscription).not.toHaveBeenCalled();
     });
 
     it("should attempt paid plan renewal with user NWC", async () => {
@@ -425,6 +448,8 @@ describe("Cron Subscription Checker", () => {
             planId: TEST_PLAN_ID,
             plan: TEST_PLAN_ID,
             currentPeriodEnd: expiredDate,
+            paymentMethod: "nwc_auto_renew",
+            renewalMode: "auto_renew",
             Plan: {
               id: TEST_PLAN_ID,
               name: "Basic Plan",
@@ -434,30 +459,6 @@ describe("Cron Subscription Checker", () => {
           },
         },
       ];
-
-      const mockInvoice = "lnbc100u1p3example";
-      const mockPaymentHash = "payment-hash-123";
-      const mockAmountSats = 25000;
-
-      const mockLNInstance = new MockLN("test-nwc");
-      mockLNInstance.requestPayment = vi.fn().mockResolvedValue({
-        invoice: mockInvoice,
-        paymentHash: mockPaymentHash,
-        amount: mockAmountSats,
-      });
-      mockLNInstance.onPaid = vi.fn().mockReturnValue(mockLNInstance);
-      mockLNInstance.onTimeout = vi.fn().mockReturnValue(mockLNInstance);
-
-      // Mock the constructor to return our configured instance
-      // Use a constructor function that returns the instance
-      const lnMock = LN as unknown as {
-        mockImplementation: (
-          fn: (credentials: string) => typeof mockLNInstance
-        ) => void;
-      };
-      lnMock.mockImplementation(function (_credentials: string) {
-        return mockLNInstance;
-      });
 
       (
         getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>
@@ -485,7 +486,100 @@ describe("Cron Subscription Checker", () => {
           : {};
 
       expect(data.renewalAttempted).toBe(1);
-      expect(mockLNInstance.requestPayment).toHaveBeenCalled();
+      expect(data.renewalSuccess).toBe(1);
+      expect(chargeAutoRenewSubscription).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: TEST_USER_ID,
+          planId: TEST_PLAN_ID,
+          subscriptionId: "sub-123",
+          nwcUrl: "decrypted-user-nwc",
+        })
+      );
+      expect(createRenewalPayment).not.toHaveBeenCalled();
+    });
+
+    it("does not charge a one-time purchase that still has a wallet saved", async () => {
+      const users = [
+        {
+          id: TEST_USER_ID,
+          npub: TEST_NPUB,
+          nwcEnabled: true,
+          encryptedNwc: "encrypted-nwc-string",
+          Subscription: {
+            id: "sub-123",
+            planId: TEST_PLAN_ID,
+            plan: TEST_PLAN_ID,
+            currentPeriodEnd: new Date(Date.now() - 24 * 60 * 60 * 1000),
+            paymentMethod: "lightning_one_time",
+            renewalMode: "manual",
+            Plan: {
+              id: TEST_PLAN_ID,
+              name: "Basic Plan",
+              price: 10,
+              enableLifetimeAccess: false,
+            },
+          },
+        },
+      ];
+
+      (
+        getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(users);
+
+      const { loader } = await import("~/routes/cron.checksubscription");
+      const response = await loader();
+      const dataRaw: unknown = await response.json();
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { expired?: unknown; renewalAttempted?: unknown })
+          : {};
+
+      expect(data.expired).toBe(1);
+      expect(data.renewalAttempted).toBe(0);
+      expect(chargeAutoRenewSubscription).not.toHaveBeenCalled();
+      expect(createRenewalPayment).not.toHaveBeenCalled();
+      expect(disableUserAccount).not.toHaveBeenCalled();
+    });
+
+    it("skips a subscriber already claimed for this period", async () => {
+      const users = [
+        {
+          id: TEST_USER_ID,
+          npub: TEST_NPUB,
+          nwcEnabled: true,
+          encryptedNwc: "encrypted-nwc-string",
+          Subscription: {
+            id: "sub-123",
+            planId: TEST_PLAN_ID,
+            plan: TEST_PLAN_ID,
+            currentPeriodEnd: new Date(Date.now() - 24 * 60 * 60 * 1000),
+            nextRenewalAttemptAt: new Date(Date.now() + 60 * 60 * 1000),
+            paymentMethod: "nwc_auto_renew",
+            renewalMode: "auto_renew",
+            Plan: {
+              id: TEST_PLAN_ID,
+              name: "Basic Plan",
+              price: 10,
+              enableLifetimeAccess: false,
+            },
+          },
+        },
+      ];
+
+      (
+        getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>
+      ).mockResolvedValue(users);
+
+      const { loader } = await import("~/routes/cron.checksubscription");
+      const response = await loader();
+      const dataRaw: unknown = await response.json();
+      const data =
+        dataRaw && typeof dataRaw === "object" && !Array.isArray(dataRaw)
+          ? (dataRaw as { renewalAttempted?: unknown })
+          : {};
+
+      expect(data.renewalAttempted).toBe(0);
+      expect(chargeAutoRenewSubscription).not.toHaveBeenCalled();
     });
 
     it("should handle renewal failure gracefully", async () => {
@@ -501,6 +595,8 @@ describe("Cron Subscription Checker", () => {
             planId: TEST_PLAN_ID,
             plan: TEST_PLAN_ID,
             currentPeriodEnd: expiredDate,
+            paymentMethod: "nwc_auto_renew",
+            renewalMode: "auto_renew",
             Plan: {
               id: TEST_PLAN_ID,
               name: "Basic Plan",
@@ -515,18 +611,11 @@ describe("Cron Subscription Checker", () => {
         getEnabledUsersWithSubscriptions as ReturnType<typeof vi.fn>
       ).mockResolvedValue(users);
       (decrypt as ReturnType<typeof vi.fn>).mockReturnValue("decrypted-nwc");
-
-      const mockLNInstance = new MockLN("test-nwc");
-      mockLNInstance.requestPayment = vi
-        .fn()
-        .mockRejectedValue(new Error("Payment failed"));
-      mockLNInstance.onPaid = vi.fn().mockReturnValue(mockLNInstance);
-      mockLNInstance.onTimeout = vi.fn().mockReturnValue(mockLNInstance);
-
-      const lnMock = LN as unknown as {
-        mockImplementation: (fn: () => typeof mockLNInstance) => void;
-      };
-      lnMock.mockImplementation(() => mockLNInstance);
+      (
+        chargeAutoRenewSubscription as ReturnType<typeof vi.fn>
+      ).mockRejectedValueOnce(
+        new NwcChargeError("wallet_rejected", "Quota exceeded")
+      );
 
       const { loader } = await import("~/routes/cron.checksubscription");
       const response = await loader();
@@ -549,8 +638,15 @@ describe("Cron Subscription Checker", () => {
       expect(data.renewalAttempted).toBe(1);
       expect(data.renewalFailed).toBe(1);
       expect(data.renewalSuccess).toBe(0);
-      // Grace period: account stays enabled until grace ends
       expect(disableUserAccount).not.toHaveBeenCalled();
+      expect(createRenewalPayment).not.toHaveBeenCalled();
+      expect(deliverSubscriptionNotificationDm).toHaveBeenCalledWith(
+        expect.objectContaining({
+          eventType: "renewal_failed",
+          failureDetail:
+            "Your wallet rejected the payment. Check the spending budget and balance.",
+        })
+      );
     });
 
     it("should handle missing OWNER_NWC gracefully", async () => {
@@ -566,6 +662,8 @@ describe("Cron Subscription Checker", () => {
             planId: TEST_PLAN_ID,
             plan: TEST_PLAN_ID,
             currentPeriodEnd: expiredDate,
+            paymentMethod: "nwc_auto_renew",
+            renewalMode: "auto_renew",
             Plan: {
               id: TEST_PLAN_ID,
               name: "Basic Plan",
@@ -620,6 +718,8 @@ describe("Cron Subscription Checker", () => {
             planId: TEST_PLAN_ID,
             plan: TEST_PLAN_ID,
             currentPeriodEnd: expiredDate,
+            paymentMethod: "nwc_auto_renew",
+            renewalMode: "auto_renew",
             Plan: {
               id: TEST_PLAN_ID,
               name: "Basic Plan",

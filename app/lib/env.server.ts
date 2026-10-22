@@ -57,6 +57,17 @@ interface EnvConfig {
    * (e.g. when triggering `/cron/runway-low` from an external scheduler).
    */
   RUNWAY_LOW_CRON_INTERVAL_MINUTES?: string;
+  /**
+   * How often (minutes) the worker runs NWC subscription renewals.
+   * Defaults to 60. Set to "0" to disable. GET/POST `/cron/checksubscription`
+   * runs the same sweep on demand.
+   */
+  SUBSCRIPTION_RENEWAL_INTERVAL_MINUTES?: string;
+  /**
+   * Shared secret for `/cron/checksubscription`. When unset, the route does
+   * not require a header. Send `X-Cron-Secret` or `Authorization: Bearer`.
+   */
+  CRON_SECRET?: string;
   FLY_REGION?: string;
   PRIMARY_REGION?: string;
   TEST_DATABASE_URL?: string;
@@ -226,6 +237,8 @@ function addOptionalConfig(config: EnvConfig): void {
     "METRICS_PORT",
     "WORKER_METRICS_PORT",
     "RUNWAY_LOW_CRON_INTERVAL_MINUTES",
+    "SUBSCRIPTION_RENEWAL_INTERVAL_MINUTES",
+    "CRON_SECRET",
     "FLY_REGION",
     "PRIMARY_REGION",
     "TEST_DATABASE_URL",

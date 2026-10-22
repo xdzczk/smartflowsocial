@@ -41,6 +41,7 @@ export async function deliverSubscriptionNotificationDm(params: {
   dedupeKey: string;
   currentPeriodEnd: Date | null;
   gracePeriodEndsAt: Date | null;
+  failureDetail?: string;
 }): Promise<{ ok: boolean; skipped?: boolean }> {
   const {
     userId,
@@ -52,6 +53,7 @@ export async function deliverSubscriptionNotificationDm(params: {
     dedupeKey,
     currentPeriodEnd,
     gracePeriodEndsAt,
+    failureDetail,
   } = params;
 
   const resolution = await resolveDedupeForIntent(dedupeKey);
@@ -79,6 +81,7 @@ export async function deliverSubscriptionNotificationDm(params: {
     commMode,
     currentPeriodEnd,
     gracePeriodEndsAt,
+    failureDetail,
   });
 
   const sendResult = await sendNostrDirectMessage(npub, content);
