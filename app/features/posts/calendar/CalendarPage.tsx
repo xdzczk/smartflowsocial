@@ -19,6 +19,7 @@ export default function CalendarPage() {
     scheduledLongFormPosts,
     pastPosts,
     pastLongFormPosts,
+    pastWindow,
     allContent: _allContent,
     user,
     queueTypes,
@@ -74,6 +75,8 @@ export default function CalendarPage() {
             pastPosts={mixedPostsToCalendarPosts(pastPosts, pastLongFormPosts)}
             user={user}
             queueTypes={queueTypes}
+            loadVisibleHistory
+            pastWindow={pastWindow}
             isAll={true}
             calendarPageTabs={{
               currentTab,
@@ -101,6 +104,8 @@ export default function CalendarPage() {
             )}
             user={user}
             queueTypes={queueTypes}
+            loadVisibleHistory
+            pastWindow={pastWindow}
             calendarPageTabs={{
               currentTab,
               basePath: CALENDAR_BASE_PATH,
@@ -123,6 +128,8 @@ export default function CalendarPage() {
             )}
             user={user}
             queueTypes={queueTypes}
+            loadVisibleHistory
+            pastWindow={pastWindow}
             calendarPageTabs={{
               currentTab,
               basePath: CALENDAR_BASE_PATH,
@@ -145,6 +152,8 @@ export default function CalendarPage() {
             )}
             user={user}
             queueTypes={queueTypes}
+            loadVisibleHistory
+            pastWindow={pastWindow}
             calendarPageTabs={{
               currentTab,
               basePath: CALENDAR_BASE_PATH,
@@ -165,6 +174,8 @@ export default function CalendarPage() {
             pastPosts={longFormPostsToCalendarPosts(pastLongFormPosts)}
             user={user}
             queueTypes={queueTypes}
+            loadVisibleHistory
+            pastWindow={pastWindow}
             isLongform={true}
             calendarPageTabs={{
               currentTab,

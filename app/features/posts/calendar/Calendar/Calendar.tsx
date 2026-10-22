@@ -10,6 +10,10 @@ import {
   PopoverTrigger,
 } from "~/components/ui/popover";
 import { calendarKeys } from "~/features/posts/calendar/hooks/useCalendarQuery";
+import {
+  useCalendarVisiblePast,
+  type CalendarHistoryStatus,
+} from "~/features/posts/calendar/hooks/useCalendarVisiblePast";
 import { getLongFormPublishedEventId } from "~/features/posts/components/post-detail-modal/post-detail-helpers";
 import PostDetailsModal from "~/features/posts/components/PostDetailsModal";
 import {
@@ -87,6 +91,10 @@ interface CalendarProps {
   initialView?: "day" | "week" | "month";
   /** Optional initial date (YYYY-MM-DD) when opening from URL. */
   initialDate?: string;
+  /** Load published posts for the visible period when the seed window does not cover it. */
+  loadVisibleHistory?: boolean;
+  /** Inclusive instants of published posts already included in `pastPosts`. */
+  pastWindow?: { start: string; end: string } | null;
 }
 
 const VIEW_VALUES = ["day", "week", "month"] as const;
@@ -107,6 +115,8 @@ function CalendarToolbar({
   onMiniCalendarSelectDate,
   calendarPageTabs,
   queueTypes,
+  historyStatus,
+  onRetryHistory,
 }: {
   view: "day" | "week" | "month";
   onViewChange: (v: "day" | "week" | "month") => void;
@@ -123,6 +133,8 @@ function CalendarToolbar({
   onMiniCalendarSelectDate: (d: Date) => void;
   calendarPageTabs?: CalendarProps["calendarPageTabs"];
   queueTypes?: QueueType[];
+  historyStatus: CalendarHistoryStatus;
+  onRetryHistory: () => void;
 }) {
   const [searchParams] = useSearchParams();
   const showPeriodLabel = view === "month" || view === "week";
@@ -244,6 +256,25 @@ function CalendarToolbar({
               {periodLabel}
             </h2>
           ) : null}
+          {historyStatus === "loading" ? (
+            <span
+              className="text-text-secondary shrink-0 text-sm font-normal"
+              role="status"
+            >
+              Loading posts
+            </span>
+          ) : null}
+          {historyStatus === "error" ? (
+            <button
+              type="button"
+              className="text-destructive shrink-0 text-sm font-normal underline-offset-2 hover:underline"
+              aria-live="polite"
+              aria-label="Could not load posts. Retry"
+              onClick={onRetryHistory}
+            >
+              Could not load posts
+            </button>
+          ) : null}
         </div>
 
         {/* Right cluster: type + queue filters (Calendar main page only). */}
@@ -321,6 +352,8 @@ export function Calendar({
   calendarPageTabs,
   initialView,
   initialDate,
+  loadVisibleHistory = false,
+  pastWindow = null,
 }: CalendarProps) {
   const { dateLocale } = useFormattedDate();
   const userTimezone = user?.timezone ?? "Etc/UTC";
@@ -372,14 +405,33 @@ export function Calendar({
   const refreshPostViews = useRefreshPostViews();
   const navigate = useNavigate();
 
+  const anchorReady = userSelectedDate !== null || todayKey !== null;
+  const historyTab =
+    calendarPageTabs?.currentTab ??
+    (isLongform ? "longform" : isAll ? "all" : "posts");
+  const {
+    pastPosts: visiblePastPosts,
+    historyStatus,
+    retryHistory,
+  } = useCalendarVisiblePast({
+    enabled: loadVisibleHistory,
+    anchorReady,
+    view,
+    anchorDate: currentDate,
+    timeZone: userTimezone,
+    seedPosts: pastPosts,
+    seedWindow: pastWindow,
+    contentTab: historyTab,
+  });
+
   const { scheduledPosts: displayScheduledPosts, pastPosts: displayPastPosts } =
     useMemo(
       () =>
-        collapseCalendarThreadSegments(scheduledPosts, pastPosts, {
+        collapseCalendarThreadSegments(scheduledPosts, visiblePastPosts, {
           isLongform,
           isAll,
         }),
-      [scheduledPosts, pastPosts, isLongform, isAll]
+      [scheduledPosts, visiblePastPosts, isLongform, isAll]
     );
 
   const calendarPostsForStats = useMemo(() => {
@@ -733,6 +785,8 @@ export function Calendar({
         }}
         calendarPageTabs={calendarPageTabs}
         queueTypes={queueTypes}
+        historyStatus={historyStatus}
+        onRetryHistory={retryHistory}
       />
 
       {/* Calendar content: Day view on lg shows main + right sidebar.

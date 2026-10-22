@@ -5,6 +5,7 @@
 export {
   handleCalendarAction,
   loadCalendarData,
+  loadCalendarPublishedRange,
   loadCalendarQueueData,
   postsToCalendarPosts,
   longFormPostsToCalendarPosts,
