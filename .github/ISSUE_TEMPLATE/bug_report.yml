@@ -1,0 +1,62 @@
+name: Bug report
+description: Report something that does not work as expected
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting this. Do not include private keys, session secrets, bunker URIs, or other credentials.
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where did this happen?
+      options:
+        - Hosted (smartflow.social)
+        - Self-hosted
+        - Local development
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: What happened
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to...
+        2. Click...
+        3. See...
+    validations:
+      required: true
+  - type: dropdown
+    id: signer
+    attributes:
+      label: Signer
+      options:
+        - NIP-07 browser extension
+        - NIP-46 remote signer
+        - Not signed in
+        - Not applicable
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser and version. For self-hosted or local runs, include the Node.js version and whether you use Docker.
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Redact keys, tokens, and connection strings before pasting.
+    validations:
+      required: false
