@@ -16,15 +16,23 @@ export function buildSubscriptionNotificationMessage(params: {
   currentPeriodEnd: Date | null;
   /** Grace end when relevant */
   gracePeriodEndsAt: Date | null;
+  /** Why an NWC renewal charge failed, when the caller knows. */
+  failureDetail?: string;
 }): string {
-  const { eventType, commMode, currentPeriodEnd, gracePeriodEndsAt } = params;
+  const {
+    eventType,
+    commMode,
+    currentPeriodEnd,
+    gracePeriodEndsAt,
+    failureDetail,
+  } = params;
   const endStr = currentPeriodEnd ? formatEnd(currentPeriodEnd) : "soon";
   const graceStr = gracePeriodEndsAt ? formatEnd(gracePeriodEndsAt) : endStr;
 
   if (commMode === "MANUAL_TOP_UP") {
     return buildManualCopy(eventType, endStr, graceStr);
   }
-  return buildNwcCopy(eventType, endStr, graceStr);
+  return buildNwcCopy(eventType, endStr, graceStr, failureDetail);
 }
 
 function buildManualCopy(
@@ -74,7 +82,8 @@ function buildManualFallback(
 function buildNwcCopy(
   eventType: SubscriptionNotificationEventType,
   endStr: string,
-  graceStr: string
+  graceStr: string,
+  failureDetail?: string
 ): string {
   switch (eventType) {
     case "renewal_upcoming_3d":
@@ -92,7 +101,9 @@ function buildNwcCopy(
     case "renewal_failed":
       return [
         `We could not renew your ${BRAND_NAME} subscription via NWC.`,
-        "Your plan has entered grace period. Reconnect your wallet or top up manually to avoid downgrade.",
+        failureDetail
+          ? `${failureDetail} Your plan has entered a grace period. Top up manually if you want to keep paid features.`
+          : "Your plan has entered grace period. Reconnect your wallet or top up manually to avoid downgrade.",
       ].join("\n");
     case "grace_period_started":
       return `Your subscription is now in grace period.\nFix NWC or top up manually before ${graceStr} to keep paid features active.`;

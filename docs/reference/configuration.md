@@ -393,6 +393,24 @@ The signed-in operator UI at `/dashboard/admin` does **not** use this secret; it
 
 ---
 
+### SUBSCRIPTION_RENEWAL_INTERVAL_MINUTES
+
+How often, in minutes, the worker renews NWC auto-renew subscriptions. Default `60`. Set to `0` to
+turn the worker sweep off.
+
+Renewals do not depend on an outside cron. `GET` or `POST /cron/checksubscription` runs the same
+sweep when you want to trigger it by hand.
+
+---
+
+### CRON_SECRET
+
+Optional secret for `GET` or `POST /cron/checksubscription`. Send it as `X-Cron-Secret` or
+`Authorization: Bearer <secret>`. When unset, the route does not check a header (set this in
+production).
+
+---
+
 ### APP_URL
 
 Canonical application URL. Used for CSRF origin validation and links in emails/push.

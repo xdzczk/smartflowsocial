@@ -1,27 +1,34 @@
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 
 import { checkAndRenewSubscriptions } from "~/features/payments";
+import { cronRequestAuthorized } from "~/lib/cron-auth.server";
 import { env } from "~/lib/env.server";
+import { ensureServerWebSocket } from "~/lib/websocket-polyfill.server";
 
-// Polyfill WebSocket for @getalby/sdk in Node.js (production only)
-if (
-  env.NODE_ENV !== "development" &&
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Runtime polyfill check for Node.js environment
-  globalThis.WebSocket === undefined
-) {
-  const { WebSocket } = require("ws") as {
-    WebSocket: typeof globalThis.WebSocket;
-  };
-  globalThis.WebSocket = WebSocket;
-}
+ensureServerWebSocket();
+
 /**
- * Cron job to check user subscriptions and handle renewals
- * This should be called periodically (e.g., daily) to:
- * 1. Check subscription expiration
- * 2. Disable accounts with expired subscriptions
- * 3. Attempt automatic renewal for users with NWC enabled
+ * Manual trigger for the subscription renewal sweep. The worker runs the same
+ * function on SUBSCRIPTION_RENEWAL_INTERVAL_MINUTES. This route does not have
+ * to be called for renewals to happen.
  */
-export async function loader() {
+async function runSubscriptionCron(request?: Request) {
+  if (!cronRequestAuthorized(request, env.CRON_SECRET)) {
+    return json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const result = await checkAndRenewSubscriptions();
   return json(result, { status: result.success ? 200 : 500 });
+}
+
+export async function loader(args?: LoaderFunctionArgs) {
+  return runSubscriptionCron(args?.request);
+}
+
+export async function action({ request }: ActionFunctionArgs) {
+  if (request.method !== "POST") {
+    return json({ error: "Method not allowed" }, { status: 405 });
+  }
+  return runSubscriptionCron(request);
 }

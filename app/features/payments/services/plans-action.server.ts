@@ -3,8 +3,6 @@
  * Centralized action processing for plans page
  */
 
-import { NWCClient } from "@getalby/sdk";
-
 import { requireUser } from "~/features/auth/session.server";
 import { isBtcpayConfigured } from "~/features/payments/btcpay.server";
 import {
@@ -17,7 +15,16 @@ import {
   manuallyVerifyPayment,
   PlanBillingModel,
 } from "~/features/payments/data";
-import { getDecryptedUserNWC, updateUserNWC } from "~/features/user";
+import {
+  NwcChargeError,
+  nwcChargeFailureNotice,
+  payBolt11WithUserNwc,
+} from "~/features/payments/services/nwc-user-pay.server";
+import {
+  getDecryptedUserNWC,
+  touchUserNwcLastUsed,
+  updateUserNWC,
+} from "~/features/user";
 import { planSubscriptionDescription } from "~/lib/brand";
 import { logError } from "~/lib/error-logger.server";
 import { trackProductEvent } from "~/lib/product-events.server";
@@ -155,11 +162,25 @@ async function attemptImmediateNwcPayment(params: {
     };
   }
 
-  const nwcClient = new NWCClient({ nostrWalletConnectUrl: decryptedNwc });
   try {
-    await nwcClient.payInvoice({ invoice: params.invoice.invoice });
-  } finally {
-    nwcClient.close();
+    await payBolt11WithUserNwc(decryptedNwc, params.invoice.invoice);
+    await touchUserNwcLastUsed(params.userId);
+  } catch (error) {
+    if (!(error instanceof NwcChargeError) || error.kind !== "unconfirmed") {
+      const kind =
+        error instanceof NwcChargeError ? error.kind : "wallet_rejected";
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        userId: params.userId,
+        planId: params.planId,
+        kind,
+        message: "Immediate NWC payment failed",
+      });
+      return {
+        ok: false as const,
+        error: nwcChargeFailureNotice(kind),
+        status: 502 as const,
+      };
+    }
   }
 
   const sleep = (ms: number) =>

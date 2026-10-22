@@ -3,13 +3,8 @@
  * Handles subscription checking and automatic renewal for cron jobs
  */
 
-import { NWCClient } from "@getalby/sdk";
-import { LN, USD } from "@getalby/sdk/lnclient";
-
 import {
   createRenewalPayment,
-  getOwnerNwcWithRelayOverrides,
-  getPlanPriceUsd,
   updateUserSubscription,
 } from "~/features/payments/data";
 import { getUserSubscription } from "~/features/payments/data/payment.queries.server";
@@ -18,36 +13,36 @@ import { deliverSubscriptionNotificationDm } from "~/features/payments/services/
 import { runSubscriptionNotifications } from "~/features/payments/services/subscription-notification-runner.server";
 import { deriveBillingCommMode } from "~/features/payments/services/subscription-status.server";
 import type { SubscriptionBillingPaymentMethod } from "~/features/payments/types/subscription-billing.types";
-import { recordReferralEarningIfAny } from "~/features/referral/record-referral-earning.server";
 import {
   disableUserAccount,
   getEnabledUsersWithSubscriptions,
 } from "~/features/user";
 import { afterSubscriptionUpdated } from "~/infra/blastr/entitlement-sync.server";
 import { decrypt } from "~/lib/encryption.server";
-import { env } from "~/lib/env.server";
 import { createErrorResponse } from "~/lib/error-handler.server";
 import { logError } from "~/lib/error-logger.server";
 import { normalizeError } from "~/lib/errors";
 import { trackProductEvent } from "~/lib/product-events.server";
+import { ensureServerWebSocket } from "~/lib/websocket-polyfill.server";
 
-import { getBitcoinRate } from "../btc.rate";
 import {
+  claimSubscriptionRenewalAttempt,
   findPlanById,
   updateSubscriptionCancelAtPeriodEndAndMetadata,
   updateSubscriptionDunningState,
   updateSubscriptionToCanceled,
 } from "../repositories/subscription-renewal-data.server";
 
+import { NwcChargeError, nwcChargeFailureNotice } from "./nwc-user-pay.server";
+import {
+  isAutoRenewChargeEligible,
+  isFreePlanPrice,
+} from "./subscription-auto-renew.server";
+import { chargeAutoRenewSubscription } from "./subscription-renewal-charge.server";
+
 // ============================================================================
 // Helper Functions
 // ============================================================================
-
-interface InvoiceDetails {
-  invoice: string;
-  paymentHash: string;
-  amountSats: number;
-}
 
 async function handleFreePlanRenewal(
   user: { id: string; npub: string },
@@ -74,244 +69,6 @@ async function handleFreePlanRenewal(
       planId: subAfter.planId,
       eventType: "renewal_success",
       commMode: "MANUAL_TOP_UP",
-      dedupeKey: buildSubscriptionDedupeKey(
-        "renewal_success",
-        subAfter.id,
-        subAfter.currentPeriodEnd ?? new Date()
-      ),
-      currentPeriodEnd: subAfter.currentPeriodEnd,
-      gracePeriodEndsAt: subAfter.gracePeriodEndsAt,
-    });
-  }
-}
-
-function extractInvoiceString(invoiceRequest: unknown): string {
-  const requestAny: Record<string, unknown> =
-    typeof invoiceRequest === "object" && !Array.isArray(invoiceRequest)
-      ? (invoiceRequest as unknown as Record<string, unknown>)
-      : {};
-  const invoiceValue = requestAny["invoice"];
-
-  if (typeof invoiceValue === "string") {
-    return invoiceValue;
-  }
-
-  if (
-    invoiceValue &&
-    typeof invoiceValue === "object" &&
-    !Array.isArray(invoiceValue) &&
-    "paymentRequest" in invoiceValue &&
-    typeof (invoiceValue as { paymentRequest?: unknown }).paymentRequest ===
-      "string"
-  ) {
-    return (invoiceValue as { paymentRequest: string }).paymentRequest;
-  }
-
-  return "";
-}
-
-function extractPaymentHash(
-  invoiceRequest: unknown,
-  invoiceValue: unknown
-): string {
-  const requestAny: Record<string, unknown> =
-    typeof invoiceRequest === "object" && !Array.isArray(invoiceRequest)
-      ? (invoiceRequest as unknown as Record<string, unknown>)
-      : {};
-
-  if (typeof requestAny["paymentHash"] === "string") {
-    return requestAny["paymentHash"];
-  }
-
-  const invoiceObj =
-    invoiceValue &&
-    typeof invoiceValue === "object" &&
-    !Array.isArray(invoiceValue)
-      ? (invoiceValue as Record<string, unknown>)
-      : null;
-
-  if (invoiceObj && "paymentHash" in invoiceObj) {
-    return String(invoiceObj["paymentHash"]);
-  }
-
-  return "";
-}
-
-async function extractAmountInSats(
-  invoiceRequest: unknown,
-  invoiceString: string,
-  amountUsd: number
-): Promise<number> {
-  const parseLnInvoiceAmountToSats = (invoice: string): number | null => {
-    if (typeof invoice !== "string") return null;
-    const invoiceStr = invoice.toLowerCase();
-    if (!invoiceStr.startsWith("lnbc")) return null;
-
-    const amountMatch = invoiceStr.match(/lnbc([0-9]+)([munp]?)/);
-    if (!amountMatch) return null;
-
-    const amountPart = amountMatch[1];
-    if (!amountPart) return null;
-
-    const baseAmount = parseInt(amountPart, 10);
-    if (Number.isNaN(baseAmount)) return null;
-
-    const unit = amountMatch[2];
-    // https://github.com/lightning/bolts/blob/master/11-payment-encoding.md
-    // lnbc<milli-btc><u|n|p?>
-    if (unit === "m") return baseAmount * 100000;
-    if (unit === "u") return baseAmount * 100;
-    if (unit === "n") return Math.round(baseAmount * 0.1);
-    if (unit === "p") return Math.round(baseAmount * 0.0001);
-    return baseAmount * 100000000;
-  };
-
-  const requestAny: Record<string, unknown> =
-    typeof invoiceRequest === "object" && !Array.isArray(invoiceRequest)
-      ? (invoiceRequest as unknown as Record<string, unknown>)
-      : {};
-
-  // Try direct amount property
-  if (requestAny["amount"] && typeof requestAny["amount"] === "number") {
-    return requestAny["amount"];
-  }
-
-  // Try invoice object
-  const invoiceValue = requestAny["invoice"];
-  const invoiceObj =
-    invoiceValue &&
-    typeof invoiceValue === "object" &&
-    !Array.isArray(invoiceValue)
-      ? (invoiceValue as Record<string, unknown>)
-      : null;
-
-  if (invoiceObj && "satoshi" in invoiceObj) {
-    const satoshiValue = Number(invoiceObj["satoshi"]);
-    if (!Number.isNaN(satoshiValue)) {
-      return satoshiValue;
-    }
-  }
-
-  // Try requestAny satoshi
-  if (requestAny["satoshi"] && typeof requestAny["satoshi"] === "number") {
-    return requestAny["satoshi"];
-  }
-
-  // Parse from Lightning invoice string
-  try {
-    const parsed = parseLnInvoiceAmountToSats(invoiceString);
-    if (typeof parsed === "number") return parsed;
-  } catch (error) {
-    logError(error instanceof Error ? error : new Error(String(error)), {
-      message: "[CRON] Error parsing Lightning invoice amount",
-      amountUsd,
-    });
-  }
-
-  // Fallback: use live Bitcoin rate
-  try {
-    return await getBitcoinRate(amountUsd);
-  } catch (error) {
-    logError(error instanceof Error ? error : new Error(String(error)), {
-      message: "[CRON] Failed to fetch Bitcoin rate, using fallback",
-      amountUsd,
-    });
-    // Fallback approximation: $1 ≈ 2,500 sats (at $40,000 per BTC)
-    return Math.round(amountUsd * 2500);
-  }
-}
-
-async function createInvoice(
-  ownerNwc: string,
-  amountUsd: number
-): Promise<unknown> {
-  const { credentials: ownerNwcCredentials } =
-    getOwnerNwcWithRelayOverrides(ownerNwc);
-  const ownerLn = new LN(ownerNwcCredentials) as unknown as {
-    requestPayment: (amount: { amount: number }) => Promise<unknown>;
-  };
-  try {
-    return await ownerLn.requestPayment(USD(amountUsd) as { amount: number });
-  } catch (error) {
-    logError(error instanceof Error ? error : new Error(String(error)), {
-      message: "[CRON] Failed to request make_invoice",
-      amountUsd,
-    });
-    throw new Error(
-      `Failed to create invoice: ${
-        error instanceof Error ? error.message : String(error)
-      }`
-    );
-  }
-}
-
-async function payInvoice(
-  decryptedNwc: string,
-  invoiceString: string
-): Promise<string> {
-  const nwcClient = new NWCClient({
-    nostrWalletConnectUrl: decryptedNwc,
-  });
-
-  const paymentResult = await nwcClient.payInvoice({
-    invoice: invoiceString,
-  });
-
-  const paymentResultObj =
-    typeof paymentResult === "object" && !Array.isArray(paymentResult)
-      ? (paymentResult as Record<string, unknown>)
-      : {};
-  const preimageValue = paymentResultObj["preimage"];
-
-  return typeof preimageValue === "string"
-    ? preimageValue
-    : `payment_${Date.now()}`;
-}
-
-async function completePaidRenewal(
-  user: { id: string; npub: string; encryptedNwc: string | null },
-  planId: string,
-  planName: string,
-  invoiceDetails: InvoiceDetails,
-  amountUsd: number
-): Promise<void> {
-  const paymentId = `renewal_${planId}_${Date.now()}_${user.id}`;
-  await createRenewalPayment({
-    paymentId,
-    userId: user.id,
-    amount: invoiceDetails.amountSats,
-    amountUsd,
-    invoice: invoiceDetails.invoice,
-    paymentHash: invoiceDetails.paymentHash,
-    description: `${planName} plan renewal`,
-  });
-
-  await updateUserSubscription(user.id, planId, paymentId);
-
-  if (invoiceDetails.amountSats > 0) {
-    await recordReferralEarningIfAny(
-      user.id,
-      paymentId,
-      invoiceDetails.amountSats
-    );
-  }
-
-  const subAfter = await getUserSubscription(user.id);
-  if (subAfter) {
-    const commMode = deriveBillingCommMode(
-      {
-        nwcEnabled: Boolean(user.encryptedNwc),
-        encryptedNwc: user.encryptedNwc,
-      },
-      subAfter
-    );
-    await deliverSubscriptionNotificationDm({
-      userId: user.id,
-      npub: user.npub,
-      subscriptionId: subAfter.id,
-      planId: subAfter.planId,
-      eventType: "renewal_success",
-      commMode,
       dedupeKey: buildSubscriptionDedupeKey(
         "renewal_success",
         subAfter.id,
@@ -428,6 +185,11 @@ async function handleRenewalWithNWC(
     return;
   }
 
+  if (!isFreePlanPrice(subscription.Plan?.price)) {
+    const claimed = await claimSubscriptionRenewalAttempt(user.id, now);
+    if (!claimed) return;
+  }
+
   results.renewalAttempted++;
   trackProductEvent("renewal_attempted", {
     userId: user.id,
@@ -441,8 +203,10 @@ async function handleRenewalWithNWC(
     await attemptRenewal(
       { ...user, encryptedNwc: user.encryptedNwc },
       {
+        id: subscription.id,
         planId: subscription.planId,
         plan: subscription.plan,
+        currentPeriodEnd: subscription.currentPeriodEnd,
         Plan:
           subscription.Plan &&
           "name" in subscription.Plan &&
@@ -461,6 +225,19 @@ async function handleRenewalWithNWC(
       planId: subscription.planId,
     });
   } catch (renewalError: unknown) {
+    const subNow = await getUserSubscription(user.id);
+    const periodEndMs = subNow?.currentPeriodEnd
+      ? new Date(subNow.currentPeriodEnd).getTime()
+      : 0;
+    if (periodEndMs > now.getTime()) {
+      results.renewalSuccess++;
+      trackProductEvent("renewal_succeeded", {
+        userId: user.id,
+        planId: subscription.planId,
+      });
+      return;
+    }
+
     results.renewalFailed++;
     trackProductEvent("renewal_failed", {
       userId: user.id,
@@ -476,6 +253,10 @@ async function handleRenewalWithNWC(
         : String(renewalError)
     }`;
     results.errors.push(errorMsg);
+    const failureDetail =
+      renewalError instanceof NwcChargeError
+        ? nwcChargeFailureNotice(renewalError.kind)
+        : undefined;
     logError(
       renewalError instanceof Error
         ? renewalError
@@ -483,6 +264,10 @@ async function handleRenewalWithNWC(
       {
         message: `[CRON] ${errorMsg}`,
         userId: user.id,
+        kind:
+          renewalError instanceof NwcChargeError
+            ? renewalError.kind
+            : undefined,
       }
     );
 
@@ -535,6 +320,7 @@ async function handleRenewalWithNWC(
       planId: subscription.planId,
       eventType: "renewal_failed",
       commMode: "AUTO_RENEW_NWC",
+      failureDetail,
       dedupeKey: buildSubscriptionDedupeKey(
         "renewal_failed",
         subscription.id,
@@ -697,7 +483,18 @@ async function processUserSubscription(
     cancelAtPeriodEnd: subscription.cancelAtPeriodEnd ?? false,
   };
 
-  if (user.nwcEnabled && user.encryptedNwc) {
+  const renewWithWallet =
+    (isFreePlanPrice(subscription.Plan?.price) &&
+      user.nwcEnabled &&
+      Boolean(user.encryptedNwc)) ||
+    isAutoRenewChargeEligible({
+      nwcEnabled: user.nwcEnabled,
+      encryptedNwc: user.encryptedNwc,
+      paymentMethod: subscription.paymentMethod,
+      renewalMode: subscription.renewalMode,
+    });
+
+  if (renewWithWallet) {
     await handleRenewalWithNWC(user, renewalSubscription, results);
   } else {
     await handleRenewalWithoutNWC(user, renewalSubscription, results);
@@ -713,6 +510,7 @@ export async function checkAndRenewSubscriptions(): Promise<
     timestamp: string;
   } & RenewalResults
 > {
+  ensureServerWebSocket();
   const results: RenewalResults = {
     checked: 0,
     expired: 0,
@@ -808,19 +606,19 @@ export async function checkAndRenewSubscriptions(): Promise<
 async function attemptRenewal(
   user: { id: string; npub: string; encryptedNwc: string | null },
   subscription: {
+    id: string;
     planId: string | null;
     plan: string | null;
+    currentPeriodEnd: Date | null;
     Plan: { name: string; price: string } | null;
     billingCadence?: "monthly" | "yearly" | null;
   }
 ): Promise<void> {
-  // Decrypt user's NWC credentials
   if (!user.encryptedNwc) {
     throw new Error("User NWC credentials not available");
   }
   const decryptedNwc = decrypt(user.encryptedNwc);
 
-  // Get user's current plan
   const planId = subscription.planId ?? subscription.plan;
   if (!planId) {
     throw new Error("No plan ID found for subscription");
@@ -831,77 +629,56 @@ async function attemptRenewal(
     throw new Error(`Plan ${planId} not found`);
   }
 
-  // Handle free plans
-  if (Number(plan.price) === 0) {
+  if (isFreePlanPrice(plan.price)) {
     await handleFreePlanRenewal(user, planId, plan.name);
     return;
   }
 
-  // Create invoice using owner's NWC (to receive payment)
-  const ownerNwc = env.OWNER_NWC;
-  if (!ownerNwc) {
-    throw new Error("Owner NWC credentials not configured");
+  if (!subscription.currentPeriodEnd) {
+    throw new Error("Subscription period end is missing");
   }
 
-  const cadence = subscription.billingCadence ?? "monthly";
-  const durationMonths = cadence === "yearly" ? 12 : 1;
-  const skuUsd = await getPlanPriceUsd({
+  const cadence =
+    subscription.billingCadence === "yearly" ? "yearly" : "monthly";
+  await chargeAutoRenewSubscription({
+    userId: user.id,
+    nwcUrl: decryptedNwc,
+    subscriptionId: subscription.id,
     planId,
+    planName: plan.name,
+    planPriceUsd: Number(plan.price),
+    periodEnd: new Date(subscription.currentPeriodEnd),
     billingCadence: cadence,
-    accessDurationMonths: durationMonths,
-    paymentMethod: "nwc_auto_renew",
   });
-  const amountUsd = typeof skuUsd === "number" ? skuUsd : Number(plan.price);
-  const invoiceRequest = await createInvoice(ownerNwc, amountUsd);
 
-  if (!invoiceRequest) {
-    throw new Error("Failed to create invoice");
-  }
+  const subAfter = await getUserSubscription(user.id);
+  if (!subAfter) return;
 
-  // Extract invoice details
-  const invoiceValue =
-    typeof invoiceRequest === "object" &&
-    !Array.isArray(invoiceRequest) &&
-    "invoice" in invoiceRequest
-      ? (invoiceRequest as Record<string, unknown>)["invoice"]
-      : null;
-  const invoiceString = extractInvoiceString(invoiceRequest);
-  const paymentHashString = extractPaymentHash(invoiceRequest, invoiceValue);
-
-  if (!invoiceString || !paymentHashString) {
-    logError(new Error("Missing invoiceString or paymentHashString"), {
-      message: "[CRON] Failed to extract invoice or paymentHash from request",
-      invoiceString,
-      paymentHashString,
-      requestStructure: Object.keys(
-        invoiceRequest as unknown as Record<string, unknown>
-      ),
-    });
-    throw new Error(
-      "Invalid response from payment provider - missing invoice or paymentHash"
-    );
-  }
-
-  // Extract amount in sats
-  const amountSats = await extractAmountInSats(
-    invoiceRequest,
-    invoiceString,
-    amountUsd
-  );
-
-  // Pay the invoice using user's NWC
-  const paymentHash = await payInvoice(decryptedNwc, invoiceString);
-
-  // Complete the renewal process
-  await completePaidRenewal(
-    user,
-    planId,
-    plan.name,
+  const commMode = deriveBillingCommMode(
+    { nwcEnabled: true, encryptedNwc: user.encryptedNwc },
     {
-      invoice: invoiceString,
-      paymentHash: paymentHash || paymentHashString,
-      amountSats,
-    },
-    amountUsd
+      planId: subAfter.planId,
+      paymentMethod: subAfter.paymentMethod,
+      renewalMode: subAfter.renewalMode,
+      cancelAtPeriodEnd: subAfter.cancelAtPeriodEnd,
+      Plan: subAfter.Plan
+        ? { enableLifetimeAccess: subAfter.Plan.enableLifetimeAccess }
+        : null,
+    }
   );
+  await deliverSubscriptionNotificationDm({
+    userId: user.id,
+    npub: user.npub,
+    subscriptionId: subAfter.id,
+    planId: subAfter.planId,
+    eventType: "renewal_success",
+    commMode,
+    dedupeKey: buildSubscriptionDedupeKey(
+      "renewal_success",
+      subAfter.id,
+      subAfter.currentPeriodEnd ?? new Date()
+    ),
+    currentPeriodEnd: subAfter.currentPeriodEnd,
+    gracePeriodEndsAt: subAfter.gracePeriodEndsAt,
+  });
 }
