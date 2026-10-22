@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Professional Nostr social media management platform - Schedule, manage, and optimize your decentralized social presence",
   "author": "SmartFlowSocial Team",
-  "license": "MIT",
+  "license": "Unlicense",
   "private": true,
   "repository": {
     "type": "git",

@@ -18,9 +18,10 @@ these steps:
 
 - Security vulnerabilities should be reported privately to prevent exploitation
 
-### 2. Report via email
+### 2. Report privately
 
-- Send details to: **security@smartflow.social**
+- Email **security@smartflow.social**, or open a
+  [private GitHub security advisory](https://github.com/xdzczk/SmartFlowSocial/security/advisories/new)
 - Include:
   - Description of the vulnerability
   - Steps to reproduce

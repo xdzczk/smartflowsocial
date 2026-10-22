@@ -11,7 +11,7 @@ Professional Nostr social media management for creators, teams, and communities.
 [![Remix](https://img.shields.io/badge/Remix-app-121212?logo=remix&logoColor=white)](https://remix.run/)
 [![PostgreSQL](https://img.shields.io/badge/postgres-primary-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/redis-jobs-DC382D?logo=redis&logoColor=white)](https://redis.io/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue)](LICENSE)
 
 [Start on Hosted](https://smartflow.social) • [Hosted Setup Guide](./docs/getting-started/hosted.md)
 • [Self-Host Guide](./docs/getting-started/quickstart.md) • [Documentation](./docs/README.md)
@@ -245,14 +245,15 @@ Roadmap and changes: [CHANGELOG](./CHANGELOG.md)
 
 - Hosted: [smartflow.social](https://smartflow.social)
 - Docs hub: [docs/README.md](./docs/README.md)
-- Bug reports: [GitHub Issues](https://github.com/xdzczk/SmartFlowSocial/issues)
-- Feature requests: [GitHub Discussions](https://github.com/xdzczk/SmartFlowSocial/discussions)
+- Bug reports and feature requests:
+  [GitHub Issues](https://github.com/xdzczk/SmartFlowSocial/issues)
+- Questions and ideas: [GitHub Discussions](https://github.com/xdzczk/SmartFlowSocial/discussions)
 
 ---
 
 ## License
 
-MIT License. See [LICENSE](./LICENSE).
+[Unlicense](./LICENSE) (public domain).
 
 ---
 

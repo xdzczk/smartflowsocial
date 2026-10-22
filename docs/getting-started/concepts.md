@@ -36,7 +36,7 @@ available as both a hosted service and self-hosted software. It enables you to:
 
 1. **Privacy-First** - Signing keys remain in your signer (browser extension or remote signer)
 2. **Flexible Hosting** - Choose hosted convenience or self-hosted control
-3. **Open Source** - MIT licensed, fully auditable
+3. **Open Source** - Unlicense (public domain), fully auditable
 4. **Professional Features** - Enterprise-level scheduling and management
 
 ---
