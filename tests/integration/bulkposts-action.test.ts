@@ -510,6 +510,8 @@ describe("Bulk Posts Action Handler", () => {
           expectedParentEventId: "parent-signed-event-id",
           followUpTimingMode: "offset_from_parent",
           followUpOffsetSeconds: 900,
+          signingState: "signed",
+          signedChildEventId: "event-repost-1",
         }),
         repostScheduledFor,
         expect.any(String)

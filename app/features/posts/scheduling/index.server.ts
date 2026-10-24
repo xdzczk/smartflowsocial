@@ -27,6 +27,7 @@ export {
   buildScheduleOverlapWarning,
   getScheduleOverlapWarning,
 } from "./services/schedule-overlap-warning.server";
+export { signedFollowUpPersistence } from "./signed-follow-up";
 export {
   cascadeAttachedReschedule,
   cascadeCancelAttachedFollowups,

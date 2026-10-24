@@ -7,6 +7,7 @@ import {
   assertScheduleCapacity,
   ScheduleCapExceededError,
 } from "~/features/payments/entitlements/schedule-cap-policy.server";
+import { signedFollowUpPersistence } from "~/features/posts/scheduling/index.server";
 import {
   createPostWithOutbox,
   updatePost,
@@ -285,6 +286,7 @@ async function createRepostAndQuotePostsFromResume(
               dependencyMode: "standalone" as const,
               targetMode: "direct" as const,
             }),
+        ...(signedFollowUpPersistence(item.signedEvent) ?? {}),
       },
       item.scheduledFor
     );
@@ -333,6 +335,7 @@ async function createRepostAndQuotePostsFromResume(
               dependencyMode: "standalone" as const,
               targetMode: "direct" as const,
             }),
+        ...(signedFollowUpPersistence(item.signedEvent) ?? {}),
       },
       item.scheduledFor
     );
