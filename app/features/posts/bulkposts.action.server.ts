@@ -41,6 +41,7 @@ import { isVideoUrl } from "~/utils/media-helpers";
 import { CreatePostUseCase } from "./composer/index.server";
 import { updateDraftGroup as updateDraftGroupRow } from "./repositories/draft-data.server";
 import { updatePost as updatePostInRepo } from "./repositories/post-queries-data.server";
+import { signedFollowUpPersistence } from "./scheduling/signed-follow-up";
 import { resolveQueueTypeId } from "./services/queue-type-resolver.server";
 import { PostStateMachine } from "./state-machine/post-state-machine.server";
 
@@ -461,6 +462,8 @@ export async function handleSignAndSchedule(
                         targetMode: "direct" as const,
                       }),
                   ...(repostConditions && { repostConditions }),
+                  ...(signedFollowUpPersistence(normalizedRepostSignedEvent) ??
+                    {}),
                 },
                 item.scheduledFor,
                 correlationId
@@ -550,6 +553,8 @@ export async function handleSignAndSchedule(
                         dependencyMode: "standalone" as const,
                         targetMode: "direct" as const,
                       }),
+                  ...(signedFollowUpPersistence(normalizedQuoteSignedEvent) ??
+                    {}),
                 },
                 item.scheduledFor,
                 correlationId
