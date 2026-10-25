@@ -529,6 +529,7 @@ export interface ComposerAttachment {
 
 /** Engagement thresholds for conditional repost (only publish if source meets all set minimums) */
 export interface RepostConditions {
+  /** Kind 7 reactions on the source note: likes, emoji, and custom emoji. */
   minReactions?: number;
   minZaps?: number;
   minComments?: number;

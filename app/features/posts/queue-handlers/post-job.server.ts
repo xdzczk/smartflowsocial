@@ -6,6 +6,7 @@
 import type { Job } from "bullmq";
 
 import type { SignedEvent } from "~/features/nostr/types";
+import { countNoteReactionsOnRelays } from "~/features/posts/note-reactions.server";
 import {
   QUEUE_SCHEDULED_POSTS,
   type WorkerSuccessResult,
@@ -20,6 +21,10 @@ import {
   delayMs,
 } from "~/features/posts/queue-payload.server";
 import { isHeldByQueue, isQueuePaused } from "~/features/posts/queue-status";
+import {
+  relaysForReactionCount,
+  repostConditionsMet,
+} from "~/features/posts/repost-conditions";
 import { PostStateMachine } from "~/features/posts/state-machine/post-state-machine.server";
 import { getPostStats } from "~/features/posts/stats.server";
 import type { RepostConditions } from "~/features/posts/types";
@@ -664,6 +669,12 @@ export async function runScheduledPostJob(input: {
       return { success: true, postId, skipped: true };
     }
   }
+  let executionRelays: string[] | null = null;
+  const loadExecutionRelays = async (): Promise<string[]> => {
+    executionRelays ??= await getSanitizedUserRelays(userId);
+    return executionRelays;
+  };
+
   const conditions = repostMeta?.repostConditions as
     | RepostConditions
     | null
@@ -715,27 +726,37 @@ export async function runScheduledPostJob(input: {
 
     const statsRecord = await getPostStats([sourceEventId]);
     const stats = statsRecord[sourceEventId];
-    const cond = conditions as Record<string, number>;
-    const mapping: Record<
-      string,
-      "likes" | "zaps" | "replies" | "reposts" | "satszapped"
-    > = {
-      minReactions: "likes",
-      minZaps: "zaps",
-      minComments: "replies",
-      minReposts: "reposts",
-      minSats: "satszapped",
-    };
-    const conditionsMet = (() => {
-      if (stats === undefined) return false;
-      for (const [k, minVal] of Object.entries(cond)) {
-        const statsKey = mapping[k];
-        if (!statsKey || typeof minVal !== "number") continue;
-        const actual = stats[statsKey];
-        if (actual < minVal) return false;
-      }
-      return true;
-    })();
+    const minReactions = conditions.minReactions;
+    let countedReactions: number | null = null;
+    if (typeof minReactions === "number" && minReactions > 0) {
+      countedReactions = await countNoteReactionsOnRelays(
+        sourceEventId,
+        relaysForReactionCount(await loadExecutionRelays()),
+        minReactions
+      );
+    }
+    const conditionsMet = repostConditionsMet({
+      conditions,
+      stats,
+      countedReactions,
+    });
+    if (typeof minReactions === "number") {
+      logInfo(
+        conditionsMet
+          ? "Repost reaction condition met"
+          : "Repost reaction condition not met",
+        {
+          postId,
+          userId,
+          correlationId,
+          queueName,
+          sourceEventId,
+          minReactions,
+          countedReactions,
+          primalLikes: stats?.likes ?? null,
+        }
+      );
+    }
     if (!conditionsMet) {
       await releasePostPublishLease({
         postId,
@@ -799,7 +820,7 @@ export async function runScheduledPostJob(input: {
 
   const validatedSignedEvent =
     validateSignedEventCryptographically(eventToPublish);
-  const sanitizedRelays = await getSanitizedUserRelays(userId);
+  const sanitizedRelays = await loadExecutionRelays();
 
   const { publishLatencyMs, publishResult } = await publishWithQueueSpan({
     queueName,
