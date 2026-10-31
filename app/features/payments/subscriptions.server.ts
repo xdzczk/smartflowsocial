@@ -14,21 +14,17 @@ export { ensureUserHasFreePlan } from "~/features/payments/data";
 import type { FeatureName, SubscriptionData } from "./types";
 import { hasFeatureAccess } from "./types";
 
-/** Redirect when user account is disabled (never to /plans). */
-const LANDING = "/";
-
 /**
- * Ensure user has free plan, then get subscription data. Throws redirect if user is disabled.
+ * Load the free-plan fallback and the subscription shown in the dashboard.
+ * Disabled accounts stay on the dashboard and see the downgraded billing banner.
+ * The app root sends signed-in users to `/dashboard`, so a redirect back to `/`
+ * would loop.
  */
 async function ensureFreeAndGetSubscriptionData(
   userId: string
 ): Promise<SubscriptionData> {
   await ensureUserHasFreePlan(userId);
-  const data = await getSubscriptionData(userId);
-  if (!data.user?.isEnabled) {
-    throw redirect(LANDING);
-  }
-  return data;
+  return getSubscriptionData(userId);
 }
 
 /**
@@ -55,11 +51,6 @@ export async function requireFeatureAccess(
  */
 export async function requireAnySubscription(userId: string): Promise<void> {
   await ensureUserHasFreePlan(userId);
-
-  const user = await getUserById(userId);
-  if (!user?.isEnabled) {
-    throw redirect(LANDING);
-  }
 }
 
 /**
