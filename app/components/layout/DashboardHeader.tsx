@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "@remix-run/react";
 import {
+  BarChart3,
   CalendarDays,
   Check,
   ChevronLeft,
@@ -367,6 +368,22 @@ function SidebarNavContent({
         collapsed={collapsed}
       >
         Published
+      </NavigationItem>
+      <NavigationItem
+        to="/dashboard/post-analytics"
+        feature="published"
+        isActive={pathname.startsWith("/dashboard/post-analytics")}
+        onUpgradeClick={onUpgradeClick}
+        onActiveClick={onMobileNavActiveClick}
+        icon={
+          <BarChart3
+            className={NAV_ICON_SIZE_CLASS}
+            strokeWidth={NAV_ICON_STROKE}
+          />
+        }
+        collapsed={collapsed}
+      >
+        Post analytics
       </NavigationItem>
       <ExpandableNavigationSection
         title="Engagement"

@@ -27,6 +27,7 @@ import {
 import { startOutboxWorker } from "./app/infra/outbox/outbox-worker.server";
 import { getQueueInstance } from "./app/infra/queue";
 import { runRunwayLowNotifications } from "./app/features/posts/runway/runway-low-notifications.server";
+import { runPaidPostAnalyticsSweep } from "./app/features/analytics/run-sweep.server";
 import { checkAndRenewSubscriptions } from "./app/features/payments/services/subscription-renewal.server";
 import {
   expireBlossomReservations,
@@ -222,6 +223,48 @@ if (
   );
 }
 
+const postAnalyticsIntervalMinutes = parseInt(
+  env.POST_ANALYTICS_INTERVAL_MINUTES ?? "60",
+  10
+);
+let postAnalyticsInterval: ReturnType<typeof setInterval> | null = null;
+let postAnalyticsInFlight = false;
+const runPostAnalyticsSweep = () => {
+  if (postAnalyticsInFlight) return;
+  postAnalyticsInFlight = true;
+  void (async () => {
+    try {
+      const result = await runPaidPostAnalyticsSweep();
+      logInfo("Post analytics sweep completed", { ...result });
+    } catch (error) {
+      logWarning("Post analytics sweep failed", {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    } finally {
+      postAnalyticsInFlight = false;
+    }
+  })();
+};
+if (
+  Number.isFinite(postAnalyticsIntervalMinutes) &&
+  postAnalyticsIntervalMinutes > 0
+) {
+  const postAnalyticsIntervalMs = postAnalyticsIntervalMinutes * 60_000;
+  const postAnalyticsStartupDelay = setTimeout(runPostAnalyticsSweep, 120_000);
+  postAnalyticsStartupDelay.unref?.();
+  postAnalyticsInterval = setInterval(
+    runPostAnalyticsSweep,
+    postAnalyticsIntervalMs
+  );
+  logInfo("Post analytics scheduler started", {
+    intervalMinutes: postAnalyticsIntervalMinutes,
+  });
+} else {
+  logInfo(
+    "Post analytics scheduler disabled (POST_ANALYTICS_INTERVAL_MINUTES=0)"
+  );
+}
+
 logInfo("BullMQ worker started");
 logInfo("Workers initialized", {
   scheduledPostsWorker: !!scheduledPostsWorker,
@@ -349,6 +392,9 @@ process.on("SIGTERM", () => {
   if (subscriptionRenewalInterval) {
     clearInterval(subscriptionRenewalInterval);
   }
+  if (postAnalyticsInterval) {
+    clearInterval(postAnalyticsInterval);
+  }
   clearInterval(relayMetricsInterval);
   clearInterval(queueBacklogMetricsInterval);
   clearInterval(blossomReservationCleanupInterval);
@@ -370,6 +416,9 @@ process.on("SIGINT", () => {
   }
   if (subscriptionRenewalInterval) {
     clearInterval(subscriptionRenewalInterval);
+  }
+  if (postAnalyticsInterval) {
+    clearInterval(postAnalyticsInterval);
   }
   clearInterval(relayMetricsInterval);
   clearInterval(queueBacklogMetricsInterval);

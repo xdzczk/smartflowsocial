@@ -53,6 +53,10 @@ vi.mock("~/lib/redis-cache.server", async (importOriginal) => {
   };
 });
 
+vi.mock("~/features/nostrmash/native-frames.server", () => ({
+  tryNativePrimalFrames: vi.fn(async () => null),
+}));
+
 // Mock global fetch
 global.fetch = vi.fn();
 
@@ -98,6 +102,7 @@ describe("Primal Cache Service", () => {
         | Record<string, string>
         | undefined;
       expect(headers?.["Content-Type"]).toBe("application/json");
+      expect(headers?.["X-Cache-Skip-Native"]).toBe("1");
       expect(fetchOptions.body).toBe(
         JSON.stringify({
           requestType: "thread_view",

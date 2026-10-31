@@ -26,6 +26,7 @@ export const DASHBOARD_SEO_SEGMENT: Record<string, DashboardSeoSegment> = {
   "routes/dashboard.scheduled": { page: "Scheduled" },
   "routes/dashboard.scheduled.$queueType": { page: "Scheduled" },
   "routes/dashboard.published": { page: "Published" },
+  "routes/dashboard.post-analytics": { page: "Post analytics" },
   "routes/dashboard.published.$queueType": { page: "Published" },
   "routes/dashboard.posted": { page: "Published" },
   "routes/dashboard.posted.$queueType": { page: "Published" },

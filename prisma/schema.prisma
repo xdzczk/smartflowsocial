@@ -104,6 +104,10 @@ model User {
   productSessions          ProductSession[]
   signerReconnectEvents    SignerReconnectEvent[]
   SubscriptionNotificationAttempt SubscriptionNotificationAttempt[]
+  trackedAuthorEvents      TrackedAuthorEvent[]
+  authorEventSyncs         AuthorEventSync[]
+  postPerformanceObservations PostPerformanceObservation[]
+  postPerformanceLatests   PostPerformanceLatest[]
 
   @@index([parentNpub])
 }
@@ -998,6 +1002,9 @@ model Post {
   draftVersions           DraftVersion[]
   draftGroupId            String?
   draftGroup              DraftGroup?  @relation(fields: [draftGroupId], references: [id], onDelete: SetNull)
+  trackedAuthorEvents     TrackedAuthorEvent[] @relation("TrackedAuthorEventPost")
+  postPerformanceObservations PostPerformanceObservation[] @relation("PerformanceObservationPost")
+  postPerformanceLatests  PostPerformanceLatest[] @relation("PerformanceLatestPost")
 
   // Indexes for common query patterns
   // State machine indexes (use currentState as single source of truth)
@@ -1574,6 +1581,80 @@ model PostAnalyticsDaily {
   @@unique([userId, date])
   @@index([userId, date])
   @@index([date])
+}
+
+// Notes and articles catalogued for a paid profile, including ones not published here.
+model TrackedAuthorEvent {
+  id             String    @id @default(cuid())
+  userId         String
+  nostrEventId   String
+  kind           Int
+  eventCreatedAt DateTime?
+  contentExcerpt String    @default("")
+  postId         String?
+  discoveredAt   DateTime  @default(now())
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post           Post?     @relation("TrackedAuthorEventPost", fields: [postId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, nostrEventId])
+  @@index([userId, eventCreatedAt])
+  @@index([postId])
+}
+
+// Cursor for walking a paid profile's notes, replies, or long-form on NostrMash.
+model AuthorEventSync {
+  id               String   @id @default(cuid())
+  userId           String
+  stream           String
+  nextCursor       String?
+  backfillComplete Boolean  @default(false)
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, stream])
+  @@index([userId])
+}
+
+// Append-only performance checks. A miss stores null counts, not zeros.
+model PostPerformanceObservation {
+  id               String   @id @default(cuid())
+  userId           String
+  nostrEventId     String
+  postId           String?
+  reactionCount    Int?
+  replyCount       Int?
+  repostCount      Int?
+  zapCount         Int?
+  zapMsats         BigInt?
+  missingFromIndex Boolean
+  checkedAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post             Post?    @relation("PerformanceObservationPost", fields: [postId], references: [id], onDelete: SetNull)
+
+  @@index([userId, nostrEventId, checkedAt])
+  @@index([userId, checkedAt])
+  @@index([postId])
+}
+
+// One current row per catalogued note. History stays in PostPerformanceObservation.
+model PostPerformanceLatest {
+  id               String   @id @default(cuid())
+  userId           String
+  nostrEventId     String
+  postId           String?
+  reactionCount    Int?
+  replyCount       Int?
+  repostCount      Int?
+  zapCount         Int?
+  zapMsats         BigInt?
+  missingFromIndex Boolean
+  checkedAt        DateTime
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post             Post?    @relation("PerformanceLatestPost", fields: [postId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, nostrEventId])
+  @@index([userId, checkedAt])
+  @@index([postId])
 }
 
 // Push notification subscriptions for PWA
