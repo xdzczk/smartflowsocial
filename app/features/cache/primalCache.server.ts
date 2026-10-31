@@ -1,3 +1,4 @@
+import { tryNativePrimalFrames } from "~/features/nostrmash/native-frames.server";
 import { env } from "~/lib/env.server";
 import { logError } from "~/lib/error-logger.server";
 import { fetchJsonWithRetry } from "~/lib/fetch.server";
@@ -87,7 +88,10 @@ async function fetchFromPrimalViaHttp(
     () =>
       fetchJsonWithRetry<CacheResponse>(primalUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Cache-Skip-Native": "1",
+        },
         body: JSON.stringify({ requestType, params }),
         timeout: parsePrimalHttpTimeoutMs(),
         maxRetries: parsePrimalHttpMaxRetries(),
@@ -127,10 +131,21 @@ export async function fetchFromCache(
   const primalUrl = env.PRIMAL_CACHING_URL;
   const useHttp = isHttpPrimalUrl(primalUrl);
 
-  const doFetch = (): Promise<CacheResponse> =>
-    useHttp && primalUrl
+  const doFetch = async (): Promise<CacheResponse> => {
+    try {
+      const native = await tryNativePrimalFrames(requestType, params);
+      if (native && native.length > 0) return native;
+    } catch (error) {
+      logError(error instanceof Error ? error : new Error(String(error)), {
+        requestType,
+        params,
+        message: "[NostrMash] Native read failed, using Primal fallback",
+      });
+    }
+    return useHttp && primalUrl
       ? fetchFromPrimalViaHttp(primalUrl, requestType, params)
       : fetchFromPrimalViaWebSocket(requestType, params);
+  };
 
   try {
     const { ttlSeconds, negativeTtlSeconds } =

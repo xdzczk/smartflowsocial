@@ -31,6 +31,20 @@ interface EnvConfig {
 
   // Optional
   PRIMAL_CACHING_URL?: string;
+  /** NostrMash HTTP origin. Defaults to https://api.nostrmash.com when unset. */
+  NOSTRMASH_BASE_URL?: string;
+  /** Sent as Bearer token only when the deployment requires one. */
+  NOSTRMASH_API_TOKEN?: string;
+  /**
+   * How often (minutes) the worker snapshots paid-profile post analytics.
+   * Defaults to 60. Set to "0" to disable. GET/POST `/cron/post-analytics`
+   * runs the same sweep on demand.
+   */
+  POST_ANALYTICS_INTERVAL_MINUTES?: string;
+  /** Notes discovered or snapshotted per sweep. Defaults to 40. */
+  POST_ANALYTICS_BATCH_SIZE?: string;
+  /** Concurrent NostrMash calls inside one sweep. Defaults to 4. */
+  POST_ANALYTICS_CONCURRENCY?: string;
   /** HTTP Primal proxy: per-attempt timeout ms (default 8000). */
   PRIMAL_HTTP_TIMEOUT_MS?: string;
   /** HTTP Primal proxy: extra retries after first attempt (default 0). */
@@ -221,6 +235,11 @@ function addOptionalStorageConfig(
 function addOptionalConfig(config: EnvConfig): void {
   const optionalVars: Array<keyof EnvConfig> = [
     "PRIMAL_CACHING_URL",
+    "NOSTRMASH_BASE_URL",
+    "NOSTRMASH_API_TOKEN",
+    "POST_ANALYTICS_INTERVAL_MINUTES",
+    "POST_ANALYTICS_BATCH_SIZE",
+    "POST_ANALYTICS_CONCURRENCY",
     "PRIMAL_HTTP_TIMEOUT_MS",
     "PRIMAL_HTTP_MAX_RETRIES",
     "OWNER_NWC",
