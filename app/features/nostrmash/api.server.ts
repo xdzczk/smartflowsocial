@@ -1,4 +1,11 @@
+import { setDefaultResultOrder } from "node:dns";
+
 import { env } from "~/lib/env.server";
+import { logWarning } from "~/lib/error-logger.server";
+
+// Prefer IPv4. A published AAAA record that does not connect makes undici
+// abort the author-page read, and the analytics catalog stays empty.
+setDefaultResultOrder("ipv4first");
 
 import {
   parseAuthorPage,
@@ -76,30 +83,44 @@ export async function nostrmashRequest(
 function authorPath(
   pubkey: string,
   stream: AuthorStream,
-  cursor: string | null
+  cursor: string | null,
+  pageLimit: number
 ): string {
   const encoded = encodeURIComponent(pubkey);
   if (stream === "replies") {
-    return `/api/v1/authors/${encoded}/replies?limit=${PAGE_LIMIT}`;
+    return `/api/v1/authors/${encoded}/replies?limit=${pageLimit}`;
   }
   const kind = stream === "longform" ? 30023 : 1;
   const params = new URLSearchParams({
     kind: String(kind),
-    limit: String(PAGE_LIMIT),
+    limit: String(pageLimit),
   });
   if (cursor) params.set("cursor", cursor);
   return `/api/v1/authors/${encoded}/events?${params.toString()}`;
 }
 
-export function createNostrMashAnalyticsClient(): NostrMashAnalyticsClient {
+export function createNostrMashAnalyticsClient(options?: {
+  pageLimit?: number;
+}): NostrMashAnalyticsClient {
+  const pageLimit = Math.min(
+    100,
+    Math.max(1, Math.floor(options?.pageLimit ?? PAGE_LIMIT))
+  );
   return {
     async listAuthorPage(pubkey, stream, cursor) {
       const response = await nostrmashRequest(
-        authorPath(pubkey, stream, cursor),
+        authorPath(pubkey, stream, cursor, pageLimit),
         { timeoutMs: ANALYTICS_TIMEOUT_MS }
       );
-      if (response?.status !== 200) return null;
-      return parseAuthorPage(response.body);
+      const page =
+        response?.status === 200 ? parseAuthorPage(response.body) : null;
+      if (!page) {
+        logWarning("NostrMash author page was not indexed", {
+          status: response?.status ?? null,
+          stream,
+        });
+      }
+      return page;
     },
     async lookupEvent(eventId) {
       const response = await nostrmashRequest(

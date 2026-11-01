@@ -5,6 +5,8 @@ import { logWarning } from "~/lib/error-logger.server";
 
 import {
   createAnalyticsDirectory,
+  hasPerformanceLatest,
+  indexPublishedAuthorEvents,
   listTrackedAuthorEvents,
 } from "./data/post-analytics-store.server";
 import {
@@ -44,12 +46,15 @@ export async function collectViewerPostAnalytics(
 ): Promise<boolean> {
   try {
     if (!(await isSubscriptionActiveForGating(userId))) return false;
-    const directory = createAnalyticsDirectory(isSubscriptionActiveForGating);
-    const existing = await listTrackedAuthorEvents(userId);
-    if (existing.length > 0) return false;
+    await indexPublishedAuthorEvents(userId);
+    const [existing, counted] = await Promise.all([
+      listTrackedAuthorEvents(userId),
+      hasPerformanceLatest(userId),
+    ]);
+    if (existing.length > 0 && counted) return false;
     const result = await collectUserPostAnalytics(
-      createNostrMashAnalyticsClient(),
-      directory,
+      createNostrMashAnalyticsClient({ pageLimit: 30 }),
+      createAnalyticsDirectory(isSubscriptionActiveForGating),
       userId,
       {
         snapshotLimit: VIEWER_SNAPSHOT_LIMIT,
@@ -57,7 +62,7 @@ export async function collectViewerPostAnalytics(
         stream: "notes",
       }
     );
-    return result.unavailable;
+    return result.unavailable && existing.length === 0;
   } catch (error) {
     logWarning("Viewer post analytics collection failed", {
       error: error instanceof Error ? error.message : String(error),
