@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "provider": "node",
+  "packages": {
+    "node": "22"
+  },
+  "buildAptPackages": ["...", "python3", "build-essential"],
+  "steps": {
+    "install": {
+      "commands": ["corepack enable && pnpm install --frozen-lockfile && npx prisma generate"]
+    },
+    "build": {
+      "inputs": [{ "step": "install" }],
+      "commands": ["pnpm run build"]
+    }
+  },
+  "deploy": {
+    "aptPackages": ["...", "openssl"],
+    "startCommand": "pnpm run start"
+  }
+}
