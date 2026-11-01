@@ -4,6 +4,7 @@ import type { AuthorStream, DiscoveredEvent } from "~/features/nostrmash/parse";
 import { convertToHex } from "~/lib/nostr-conversion";
 import { prisma } from "~/lib/prisma.server";
 
+import { publishedEventId, publishedNoteExcerpt } from "../published-events";
 import type { AnalyticsDirectory, ObservationInput, SyncState } from "../sweep";
 
 function observationData(row: ObservationInput) {
@@ -174,6 +175,105 @@ export async function listPerformanceLatest(
   return prisma.postPerformanceLatest.findMany({
     where: { userId, nostrEventId: { in: eventIds } },
   });
+}
+
+const PUBLISHED_INDEX_LIMIT = 100;
+
+/**
+ * Catalog notes and articles already published in SmartFlow.
+ * The page can list them even when the NostrMash author walk does not answer.
+ */
+export async function indexPublishedAuthorEvents(
+  userId: string
+): Promise<number> {
+  const [posts, articles] = await Promise.all([
+    prisma.post.findMany({
+      where: { userId, currentState: "PUBLISHED", repost: false },
+      orderBy: { publishedAt: "desc" },
+      take: PUBLISHED_INDEX_LIMIT,
+      select: {
+        id: true,
+        nostrEventId: true,
+        nostrEvent: true,
+        content: true,
+        caption: true,
+        fileUrl: true,
+        publishedAt: true,
+      },
+    }),
+    prisma.longFormPost.findMany({
+      where: { userId, currentState: "PUBLISHED" },
+      orderBy: { publishedAt: "desc" },
+      take: PUBLISHED_INDEX_LIMIT,
+      select: {
+        id: true,
+        nostrEventId: true,
+        nostrEvent: true,
+        title: true,
+        summary: true,
+        content: true,
+        publishedAt: true,
+      },
+    }),
+  ]);
+
+  const seen = new Set<string>();
+  const data: Array<{
+    userId: string;
+    nostrEventId: string;
+    kind: number;
+    eventCreatedAt: Date | null;
+    contentExcerpt: string;
+    postId: string | null;
+  }> = [];
+  for (const post of posts) {
+    const nostrEventId = publishedEventId(post.nostrEventId, post.nostrEvent);
+    if (!nostrEventId || seen.has(nostrEventId)) continue;
+    seen.add(nostrEventId);
+    data.push({
+      userId,
+      nostrEventId,
+      kind: 1,
+      eventCreatedAt: post.publishedAt,
+      contentExcerpt: publishedNoteExcerpt([
+        post.content,
+        post.caption,
+        post.fileUrl[0],
+      ]),
+      postId: post.id,
+    });
+  }
+  for (const article of articles) {
+    const nostrEventId = publishedEventId(
+      article.nostrEventId,
+      article.nostrEvent
+    );
+    if (!nostrEventId || seen.has(nostrEventId)) continue;
+    seen.add(nostrEventId);
+    data.push({
+      userId,
+      nostrEventId,
+      kind: 30023,
+      eventCreatedAt: article.publishedAt,
+      contentExcerpt: publishedNoteExcerpt([
+        article.title,
+        article.summary,
+        article.content,
+      ]),
+      postId: null,
+    });
+  }
+  if (data.length === 0) return 0;
+  await prisma.trackedAuthorEvent.createMany({ data, skipDuplicates: true });
+  return data.length;
+}
+
+export async function hasPerformanceLatest(userId: string): Promise<boolean> {
+  const row = await prisma.postPerformanceLatest.findFirst({
+    where: { userId },
+    select: { nostrEventId: true },
+  });
+  return row !== null;
 }
 
 export async function listPerformanceObservations(
