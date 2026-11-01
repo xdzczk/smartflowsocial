@@ -144,7 +144,11 @@ export function PostAnalyticsPage({ data }: { data: PostAnalyticsPageData }) {
           }
           description={
             data.collectionActive
-              ? "The next sweep will list notes and articles NostrMash still has for this profile."
+              ? data.indexUnavailable
+                ? "NostrMash did not answer, so this profile was not indexed. Open the page again once it is back."
+                : data.notesIndexChecked
+                  ? "NostrMash has no notes or articles listed for this profile."
+                  : "The next check will list notes and articles NostrMash still has for this profile."
               : "A paid plan collects this history. This account has no saved checks."
           }
         />

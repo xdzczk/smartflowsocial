@@ -2,6 +2,7 @@ import { describe, expect, it, vi, type Mock } from "vitest";
 
 import { notePerformanceStatus } from "~/features/analytics/status";
 import {
+  collectUserPostAnalytics,
   pickDiscovery,
   runPostAnalyticsSweep,
   type AnalyticsDirectory,
@@ -347,6 +348,178 @@ describe("paid post analytics sweep", () => {
       "cursor-1"
     );
     expect(memory.tracked.size).toBe(2);
+  });
+
+  it("gives the next unpaid profile a turn after a failed check", async () => {
+    const memory: Memory = {
+      active: new Set(["a-user", "b-user"]),
+      pubkeys: new Map([
+        ["a-user", PUBKEY],
+        ["b-user", "d".repeat(64)],
+      ]),
+      posts: new Map(),
+      syncs: new Map(),
+      tracked: new Map(),
+      observations: [],
+      clock: 0,
+    };
+    const directory = createDirectory(memory);
+    const client = createClient([]);
+    client.listAuthorPage
+      .mockReset()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        events: [event(EVENT_A)],
+        nextCursor: null,
+      });
+
+    await runPostAnalyticsSweep(client, directory, {
+      batchSize: 2,
+      concurrency: 1,
+    });
+    await runPostAnalyticsSweep(client, directory, {
+      batchSize: 2,
+      concurrency: 1,
+    });
+
+    expect(client.listAuthorPage).toHaveBeenNthCalledWith(
+      1,
+      PUBKEY,
+      "notes",
+      null
+    );
+    expect(client.listAuthorPage).toHaveBeenNthCalledWith(
+      2,
+      "d".repeat(64),
+      "notes",
+      null
+    );
+    expect(memory.tracked.has(key("b-user", EVENT_A))).toBe(true);
+    expect(memory.tracked.has(key("a-user", EVENT_A))).toBe(false);
+  });
+
+  it("indexes the requested profile even when another profile is waiting", async () => {
+    const memory: Memory = {
+      active: new Set(["a-user", "b-user"]),
+      pubkeys: new Map([
+        ["a-user", PUBKEY],
+        ["b-user", "d".repeat(64)],
+      ]),
+      posts: new Map(),
+      syncs: new Map(),
+      tracked: new Map(),
+      observations: [],
+      clock: 0,
+    };
+    const client = createClient([
+      { events: [event(EVENT_A)], nextCursor: null },
+    ]);
+    const result = await collectUserPostAnalytics(
+      client,
+      createDirectory(memory),
+      "b-user",
+      { snapshotLimit: 1, concurrency: 1 }
+    );
+
+    expect(result.discovered).toBe(1);
+    expect(result.snapshotted).toBe(1);
+    expect(client.listAuthorPage).toHaveBeenCalledTimes(1);
+    expect(client.listAuthorPage).toHaveBeenCalledWith(
+      "d".repeat(64),
+      "notes",
+      null
+    );
+    expect(memory.observations[0]?.userId).toBe("b-user");
+  });
+
+  it("keeps counts that arrived with the author page", async () => {
+    const memory: Memory = {
+      active: new Set(["b-user"]),
+      pubkeys: new Map([["b-user", "d".repeat(64)]]),
+      posts: new Map(),
+      syncs: new Map(),
+      tracked: new Map(),
+      observations: [],
+      clock: 0,
+    };
+    const listed = { ...event(EVENT_A), counts: counts(8) };
+    const client = createClient([{ events: [listed], nextCursor: null }]);
+    const result = await collectUserPostAnalytics(
+      client,
+      createDirectory(memory),
+      "b-user",
+      { snapshotLimit: 1, concurrency: 1 }
+    );
+
+    expect(result).toEqual({
+      discovered: 1,
+      snapshotted: 1,
+      unavailable: false,
+    });
+    expect(client.lookupEvent).not.toHaveBeenCalled();
+    expect(client.readCounts).not.toHaveBeenCalled();
+    expect(memory.observations[0]?.reactionCount).toBe(8);
+    expect(memory.tracked.has(`b-user:${EVENT_A}`)).toBe(true);
+  });
+
+  it("reads notes from the start when that stream is requested", async () => {
+    const memory: Memory = {
+      active: new Set(["b-user"]),
+      pubkeys: new Map([["b-user", "d".repeat(64)]]),
+      posts: new Map(),
+      syncs: new Map([
+        [
+          "b-user:notes",
+          { nextCursor: null, backfillComplete: true, updatedAt: 1 },
+        ],
+      ]),
+      tracked: new Map(),
+      observations: [],
+      clock: 1,
+    };
+    const client = createClient([
+      { events: [event(EVENT_A)], nextCursor: "more" },
+    ]);
+    await collectUserPostAnalytics(client, createDirectory(memory), "b-user", {
+      snapshotLimit: 0,
+      concurrency: 1,
+      stream: "notes",
+    });
+
+    expect(client.listAuthorPage).toHaveBeenCalledWith(
+      "d".repeat(64),
+      "notes",
+      null
+    );
+    expect(memory.tracked.has(`b-user:${EVENT_A}`)).toBe(true);
+  });
+
+  it("reports a notes check that got no answer", async () => {
+    const memory: Memory = {
+      active: new Set(["b-user"]),
+      pubkeys: new Map([["b-user", "d".repeat(64)]]),
+      posts: new Map(),
+      syncs: new Map(),
+      tracked: new Map(),
+      observations: [],
+      clock: 0,
+    };
+    const client = createClient([]);
+    client.listAuthorPage.mockReset();
+    client.listAuthorPage.mockResolvedValueOnce(null);
+    const result = await collectUserPostAnalytics(
+      client,
+      createDirectory(memory),
+      "b-user",
+      { snapshotLimit: 1, concurrency: 1, stream: "notes" }
+    );
+
+    expect(result).toEqual({
+      discovered: 0,
+      snapshotted: 0,
+      unavailable: true,
+    });
+    expect(memory.tracked.size).toBe(0);
   });
 });
 

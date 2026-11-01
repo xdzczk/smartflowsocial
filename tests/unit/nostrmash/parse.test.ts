@@ -38,6 +38,41 @@ describe("NostrMash response parsing", () => {
     ]);
   });
 
+  it("keeps nested counts that travel with a kind-1 note", () => {
+    const page = parseAuthorPage({
+      events: [
+        {
+          id: EVENT_ID,
+          kind: 1,
+          created_at: 1_700_000_000,
+          content: "a meme",
+          reaction_count: 1,
+          reply_count: 2,
+          repost_count: 3,
+          zap_count: 4,
+          zap_msats: 5,
+          counts: {
+            consistency: "eventual",
+            reaction_count: 8,
+            reply_count: 0,
+            repost_count: 0,
+            zap_count: 0,
+            zap_msats: 0,
+          },
+        },
+        { id: "e".repeat(64), kind: 6, created_at: 1, content: "repost" },
+      ],
+    });
+    expect(page?.events).toHaveLength(1);
+    expect(page?.events[0]?.counts).toEqual({
+      reactionCount: 8,
+      replyCount: 0,
+      repostCount: 0,
+      zapCount: 0,
+      zapMsats: 0n,
+    });
+  });
+
   it("reads reply items", () => {
     const page = parseAuthorPage({
       pubkey: "ab".repeat(32),
