@@ -15,7 +15,7 @@
     }
   },
   "deploy": {
-    "aptPackages": ["...", "openssl"],
+    "aptPackages": ["...", "curl", "wget", "openssl"],
     "startCommand": "pnpm run start"
   }
 }
