@@ -8,6 +8,8 @@ export interface DiscoveredEvent {
   kind: number;
   eventCreatedAt: Date | null;
   contentExcerpt: string;
+  /** Present when the author page included a full count object for this event. */
+  counts?: EventCountsSnapshot;
 }
 
 export interface AuthorPage {
@@ -74,11 +76,14 @@ function discoveredFromEvent(value: unknown): DiscoveredEvent | null {
     return null;
   }
   if (kind !== 1 && kind !== 30023) return null;
+  const nestedCounts = parseCounts(asRecord(event["counts"]));
+  const counts = nestedCounts ?? parseCounts(event);
   return {
     nostrEventId,
     kind,
     eventCreatedAt: eventCreatedAt(event["created_at"]),
     contentExcerpt: contentExcerpt(event["content"]),
+    ...(counts ? { counts } : {}),
   };
 }
 

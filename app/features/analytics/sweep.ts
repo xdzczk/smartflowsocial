@@ -139,6 +139,194 @@ async function loadSyncs(
 }
 
 /**
+ * When the next stream was last checked. Missing rows count as never checked.
+ * This follows the same stream order as {@link pickDiscovery}, so a failed
+ * notes check does not keep the profile ahead of one that has never been read.
+ */
+function incompleteStaleness(
+  syncs: Partial<Record<AuthorStream, SyncState | null>>
+): number | null {
+  for (const stream of STREAMS) {
+    if (syncs[stream]?.backfillComplete) continue;
+    return syncs[stream]?.updatedAt ?? 0;
+  }
+  return null;
+}
+
+function refreshStaleness(
+  syncs: Partial<Record<AuthorStream, SyncState | null>>
+): number {
+  let oldest = Number.POSITIVE_INFINITY;
+  for (const stream of STREAMS) {
+    const at = syncs[stream]?.updatedAt ?? 0;
+    if (at < oldest) oldest = at;
+  }
+  return oldest;
+}
+
+async function discoverAuthorPage(
+  client: NostrMashAnalyticsClient,
+  directory: AnalyticsDirectory,
+  userId: string,
+  checkedAt: Date,
+  forced?: { stream: AuthorStream; cursor: string | null }
+): Promise<
+  | { ok: false; reason: "no_pubkey" | "unavailable" }
+  | { ok: true; events: DiscoveredEvent[]; snapshotted: number }
+> {
+  const pubkey = await directory.pubkeyHex(userId);
+  if (!pubkey) return { ok: false, reason: "no_pubkey" };
+  const syncs = await loadSyncs(directory, userId);
+  const pick = forced
+    ? { stream: forced.stream, cursor: forced.cursor, refresh: false }
+    : pickDiscovery(syncs);
+  const page = await client.listAuthorPage(pubkey, pick.stream, pick.cursor);
+  const previous = syncs[pick.stream];
+  if (!page) {
+    await directory.saveSync(userId, pick.stream, {
+      nextCursor: previous?.nextCursor ?? null,
+      backfillComplete: previous?.backfillComplete ?? false,
+    });
+    return { ok: false, reason: "unavailable" };
+  }
+  const events: DiscoveredEvent[] = [];
+  let snapshotted = 0;
+  for (const event of page.events) {
+    const postId = await directory.postIdForEvent(userId, event.nostrEventId);
+    await directory.upsertTracked({ userId, event, postId });
+    events.push(event);
+    if (!event.counts) continue;
+    await directory.appendObservation({
+      userId,
+      nostrEventId: event.nostrEventId,
+      postId,
+      reactionCount: event.counts.reactionCount,
+      replyCount: event.counts.replyCount,
+      repostCount: event.counts.repostCount,
+      zapCount: event.counts.zapCount,
+      zapMsats: event.counts.zapMsats,
+      missingFromIndex: false,
+      checkedAt,
+    });
+    snapshotted += 1;
+  }
+  const backfillComplete = pick.refresh ? true : page.nextCursor === null;
+  await directory.saveSync(userId, pick.stream, {
+    nextCursor: backfillComplete ? null : page.nextCursor,
+    backfillComplete,
+  });
+  return { ok: true, events, snapshotted };
+}
+
+async function snapshotOne(
+  client: NostrMashAnalyticsClient,
+  directory: AnalyticsDirectory,
+  target: SnapshotTarget,
+  checkedAt: Date
+): Promise<"miss" | "snapshot" | "skip"> {
+  const lookup = await client.lookupEvent(target.nostrEventId);
+  if (lookup.status === "error") return "skip";
+  if (lookup.status === "missing") {
+    await directory.appendObservation({
+      userId: target.userId,
+      nostrEventId: target.nostrEventId,
+      postId: target.postId,
+      reactionCount: null,
+      replyCount: null,
+      repostCount: null,
+      zapCount: null,
+      zapMsats: null,
+      missingFromIndex: true,
+      checkedAt,
+    });
+    return "miss";
+  }
+  const counts = await client.readCounts(target.nostrEventId);
+  if (!counts) return "skip";
+  await directory.appendObservation({
+    userId: target.userId,
+    nostrEventId: target.nostrEventId,
+    postId: target.postId,
+    reactionCount: counts.reactionCount,
+    replyCount: counts.replyCount,
+    repostCount: counts.repostCount,
+    zapCount: counts.zapCount,
+    zapMsats: counts.zapMsats,
+    missingFromIndex: false,
+    checkedAt,
+  });
+  return "snapshot";
+}
+
+/**
+ * Index one NostrMash page for a single paid profile and snapshot the newest
+ * notes from that page. Used when the viewer opens an empty analytics catalog.
+ */
+export async function collectUserPostAnalytics(
+  client: NostrMashAnalyticsClient,
+  directory: AnalyticsDirectory,
+  userId: string,
+  options: {
+    snapshotLimit: number;
+    concurrency?: number;
+    now?: Date;
+    /** Read this stream from the start, ignoring a finished or later stream. */
+    stream?: AuthorStream;
+  }
+): Promise<{
+  discovered: number;
+  snapshotted: number;
+  unavailable: boolean;
+}> {
+  if (!(await directory.isCollectionActive(userId))) {
+    return { discovered: 0, snapshotted: 0, unavailable: false };
+  }
+  const checkedAt = options.now ?? new Date();
+  const discovered = await discoverAuthorPage(
+    client,
+    directory,
+    userId,
+    checkedAt,
+    options.stream ? { stream: options.stream, cursor: null } : undefined
+  );
+  if (!discovered.ok) {
+    return {
+      discovered: 0,
+      snapshotted: 0,
+      unavailable: discovered.reason === "unavailable",
+    };
+  }
+  if (discovered.events.length === 0) {
+    return {
+      discovered: 0,
+      snapshotted: discovered.snapshotted,
+      unavailable: false,
+    };
+  }
+  const limit = Math.max(0, Math.floor(options.snapshotLimit));
+  let snapshotted = discovered.snapshotted;
+  await mapPool(
+    discovered.events.filter((event) => !event.counts).slice(0, limit),
+    options.concurrency ?? 4,
+    async (event) => {
+      const postId = await directory.postIdForEvent(userId, event.nostrEventId);
+      const outcome = await snapshotOne(
+        client,
+        directory,
+        { userId, nostrEventId: event.nostrEventId, postId },
+        checkedAt
+      );
+      if (outcome === "snapshot") snapshotted += 1;
+    }
+  );
+  return {
+    discovered: discovered.events.length,
+    snapshotted,
+    unavailable: false,
+  };
+}
+
+/**
  * Catalog paid profiles from NostrMash and append count snapshots.
  * Users who fail the paid gate are skipped. Stored rows are never deleted here.
  */
@@ -171,57 +359,48 @@ export async function runPostAnalyticsSweep(
   result.activeUsers = active.length;
   if (active.length === 0) return result;
 
-  const incomplete: string[] = [];
+  const ranked: Array<{
+    userId: string;
+    staleness: number;
+    incomplete: boolean;
+  }> = [];
   for (const userId of active) {
     const syncs = await loadSyncs(directory, userId);
-    if (STREAMS.some((stream) => !syncs[stream]?.backfillComplete)) {
-      incomplete.push(userId);
-    }
+    const unfinished = incompleteStaleness(syncs);
+    ranked.push({
+      userId,
+      staleness: unfinished ?? refreshStaleness(syncs),
+      incomplete: unfinished !== null,
+    });
   }
+  const byStaleness = (
+    left: { staleness: number; userId: string },
+    right: { staleness: number; userId: string }
+  ) =>
+    left.staleness - right.staleness || left.userId.localeCompare(right.userId);
+  const incomplete = ranked.filter((row) => row.incomplete).sort(byStaleness);
+  const refreshed = ranked.filter((row) => !row.incomplete).sort(byStaleness);
   let discoverBudget = Math.floor(batchSize / 2);
   if (incomplete.length > 0) discoverBudget = Math.max(discoverBudget, 1);
   if (batchSize === 1 && incomplete.length > 0) discoverBudget = 1;
-  const discoverUsers = (incomplete.length > 0 ? incomplete : active).slice(
-    0,
-    discoverBudget
-  );
+  const discoverUsers = (incomplete.length > 0 ? incomplete : refreshed)
+    .slice(0, discoverBudget)
+    .map((row) => row.userId);
 
   await mapPool(discoverUsers, options.concurrency, async (userId) => {
     try {
-      const pubkey = await directory.pubkeyHex(userId);
-      if (!pubkey) {
-        result.skipped += 1;
-        return;
-      }
-      const syncs = await loadSyncs(directory, userId);
-      const pick = pickDiscovery(syncs);
-      const page = await client.listAuthorPage(
-        pubkey,
-        pick.stream,
-        pick.cursor
+      const discovered = await discoverAuthorPage(
+        client,
+        directory,
+        userId,
+        checkedAt
       );
-      const previous = syncs[pick.stream];
-      if (!page) {
-        await directory.saveSync(userId, pick.stream, {
-          nextCursor: previous?.nextCursor ?? null,
-          backfillComplete: previous?.backfillComplete ?? false,
-        });
+      if (!discovered.ok) {
         result.skipped += 1;
         return;
       }
-      for (const event of page.events) {
-        const postId = await directory.postIdForEvent(
-          userId,
-          event.nostrEventId
-        );
-        await directory.upsertTracked({ userId, event, postId });
-        result.discovered += 1;
-      }
-      const backfillComplete = pick.refresh ? true : page.nextCursor === null;
-      await directory.saveSync(userId, pick.stream, {
-        nextCursor: backfillComplete ? null : page.nextCursor,
-        backfillComplete,
-      });
+      result.discovered += discovered.events.length;
+      result.snapshotted += discovered.snapshotted;
     } catch {
       result.skipped += 1;
     }
@@ -232,45 +411,10 @@ export async function runPostAnalyticsSweep(
   const targets = await directory.oldestForSnapshot(active, snapshotBudget);
   await mapPool(targets, options.concurrency, async (target) => {
     try {
-      const lookup = await client.lookupEvent(target.nostrEventId);
-      if (lookup.status === "error") {
-        result.skipped += 1;
-        return;
-      }
-      if (lookup.status === "missing") {
-        await directory.appendObservation({
-          userId: target.userId,
-          nostrEventId: target.nostrEventId,
-          postId: target.postId,
-          reactionCount: null,
-          replyCount: null,
-          repostCount: null,
-          zapCount: null,
-          zapMsats: null,
-          missingFromIndex: true,
-          checkedAt,
-        });
-        result.misses += 1;
-        return;
-      }
-      const counts = await client.readCounts(target.nostrEventId);
-      if (!counts) {
-        result.skipped += 1;
-        return;
-      }
-      await directory.appendObservation({
-        userId: target.userId,
-        nostrEventId: target.nostrEventId,
-        postId: target.postId,
-        reactionCount: counts.reactionCount,
-        replyCount: counts.replyCount,
-        repostCount: counts.repostCount,
-        zapCount: counts.zapCount,
-        zapMsats: counts.zapMsats,
-        missingFromIndex: false,
-        checkedAt,
-      });
-      result.snapshotted += 1;
+      const outcome = await snapshotOne(client, directory, target, checkedAt);
+      if (outcome === "miss") result.misses += 1;
+      else if (outcome === "snapshot") result.snapshotted += 1;
+      else result.skipped += 1;
     } catch {
       result.skipped += 1;
     }

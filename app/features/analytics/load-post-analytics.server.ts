@@ -4,6 +4,7 @@ import {
   listPerformanceLatest,
   listPerformanceObservations,
   listTrackedAuthorEvents,
+  notesBackfillComplete,
 } from "./data/post-analytics-store.server";
 import { notePerformanceStatus, type NotePerformanceStatus } from "./status";
 
@@ -33,6 +34,10 @@ export interface AnalyticsNoteView {
 
 export interface PostAnalyticsPageData {
   collectionActive: boolean;
+  /** True once a notes check finished, including a check that found nothing. */
+  notesIndexChecked: boolean;
+  /** The latest notes check got no answer from NostrMash. */
+  indexUnavailable: boolean;
   notes: AnalyticsNoteView[];
   history: {
     nostrEventId: string;
@@ -66,8 +71,12 @@ export async function loadPostAnalyticsPage(args: {
   userId: string;
   collectionActive: boolean;
   selectedEventId: string | null;
+  indexUnavailable?: boolean;
 }): Promise<PostAnalyticsPageData> {
-  const notes = await listTrackedAuthorEvents(args.userId);
+  const [notes, notesChecked] = await Promise.all([
+    listTrackedAuthorEvents(args.userId),
+    notesBackfillComplete(args.userId),
+  ]);
   const latestRows = await listPerformanceLatest(
     args.userId,
     notes.map((note) => note.nostrEventId)
@@ -112,6 +121,8 @@ export async function loadPostAnalyticsPage(args: {
 
   return {
     collectionActive: args.collectionActive,
+    notesIndexChecked: noteViews.length > 0 || notesChecked,
+    indexUnavailable: args.indexUnavailable === true && noteViews.length === 0,
     notes: noteViews,
     history,
   };

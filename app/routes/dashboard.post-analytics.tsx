@@ -4,6 +4,7 @@ import { useLoaderData } from "@remix-run/react";
 
 import { loadPostAnalyticsPage } from "~/features/analytics/load-post-analytics.server";
 import { PostAnalyticsPage } from "~/features/analytics/PostAnalyticsPage";
+import { collectViewerPostAnalytics } from "~/features/analytics/run-sweep.server";
 import { requireUserId } from "~/features/auth";
 import {
   isSubscriptionActiveForGating,
@@ -13,12 +14,14 @@ import {
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await requireUserId(request);
   await requireAnySubscription(userId);
+  const indexUnavailable = await collectViewerPostAnalytics(userId);
   const url = new URL(request.url);
   const selected = url.searchParams.get("event")?.trim() ?? "";
   const data = await loadPostAnalyticsPage({
     userId,
     collectionActive: await isSubscriptionActiveForGating(userId),
     selectedEventId: selected.length > 0 ? selected : null,
+    indexUnavailable,
   });
   return json(data);
 }

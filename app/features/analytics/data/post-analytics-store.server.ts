@@ -147,6 +147,14 @@ export function createAnalyticsDirectory(
   };
 }
 
+export async function notesBackfillComplete(userId: string): Promise<boolean> {
+  const row = await prisma.authorEventSync.findUnique({
+    where: { userId_stream: { userId, stream: "notes" } },
+    select: { backfillComplete: true },
+  });
+  return row?.backfillComplete ?? false;
+}
+
 export async function listTrackedAuthorEvents(userId: string) {
   return prisma.trackedAuthorEvent.findMany({
     where: { userId },
