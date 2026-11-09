@@ -171,7 +171,7 @@
     "uuid": "^13.0.0",
     "web-push": "^3.6.7",
     "ws": "^8.19.0",
-    "zod": "^4.3.5"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
@@ -278,7 +278,10 @@
       "@vanilla-extract/integration>esbuild": "0.25.12",
       "esbuild@>=0.27.3 <0.28.1": "0.28.2",
       "tar": "7.5.22",
-      "toml": "4.3.0",
+      "body-parser@>=2.0.0 <2.4.0": "2.4.0",
+      "follow-redirects@<1.16.2": "1.16.2",
+      "joi@<18.3.1": "18.3.1",
+      "toml": "5.0.1",
       "estree-util-value-to-estree": "3.5.0",
       "@vanilla-extract/integration>vite": "6.4.5",
       "vite-node@1>vite": "6.4.5",
