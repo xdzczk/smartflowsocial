@@ -24,6 +24,7 @@ import {
   HashtagPresetsSettings,
   QueueTypesSettings,
 } from "~/features/posts/ui";
+import { LandingPictureSettings } from "~/features/public-stats/components/LandingPictureControls";
 import type { Nip65ProfileRelayEntry } from "~/features/relays/nip65-relay-entry";
 import { BillingSettings } from "~/features/settings/components/BillingSettings";
 import { DefaultZapAmountSettings } from "~/features/settings/components/DefaultZapAmountSettings";
@@ -247,6 +248,7 @@ function renderSettingsPanel(
                 : "ddmmyyyy"
             }
           />
+          <LandingPictureSettings />
           <ThemePreferenceSettings
             themePreference={
               themePreferenceRaw === "system" ||

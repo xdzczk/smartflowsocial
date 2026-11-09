@@ -148,6 +148,11 @@ interface EnvConfig {
   // Ops / tooling
   COOLIFY_URL?: string;
   CYPRESS?: string; // Set by Cypress when running E2E (rate-limit bypass)
+
+  /** Set to "false" to disable GET /api/public/stats and the avatar proxy. */
+  PUBLIC_STATS_ENABLED?: string;
+  /** Extra CORS origins for the public stats route, comma-separated. */
+  LANDING_STATS_ORIGINS?: string;
 }
 
 interface ValidationError {
@@ -296,6 +301,8 @@ function addOptionalConfig(config: EnvConfig): void {
     "VAPID_SUBJECT",
     "COOLIFY_URL",
     "CYPRESS",
+    "PUBLIC_STATS_ENABLED",
+    "LANDING_STATS_ORIGINS",
   ];
 
   optionalVars.forEach((key) => {

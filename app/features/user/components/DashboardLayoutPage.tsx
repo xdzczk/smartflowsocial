@@ -47,6 +47,7 @@ import { DraftsPageSkeleton } from "~/features/posts/drafts/DraftsPageSkeleton";
 import { PublishedPostsPageSkeleton } from "~/features/posts/publishing/PublishedPostsPageSkeleton";
 import { RecyclablesPageSkeleton } from "~/features/posts/publishing/RecyclablesPageSkeleton";
 import { ScheduledPostsPageSkeleton } from "~/features/posts/scheduling/ScheduledPostsPageSkeleton";
+import { LandingPictureNotice } from "~/features/public-stats/components/LandingPictureControls";
 import { ReferredByBanner } from "~/features/referral/components/ReferredByBanner";
 import { MediaSettingsPageSkeleton } from "~/features/settings/components/MediaSettingsPageSkeleton";
 import { SettingsPageSkeleton } from "~/features/settings/components/SettingsPageSkeleton";
@@ -351,6 +352,7 @@ export function DashboardLayoutPage(): ReactNode {
             isCalendar ? "overflow-hidden" : ""
           } ${isBroadcastsViewportLocked ? "overflow-y-auto overscroll-y-contain" : ""}`}
         >
+          <LandingPictureNotice />
           {referredBy != null ? (
             <ReferredByBanner
               referrerNpub={referredBy.referrerNpub}
