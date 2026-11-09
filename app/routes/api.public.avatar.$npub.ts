@@ -7,20 +7,30 @@ import { nostrAdapter } from "~/lib/nostr-adapter.server";
 
 export async function loader({ params }: LoaderFunctionArgs) {
   if (!publicStatsEnabled()) {
-    return new Response("Not found", { status: 404 });
+    return new Response("Not found", {
+      status: 404,
+      headers: { "cache-control": "no-store" },
+    });
   }
   const raw = params["npub"] ?? "";
   const candidates: string[] = [];
   if (/^npub1[0-9a-z]{20,}$/.test(raw)) {
     candidates.push(raw);
     const hex = nostrAdapter.decodeNpub(raw);
-    if (hex) candidates.push(hex);
+    if (hex && /^[0-9a-fA-F]{64}$/.test(hex)) {
+      candidates.push(hex.toLowerCase(), hex.toUpperCase());
+    } else if (hex) {
+      candidates.push(hex);
+    }
   } else if (/^[0-9a-fA-F]{64}$/.test(raw)) {
-    candidates.push(raw.toLowerCase());
+    candidates.push(raw.toLowerCase(), raw.toUpperCase());
   }
   for (const key of candidates) {
     const user = await findAvatarSubject(key);
     if (user) return renderAvatar(key);
   }
-  return new Response("Not found", { status: 404 });
+  return new Response("Not found", {
+    status: 404,
+    headers: { "cache-control": "no-store" },
+  });
 }

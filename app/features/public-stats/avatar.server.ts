@@ -6,7 +6,8 @@ import { logWarning } from "~/lib/error-logger.server";
 import { findAvatarSubject } from "./repositories/public-stats-data.server";
 import { profileBits, safeImageUrl } from "./stats-payload";
 
-const MAX_BYTES = 2 * 1024 * 1024;
+// Kind 0 photos are often full-size PNGs. The response is a 96px thumbnail.
+const MAX_BYTES = 8 * 1024 * 1024;
 const CACHE_TTL_SECONDS = 24 * 60 * 60;
 const MAX_REDIRECTS = 3;
 
@@ -63,14 +64,19 @@ async function fetchImage(start: URL): Promise<Buffer | null> {
   return null;
 }
 
+function notFound(): Response {
+  return new Response("Not found", {
+    status: 404,
+    headers: { "cache-control": "no-store" },
+  });
+}
+
 export async function renderAvatar(npub: string): Promise<Response> {
   const user = await findAvatarSubject(npub);
-  if (!user || user.hideFromLanding) {
-    return new Response("Not found", { status: 404 });
-  }
+  if (!user || user.hideFromLanding) return notFound();
   const picture = profileBits(user.nostrProfile).picture;
   const source = picture ? safeImageUrl(picture) : null;
-  if (!source) return new Response("Not found", { status: 404 });
+  if (!source) return notFound();
 
   const key = avatarCacheKey(npub);
   try {
@@ -97,9 +103,9 @@ export async function renderAvatar(npub: string): Promise<Response> {
     logWarning("Avatar fetch failed", {
       error: error instanceof Error ? error.message : String(error),
     });
-    return new Response("Not found", { status: 404 });
+    return notFound();
   }
-  if (!bytes) return new Response("Not found", { status: 404 });
+  if (!bytes) return notFound();
 
   let webp: Buffer;
   try {
@@ -112,7 +118,7 @@ export async function renderAvatar(npub: string): Promise<Response> {
     logWarning("Avatar resize failed", {
       error: error instanceof Error ? error.message : String(error),
     });
-    return new Response("Not found", { status: 404 });
+    return notFound();
   }
 
   const payload: CachedAvatar = {
