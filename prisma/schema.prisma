@@ -58,6 +58,10 @@ model User {
   defaultZapAmountSats       Int?
   // Use SFS Blastr relay when eligible (paid + plan has enableRelayBlast); default true
   blastrRelayEnabled         Boolean        @default(true)
+  /// When true, this account's public picture is left off the marketing site.
+  hideFromLanding            Boolean        @default(false)
+  /// Set once the user has seen (or acted on) the landing-picture notice.
+  landingNoticeSeenAt        DateTime?
   // Account-level theme preference; null = no account override (use device/local default)
   themePreference            String?
   // Child/parent self-relation via npub
@@ -124,6 +128,15 @@ enum SignerReconnectFailureBucket {
   NETWORK
   SESSION_DROPPED
   UNKNOWN
+}
+
+/// Point-in-time copy of the public marketing stats payload.
+model PublicStatsSnapshot {
+  id         String   @id @default(cuid())
+  computedAt DateTime @default(now())
+  payload    Json
+
+  @@index([computedAt])
 }
 
 /// Product usage sessions (distinct from auth Session rows).
