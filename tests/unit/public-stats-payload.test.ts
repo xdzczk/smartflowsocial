@@ -5,6 +5,7 @@ import {
   profileBits,
   safeImageUrl,
   selectPeople,
+  toPublicNpub,
 } from "~/features/public-stats/stats-payload";
 
 describe("profileBits", () => {
@@ -73,6 +74,16 @@ describe("onTimeRate", () => {
         { publishedAt: late, scheduledAtUtc: at },
       ])
     ).toBe(0.5);
+  });
+});
+
+describe("toPublicNpub", () => {
+  it("keeps bech32 and encodes hex", () => {
+    expect(toPublicNpub("npub1example", () => "unused")).toBe("npub1example");
+    expect(
+      toPublicNpub("ab".repeat(32), (hex) => `npub1-${hex.slice(0, 4)}`)
+    ).toBe("npub1-abab");
+    expect(toPublicNpub("nope", () => "x")).toBeNull();
   });
 });
 

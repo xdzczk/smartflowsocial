@@ -61,6 +61,19 @@ export function profileBits(raw: unknown): ProfileBits {
   };
 }
 
+/**
+ * The user table stores a hex public key in the `npub` column.
+ * The public payload always uses bech32.
+ */
+export function toPublicNpub(
+  stored: string,
+  encodeHex: (hex: string) => string | null
+): string | null {
+  if (stored.startsWith("npub1")) return stored;
+  if (/^[0-9a-fA-F]{64}$/.test(stored)) return encodeHex(stored.toLowerCase());
+  return null;
+}
+
 export function shortenNpub(npub: string): string {
   if (npub.length <= 16) return npub;
   return `${npub.slice(0, 8)}…${npub.slice(-4)}`;
