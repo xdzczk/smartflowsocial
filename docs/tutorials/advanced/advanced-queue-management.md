@@ -2,7 +2,7 @@
 
 **Estimated time:** 35 minutes  
 **Difficulty:** Advanced  
-**Last updated:** 2025-03-12
+**Last updated:** 2026-03-12
 
 Master advanced queue management techniques, complex configurations, optimization strategies, and
 troubleshooting.

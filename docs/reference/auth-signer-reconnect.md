@@ -1,6 +1,6 @@
 # Auth / signer reconnect: risk areas and guards
 
-**Last updated:** 2026-03-12
+**Last updated:** 2026-05-04
 
 This document lists known risk areas for the remote signer reconnect flow and points to the modules
 that implement guards. It helps reviewers and future contributors avoid regressions.

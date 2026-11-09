@@ -326,6 +326,6 @@ await prisma.$transaction(
 
 ## Resources
 
-- [Test Strategy](../docs/TEST_STRATEGY.md) - Overall testing strategy
-- [Testing Patterns](../docs/TESTING_PATTERNS.md) - Common testing patterns
+- [Testing Guide](../../docs/guides/testing.md) - Overall testing strategy
+- [Testing Guide](../../docs/guides/testing.md) - Test types and patterns
 - [Prisma Testing Guide](https://www.prisma.io/docs/guides/testing) - Prisma testing best practices

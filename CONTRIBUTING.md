@@ -26,13 +26,13 @@ efficient, and organized codebase.
    repository.
 2. **Clone Your Fork**: Clone your forked repository to your local machine.
    ```bash
-   git clone https://github.com/xdzczk/SmartFlowSocial
+   git clone https://github.com/xdzczk/smartflowsocial
    cd smartflowsocial
    ```
 3. **Set Up the Upstream Remote**: Add the original repository as an upstream remote to stay
    updated.
    ```bash
-   git remote add upstream https://github.com/xdzczk/SmartFlowSocial
+   git remote add upstream https://github.com/xdzczk/smartflowsocial
    ```
 
 ---
@@ -45,7 +45,8 @@ the development environment:
 ### Prerequisites
 
 - **Node.js**: Version 20.0.0 or higher
-- **pnpm**: Install with `pnpm install -g pnpm`
+- **pnpm**: `10.27.0`, installed with Corepack
+  (`corepack enable && corepack prepare pnpm@10.27.0 --activate`)
 - **PostgreSQL**: Database server (local or remote)
 - **Git**: For version control
 
@@ -530,8 +531,8 @@ Use appropriate labels to categorize issues:
 1. **Clone and Install:**
 
    ```bash
-   git clone https://github.com/xdzczk/SmartFlowSocial.git
-   cd SmartFlowSocial
+   git clone https://github.com/xdzczk/smartflowsocial.git
+   cd smartflowsocial
    pnpm install
    ```
 
@@ -670,7 +671,7 @@ pnpm test:coverage
 - Integration tests: Test API endpoints and loaders
 - E2E tests: Test user workflows (Cypress)
 
-See [Testing Guide](./docs/testing.md) for detailed testing documentation.
+See [Testing Guide](./docs/guides/testing.md) for detailed testing documentation.
 
 ### 3. **Component Development**
 
@@ -769,7 +770,7 @@ pnpm test:performance
 - [ ] XSS protection (sanitize user content)
 - [ ] CSRF protection (use Remix Forms)
 
-See [Security Guide](./docs/security/security.md) for detailed security practices.
+See [Security Guide](./docs/guides/security.md) for detailed security practices.
 
 ### 7. **Debugging**
 
@@ -799,7 +800,8 @@ redis-cli -u $REDIS_URL
 5. Review error messages
 6. Use browser DevTools for frontend issues
 
-See [Troubleshooting Guide](./docs/operations/troubleshooting.md) for common issues and solutions.
+See [Troubleshooting Guide](./docs/troubleshooting/common-issues.md) for common issues and
+solutions.
 
 ---
 

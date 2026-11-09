@@ -2,7 +2,7 @@
 
 **Estimated time:** 15 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2025-03-12
+**Last updated:** 2026-11-09
 
 Learn how to create and use reusable post templates to streamline your content creation workflow.
 
@@ -27,7 +27,7 @@ templates for:
 - **Weekly announcements** - Regular updates
 - **Product launches** - Consistent format
 - **Event promotions** - Standard structure
-- **Recurring content** - Evergreen posts
+- **Recurring content** - Recyclable posts
 
 ---
 

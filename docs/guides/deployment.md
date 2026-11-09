@@ -2,7 +2,7 @@
 
 **Estimated time:** 45 minutes  
 **Difficulty:** Intermediate  
-**Last updated:** 2025-03-12
+**Last updated:** 2026-11-09
 
 Complete guide for deploying SmartFlowSocial to production environments, including platform-specific
 instructions and best practices.
@@ -253,8 +253,8 @@ sudo apt-get install -y nodejs
 sudo pnpm install -g pm2
 
 # Clone repository
-git clone https://github.com/xdzczk/SmartFlowSocial.git
-cd SmartFlowSocial
+git clone https://github.com/xdzczk/smartflowsocial.git
+cd smartflowsocial
 
 # Install dependencies
 pnpm install
@@ -819,7 +819,7 @@ upstream smartflow {
 
 ## Additional Resources
 
-- [Environment Setup Guide](./environment-setup.md)
+- [Environment setup](../getting-started/installation.md#environment-configuration)
 - [Operations Guide](./operations.md)
-- [Troubleshooting Guide](./troubleshooting.md)
-- [Architecture Documentation](./architecture.md)
+- [Troubleshooting Guide](../troubleshooting/common-issues.md)
+- [Architecture](../getting-started/architecture.md)

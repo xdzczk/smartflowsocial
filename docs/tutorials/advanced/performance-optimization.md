@@ -2,7 +2,7 @@
 
 **Estimated time:** 40 minutes  
 **Difficulty:** Advanced  
-**Last updated:** 2025-03-12
+**Last updated:** 2026-03-12
 
 Learn how to optimize SmartFlowSocial performance, scale efficiently, and monitor system health.
 

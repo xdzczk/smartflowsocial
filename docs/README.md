@@ -74,6 +74,8 @@ Comprehensive guides organized by role and topic.
 - [Engagement Guide](./guides/user-guides/engagement.md#searching-for-events) - Search for events
   (included in engagement guide)
 - [Assets Management Guide](./guides/user-guides/assets.md) - Manage uploaded assets
+- [Search Guide](./guides/user-guides/search.md) - Search
+- [Templates Guide](./guides/user-guides/templates.md) - Templates
 
 #### Developer Guides
 
@@ -100,6 +102,16 @@ Complete reference documentation.
 - [Nostr Integration](./reference/nostr.md) - Nostr protocol details
 - [Error Codes](./reference/error-codes.md) - Complete error code reference
 - [Plan Features](./reference/plan-features.md) - Subscription plans and features
+- [Performance](./reference/performance.md) - Performance reference
+- [Admin metrics](./reference/admin-metrics.md) - Admin metrics
+- [Auth signer architecture](./reference/auth-signer-architecture.md) - Signer structure
+- [Auth signer reconnect](./reference/auth-signer-reconnect.md) - Reconnect behavior
+- [Primal self-hosted](./reference/primal-self-hosted.md) - Self-hosted cache notes
+- [Posts submodules](./reference/posts-submodules.md) - Post module map
+- [Icon semantics](./reference/icon-semantics.md) - Icon meanings
+- [Coverage gap tracker](./reference/coverage-gap-tracker.md) - Doc coverage gaps
+- [App lib audit](./reference/app-lib-audit.md) - Library audit notes
+- [Suppressions audit](./reference/suppressions-audit-app.md) - Lint suppression audit
 
 #### Architectural Reference
 
@@ -117,11 +129,14 @@ Working code examples and recipes.
 - [Code Examples](./examples/code-samples.md) - Common code patterns
 - [Integration Examples](./examples/integrations.md) - Third-party integrations
 - [Recipes](./examples/recipes.md) - Common use cases
+- [Upload route example](./examples/upload-route.example.tsx) - Error-handling sample, not a served
+  route
 
 ### Tutorials
 
 Step-by-step tutorials for common tasks.
 
+- [Tutorials index](./tutorials/README.md) - Every tutorial, with time estimates
 - [Beginner Tutorials](./tutorials/beginner/) - Getting started tutorials
 - [Intermediate Tutorials](./tutorials/intermediate/) - Advanced features
 - [Advanced Tutorials](./tutorials/advanced/) - Expert-level topics
@@ -133,6 +148,26 @@ Help when things go wrong.
 - [Common Issues](./troubleshooting/common-issues.md) - Frequently asked questions
 - [Error Solutions](./troubleshooting/errors.md) - Error resolution
 - [Performance Issues](./troubleshooting/performance.md) - Performance troubleshooting
+- [Nostr authentication](./troubleshooting/nostr-authentication.md) - Signer and login failures
+
+### Product notes
+
+- [Contests architecture](./contests-v1-architecture.md)
+- [Hosted media policy](./hosted-media-policy.md)
+- [Plan limits and upload policy](./plan-limits-and-upload-policy.md)
+- [Public stats](./guides/public-stats.md)
+
+### Runbooks and monitoring
+
+- [Performance resilience drills](./runbooks/performance-resilience-drills.md)
+- [Plan id cutover](./runbooks/plan-id-cutover.md)
+- [Queue SLO dashboard](./monitoring/queue-slo-dashboard.md)
+- [Replay runbook](./monitoring/replay-runbook.md)
+
+### Documentation meta
+
+- [Visual aids](./meta/visual-aids-guide.md)
+- [Link verification](./meta/link-verification.md)
 
 ---
 
@@ -205,12 +240,12 @@ We welcome contributions! See our [Documentation Contributing Guide](./meta/cont
 
 | Section          | Status         | Last Updated |
 | ---------------- | -------------- | ------------ |
-| Getting Started  | ✅ Complete    | 2026-04-11   |
-| User Guides      | ✅ Complete    | 2026-04-11   |
-| Developer Guides | ✅ Complete    | 2026-04-11   |
-| Reference        | ✅ Complete    | 2026-04-11   |
-| Examples         | 🚧 In Progress | 2026-04-11   |
-| Troubleshooting  | ✅ Complete    | 2026-04-11   |
+| Getting Started  | ✅ Complete    | 2026-11-09   |
+| User Guides      | ✅ Complete    | 2026-11-09   |
+| Developer Guides | ✅ Complete    | 2026-11-09   |
+| Reference        | ✅ Complete    | 2026-11-09   |
+| Examples         | 🚧 In Progress | 2026-11-09   |
+| Troubleshooting  | ✅ Complete    | 2026-11-09   |
 
 ---
 
@@ -228,7 +263,7 @@ We welcome contributions! See our [Documentation Contributing Guide](./meta/cont
 
 **SmartFlowSocial Documentation** - Built with ❤️ for the community
 
-[Report Documentation Issue](https://github.com/xdzczk/SmartFlowSocial/issues) •
+[Report Documentation Issue](https://github.com/xdzczk/smartflowsocial/issues) •
 [Improve This Page](./meta/contributing.md)
 
 </div>

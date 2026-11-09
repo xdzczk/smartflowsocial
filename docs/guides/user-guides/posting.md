@@ -2,7 +2,7 @@
 
 **Estimated time:** 30 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2025-03-12
+**Last updated:** 2026-11-09
 
 Complete guide to creating, managing, and optimizing posts in SmartFlowSocial.
 
@@ -31,7 +31,7 @@ SmartFlowSocial supports multiple ways to create and publish content to Nostr:
 - **Bulk Upload**: Schedule multiple posts at once
 - **Drafts**: Save work-in-progress
 - **Templates**: Reuse post structures
-- **Recyclables**: Reuse evergreen content
+- **Recyclables**: Reuse recyclable content
 
 All posts are signed client-side using your Nostr extension (NIP-07) before being published to
 relays.
@@ -503,7 +503,7 @@ Save and manage work-in-progress posts.
 
 ### Recyclables
 
-Reuse evergreen content.
+Reuse recyclable content.
 
 **What are Recyclables?**
 
@@ -511,7 +511,7 @@ Posts marked as recyclable can be:
 
 - Rescheduled for future dates
 - Reused multiple times
-- Great for evergreen content
+- Great for recyclable content
 
 **Marking Posts as Recyclable:**
 
@@ -798,7 +798,7 @@ templates for:
 - **Weekly announcements** - Regular updates
 - **Product launches** - Consistent format
 - **Event promotions** - Standard structure
-- **Recurring content** - Evergreen posts
+- **Recurring content** - Recyclable posts
 
 **Creating Templates:**
 
@@ -935,7 +935,7 @@ Track post performance (if available).
 1. **Images**: Optimize before upload
 2. **Hashtags**: Use presets for consistency
 3. **Templates**: Save time with templates
-4. **Recyclables**: Reuse evergreen content
+4. **Recyclables**: Reuse recyclable content
 5. **Bulk Operations**: Use for efficiency
 
 ### Engagement
@@ -1003,18 +1003,18 @@ Track post performance (if available).
 - Ensure new time is in future
 - Re-sign event if needed
 
-See [Troubleshooting Guide](../troubleshooting/common-issues.md) for more solutions.
+See [Troubleshooting Guide](../../troubleshooting/common-issues.md) for more solutions.
 
 ---
 
 ## See Also
 
-- [Hosted Quick Start](../getting-started/hosted.md) - Getting started with SmartFlowSocial
+- [Hosted Quick Start](../../getting-started/hosted.md) - Getting started with SmartFlowSocial
 - [Calendar Guide](./calendar.md) - Visual post scheduling with drag-and-drop
 - [Payments Guide](./payments.md) - Subscription payment system
-- [Nostr Integration](../reference/nostr.md) - Nostr protocol integration details
-- [API Reference](../reference/api.md) - API endpoints and usage
-- [Troubleshooting Guide](../troubleshooting/common-issues.md) - Common issues and solutions
+- [Nostr Integration](../../reference/nostr.md) - Nostr protocol integration details
+- [API Reference](../../reference/api.md) - API endpoints and usage
+- [Troubleshooting Guide](../../troubleshooting/common-issues.md) - Common issues and solutions
 - [Queue Types](#queue-types) - How posts are queued and scheduled (see above)
 
 ---

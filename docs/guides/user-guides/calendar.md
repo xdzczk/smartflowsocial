@@ -2,7 +2,7 @@
 
 **Estimated time:** 20 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2025-03-12
+**Last updated:** 2026-11-09
 
 Complete guide to using the visual calendar interface for scheduling posts in SmartFlowSocial.
 
@@ -362,7 +362,7 @@ app/routes/
 4. Check browser performance
 5. Update browser
 
-See [Troubleshooting Guide](../troubleshooting/common-issues.md) for more solutions.
+See [Troubleshooting Guide](../../troubleshooting/common-issues.md) for more solutions.
 
 ---
 
@@ -432,5 +432,5 @@ Update Calendar View
 
 - [Posting Guide](./posting.md) - How to create posts
 - [Queue Types](./posting.md#queue-types) - Queue documentation
-- [Nostr Integration](../reference/nostr.md) - Protocol details
-- [Troubleshooting Guide](../troubleshooting/common-issues.md) - Common issues
+- [Nostr Integration](../../reference/nostr.md) - Protocol details
+- [Troubleshooting Guide](../../troubleshooting/common-issues.md) - Common issues

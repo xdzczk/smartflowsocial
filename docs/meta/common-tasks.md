@@ -1,6 +1,6 @@
 # Common Tasks Quick Reference
 
-**Last updated:** 2025-03-12
+**Last updated:** 2026-11-09
 
 Quick reference for common SmartFlowSocial tasks.
 
@@ -59,8 +59,8 @@ Quick reference for common SmartFlowSocial tasks.
 ### Set Up Development Environment
 
 ```bash
-git clone https://github.com/xdzczk/SmartFlowSocial.git
-cd SmartFlowSocial
+git clone https://github.com/xdzczk/smartflowsocial.git
+cd smartflowsocial
 pnpm install
 cp example.env .env
 # Edit .env

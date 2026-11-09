@@ -1,6 +1,6 @@
 # Threat Model & Trust Boundaries
 
-**Last Updated:** 2025-01-02  
+**Last Updated:** 2026-01-17  
 **Status:** Active
 
 This document defines what SmartFlowSocial knows about users, what it doesn't need to know, and what

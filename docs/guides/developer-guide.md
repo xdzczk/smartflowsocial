@@ -2,7 +2,7 @@
 
 **Estimated time:** 60 minutes  
 **Difficulty:** Intermediate  
-**Last updated:** 2025-03-12
+**Last updated:** 2026-11-09
 
 Complete guide for developers working on SmartFlowSocial, covering development workflow,
 architecture patterns, and best practices.
@@ -36,8 +36,8 @@ architecture patterns, and best practices.
 
 ```bash
 # Clone repository
-git clone https://github.com/xdzczk/SmartFlowSocial.git
-cd SmartFlowSocial
+git clone https://github.com/xdzczk/smartflowsocial.git
+cd smartflowsocial
 
 # Install dependencies
 pnpm install
@@ -442,7 +442,7 @@ if (cached) return cached;
 
 - [Architecture Overview](../getting-started/architecture.md) - System design
 - [Testing Guide](./testing.md) - Testing strategies
-- [Contributing Guide](../CONTRIBUTING.md) - Contribution guidelines
+- [Contributing Guide](../../CONTRIBUTING.md) - Contribution guidelines
 - [Configuration Reference](../reference/configuration.md) - Configuration options
 - [API Development Guide](./api-development.md) - Building API endpoints
 

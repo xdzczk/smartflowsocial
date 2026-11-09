@@ -2,7 +2,7 @@
 
 **Estimated time:** 15 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2025-03-12
+**Last updated:** 2026-11-09
 
 Complete installation guide for SmartFlowSocial, covering all platforms and deployment options.
 
@@ -26,7 +26,7 @@ Complete installation guide for SmartFlowSocial, covering all platforms and depl
 ### Required
 
 - **Node.js** 20.0.0 or higher ([Download](https://nodejs.org/))
-- **pnpm** package manager (`npm install -g pnpm`)
+- **pnpm** 10.27.0 via Corepack (`corepack enable && corepack prepare pnpm@10.27.0 --activate`)
 - **PostgreSQL** 14+ (local or managed)
 - **Redis** 6+ (for BullMQ queues)
 
@@ -63,8 +63,8 @@ docker --version
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/xdzczk/SmartFlowSocial.git
-cd SmartFlowSocial
+git clone https://github.com/xdzczk/smartflowsocial.git
+cd smartflowsocial
 
 # 2. Install dependencies
 pnpm install
@@ -88,8 +88,8 @@ pnpm dev
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/xdzczk/SmartFlowSocial.git
-cd SmartFlowSocial
+git clone https://github.com/xdzczk/smartflowsocial.git
+cd smartflowsocial
 
 # 2. Configure environment
 cp example.env .env
@@ -178,23 +178,22 @@ createdb smartflow
 DATABASE_URL=postgresql://$(whoami)@localhost:5432/smartflow
 ```
 
-### Option 2: Docker PostgreSQL
+### Option 2: Docker PostgreSQL (`pnpm docker`)
+
+[`docker-compose.yml`](../../docker-compose.yml) publishes Postgres on host port **5433** and
+creates a database named `postgres`.
 
 ```bash
-# Start PostgreSQL container
 pnpm docker
-
-# Or manually
-docker run -d \
-  --name postgres \
-  -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=smartflow \
-  -p 5432:5432 \
-  postgres:14
-
-# Use this DATABASE_URL
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/smartflow
 ```
+
+```env
+DATABASE_URL=postgresql://postgres:postgres@localhost:5433/postgres
+REDIS_URL=redis://localhost:6379
+```
+
+A Postgres you install yourself (Option 1) stays on port 5432. Do not point `DATABASE_URL` at 5432
+after `pnpm docker`.
 
 ### Option 3: Managed PostgreSQL
 
@@ -287,24 +286,28 @@ Required for publishing posts to Nostr relays.
 
 **Deploy your own:**
 
-- [HTTP Nostr Publisher](https://github.com/getAlby/http-nostr-publisher)
+- [SmartFlowSocial Publisher](https://github.com/xdzczk/smartflowsocial-publisher)
+- Set `NOSTR_PUBLISHER_URL` to that worker. If the publisher has `API_TOKEN` set, set the same value
+  as `NOSTR_PUBLISHER_API_TOKEN` (sent as `API-TOKEN`).
 
-**Or use a hosted service:**
+### Blastr (optional)
 
-- Configure `NOSTR_PUBLISHER_URL` in `.env`
+[Blastr](https://github.com/xdzczk/smartflowsocial-blastr) is the managed fan-out relay. Set
+`BLASTR_ADMIN_URL` and `BLASTR_ADMIN_API_TOKEN` so the app can sync entitlements and relay policy.
+Publishing still works without them.
 
-### Primal Caching Service (Optional)
+### Blossom (optional)
 
-For profile and event lookups.
+[SmartFlowSocial Blossom](https://github.com/xdzczk/smartflowsocial-blossom) is the Blossom media
+gateway ([protocol](https://github.com/hzrd149/blossom)). Set `BLOSSOM_SFS_API_URL`,
+`BLOSSOM_INTERNAL_SECRET`, and `BLOSSOM_UPLOAD_TOKEN_SECRET` to the same values the gateway uses.
 
-**Default (public endpoints):**
+### Cache worker (optional)
 
-- Uses public Primal cache if not configured
-
-**Self-hosted:**
-
-- [Primal Caching Service](https://github.com/PrimalHQ/primal-caching-service)
-- Configure `PRIMAL_CACHING_URL` in `.env`
+[SmartFlowSocial Cache Worker](https://github.com/xdzczk/smartflowsocial-cache-worker) answers
+profile and event lookups. It reads [NostrMash](https://github.com/xdzczk/nostrmash) first and falls
+back to public Primal. Set `PRIMAL_CACHING_URL` to the worker. If unset, the app uses public Primal
+sockets.
 
 ### Redis Setup
 

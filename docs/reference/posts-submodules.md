@@ -1,6 +1,6 @@
 # Posts Feature: Internal Submodules
 
-**Last updated:** 2026-03-12
+**Last updated:** 2026-05-04
 
 The `app/features/posts/` feature is split into internal submodules so that boundaries stay
 meaningful as the product grows. The rest of the app uses `~/features/posts/server` and

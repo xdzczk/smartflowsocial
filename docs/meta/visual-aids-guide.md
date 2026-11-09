@@ -1,6 +1,6 @@
 # Visual Aids Guide
 
-**Last updated:** 2025-03-12
+**Last updated:** 2026-11-09
 
 Guide for adding visual aids to documentation, including screenshots, diagrams, and flowcharts.
 
@@ -284,6 +284,8 @@ graph TB
 ---
 
 ## Examples
+
+The screenshot paths in the samples below are syntax examples. This repository does not ship product screenshots. The hero used on the project README is [readme-hero.svg](../readme-hero.svg).
 
 ### Screenshot Example
 

@@ -4,8 +4,8 @@ Professional Nostr social media management for creators, teams, and communities.
 
 ![SmartFlowSocial hero banner](./docs/readme-hero.svg)
 
-[![CI](https://github.com/xdzczk/SmartFlowSocial/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/xdzczk/SmartFlowSocial/actions/workflows/ci.yml)
-[![Latest release](https://img.shields.io/github/v/release/xdzczk/SmartFlowSocial?display_name=tag)](https://github.com/xdzczk/SmartFlowSocial/releases)
+[![CI](https://github.com/xdzczk/smartflowsocial/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/xdzczk/smartflowsocial/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/xdzczk/smartflowsocial?display_name=tag)](https://github.com/xdzczk/smartflowsocial/releases)
 [![Node 20+](https://img.shields.io/badge/node-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![pnpm 10](https://img.shields.io/badge/pnpm-10.27.0-f69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
 [![Remix](https://img.shields.io/badge/Remix-app-121212?logo=remix&logoColor=white)](https://remix.run/)
@@ -65,6 +65,7 @@ Configuration reference: [Configuration](./docs/reference/configuration.md)
 | Operating the stack         | [Operations guide](./docs/guides/operations.md)              | [Configuration reference](./docs/reference/configuration.md) |
 | Integrating with APIs       | [API reference](./docs/reference/api.md)                     | [API development](./docs/guides/api-development.md)          |
 | Building or contributing    | [CONTRIBUTING.md](./CONTRIBUTING.md)                         | [Testing guide](./docs/guides/testing.md)                    |
+| Looking up a term           | [Glossary](./docs/meta/glossary.md)                          | [Core concepts](./docs/getting-started/concepts.md)          |
 | Reporting security issues   | [SECURITY.md](./SECURITY.md)                                 | [Security guide](./docs/guides/security.md)                  |
 
 Complete docs index: [docs/README.md](./docs/README.md)
@@ -111,11 +112,16 @@ Operational details: [Operations guide](./docs/guides/operations.md)
 
 ## Self-hosted quick start
 
-Prerequisites: Node.js 20+, pnpm, PostgreSQL, Redis, S3-compatible storage.
+Prerequisites: Node.js 20+, pnpm 10.27.0 (Corepack), PostgreSQL, and Redis. S3-compatible storage is
+required for uploads. Companion services are the
+[publisher](https://github.com/xdzczk/smartflowsocial-publisher),
+[Blastr](https://github.com/xdzczk/smartflowsocial-blastr),
+[Blossom](https://github.com/xdzczk/smartflowsocial-blossom), and the
+[cache worker](https://github.com/xdzczk/smartflowsocial-cache-worker).
 
 ```bash
-git clone https://github.com/xdzczk/SmartFlowSocial.git
-cd SmartFlowSocial
+git clone https://github.com/xdzczk/smartflowsocial.git
+cd smartflowsocial
 pnpm install
 cp example.env .env
 pnpm docker
@@ -129,8 +135,8 @@ Then open `http://localhost:3000`.
 
 **What `pnpm docker` starts:** only `postgres` and `redis` from
 [`docker-compose.yml`](./docker-compose.yml). Point `DATABASE_URL` at Postgres (for the default
-compose file, the host port is **5433**) and `REDIS_URL` at Redis before running migrations or the
-app.
+compose file, the host port is **5433** and the database name is `postgres`) and `REDIS_URL` at
+Redis before running migrations or the app.
 
 **What `pnpm dev` starts:** the Remix dev surface, the Node HTTP server bundle, and the worker
 bundle (see `package.json` scripts `dev:*`).
@@ -246,8 +252,8 @@ Roadmap and changes: [CHANGELOG](./CHANGELOG.md)
 - Hosted: [smartflow.social](https://smartflow.social)
 - Docs hub: [docs/README.md](./docs/README.md)
 - Bug reports and feature requests:
-  [GitHub Issues](https://github.com/xdzczk/SmartFlowSocial/issues)
-- Questions and ideas: [GitHub Discussions](https://github.com/xdzczk/SmartFlowSocial/discussions)
+  [GitHub Issues](https://github.com/xdzczk/smartflowsocial/issues)
+- Questions and ideas: [GitHub Discussions](https://github.com/xdzczk/smartflowsocial/discussions)
 
 ---
 

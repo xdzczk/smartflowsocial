@@ -1,6 +1,6 @@
 # Contributing to Documentation
 
-**Last updated:** 2025-03-12
+**Last updated:** 2026-11-09
 
 How to contribute to SmartFlowSocial documentation.
 
@@ -10,7 +10,7 @@ How to contribute to SmartFlowSocial documentation.
 
 1. **Find what to improve:**
    - Check
-     [open documentation issues](https://github.com/xdzczk/SmartFlowSocial/issues?q=label%3Adocumentation)
+     [open documentation issues](https://github.com/xdzczk/smartflowsocial/issues?q=label%3Adocumentation)
    - Identify gaps or outdated content
 
 2. **Make your changes:**

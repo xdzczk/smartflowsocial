@@ -22,7 +22,7 @@ these steps:
 
 - Message us on Nostr at `npub1ckqlguq0htvs3smwy8pl5uwmfas0h208p7p8hs92ghaurgkmzzrsw3vlh0`, or open
   a
-  [private GitHub security advisory](https://github.com/xdzczk/SmartFlowSocial/security/advisories/new)
+  [private GitHub security advisory](https://github.com/xdzczk/smartflowsocial/security/advisories/new)
 - Include:
   - Description of the vulnerability
   - Steps to reproduce
