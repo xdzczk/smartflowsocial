@@ -1,6 +1,6 @@
 # Common Issues
 
-**Last updated:** 2025-03-12
+**Last updated:** 2026-11-09
 
 Solutions to frequently encountered problems when using SmartFlowSocial.
 
@@ -356,7 +356,8 @@ aws s3 cp test.jpg s3://your-bucket/test.jpg
 
 ### Blossom upload failed
 
-**Problem:** Uploads to Blossom (vibe-cdn) fail with quota, token, or policy errors.
+**Problem:** Uploads to [Blossom](https://github.com/xdzczk/smartflowsocial-blossom) fail with
+quota, token, or policy errors.
 
 **Solutions:**
 
@@ -749,7 +750,7 @@ See [Contributing Guide](../../CONTRIBUTING.md) for:
 
 **How do I report bugs?**
 
-Open an issue on [GitHub](https://github.com/xdzczk/SmartFlowSocial/issues):
+Open an issue on [GitHub](https://github.com/xdzczk/smartflowsocial/issues):
 
 - Include clear steps to reproduce
 - Specify your environment
@@ -758,7 +759,7 @@ Open an issue on [GitHub](https://github.com/xdzczk/SmartFlowSocial/issues):
 **How do I request a feature?**
 
 Open a feature request on
-[GitHub Discussions](https://github.com/xdzczk/SmartFlowSocial/discussions):
+[GitHub Discussions](https://github.com/xdzczk/smartflowsocial/discussions):
 
 - Describe the feature
 - Explain the use case
@@ -783,7 +784,7 @@ If you're still experiencing issues:
    - [Performance Troubleshooting](./performance.md) - Performance issues
 
 3. **Open an issue:**
-   - [GitHub Issues](https://github.com/xdzczk/SmartFlowSocial/issues)
+   - [GitHub Issues](https://github.com/xdzczk/smartflowsocial/issues)
    - Include error messages
    - Provide environment details
    - Share relevant logs

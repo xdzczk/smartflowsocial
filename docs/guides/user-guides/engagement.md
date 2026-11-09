@@ -2,7 +2,7 @@
 
 **Estimated time:** 15 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2025-03-12
+**Last updated:** 2026-11-09
 
 Learn how to track and manage engagement with your Nostr posts, including replies, mentions, and
 interactions.
@@ -268,8 +268,8 @@ SmartFlowSocial can load and show a thread so you can read the full context befo
 - Option to reply, like, or open the note in your preferred Nostr client
 
 Thread data is fetched from the cache/relays (see
-[API: thread-view](../reference/api.md#thread-view) for the backend endpoint). If a thread is long,
-only part of it may be loaded.
+[API: thread-view](../../reference/api.md#thread-view) for the backend endpoint). If a thread is
+long, only part of it may be loaded.
 
 ---
 

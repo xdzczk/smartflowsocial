@@ -2,7 +2,7 @@
 
 **Estimated time:** 45 minutes  
 **Difficulty:** Intermediate  
-**Last updated:** 2025-03-12
+**Last updated:** 2026-11-09
 
 Comprehensive guide to testing in SmartFlowSocial, covering strategy, patterns, and best practices.
 
@@ -431,7 +431,7 @@ describe("My Integration Test", () => {
 });
 ```
 
-See [Test Suite Refactoring](../test-suite-refactoring-complete.md) for details on the refactoring.
+The integration helpers live in `tests/utils/test-helpers`.
 
 ### Test Data Factories
 
@@ -453,7 +453,7 @@ const post = new PostFactory()
   .build();
 ```
 
-See [Test Factories README](../tests/factories/README.md) for details.
+See [Test Factories README](../../tests/factories/README.md) for details.
 
 **Rule for new tests:** Prefer factories (or the combined-content factory for
 `CombinedContent`-shaped data) over inline minimal objects and `as unknown as T` for domain data.

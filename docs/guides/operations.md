@@ -2,7 +2,7 @@
 
 **Estimated time:** 45 minutes  
 **Difficulty:** Intermediate  
-**Last updated:** 2025-03-12
+**Last updated:** 2026-11-09
 
 Complete guide to operating SmartFlowSocial in production, including monitoring, logging, alerting,
 and maintenance.
@@ -684,7 +684,7 @@ sequenceDiagram
 
 ## Queue Monitoring
 
-See [Queue System Documentation](./queue-system.md) for detailed queue monitoring.
+See [Queue System](#queue-system) above for how the queue is structured.
 
 ### Key Metrics
 

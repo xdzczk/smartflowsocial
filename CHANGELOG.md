@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ### Added
 
-- Blossom (vibe-cdn) upload integration: token-based uploads, commit-batch, quota/usage tracking.
+- Blossom upload integration: token-based uploads, commit-batch, quota/usage tracking.
 - Web Push notifications: subscribe/unsubscribe, VAPID config, publish success/failure and
   runway-low alerts.
 - Media intents and commit API: declare files before upload, commit after upload (S3/Blossom).

@@ -1,6 +1,6 @@
 # Time Semantics & Scheduling Behavior
 
-**Last Updated:** 2025-01-02  
+**Last Updated:** 2026-03-08  
 **Status:** Active
 
 This document defines what scheduled times mean, how timezone changes are handled, and what happens

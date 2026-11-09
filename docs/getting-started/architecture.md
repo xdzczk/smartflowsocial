@@ -71,9 +71,9 @@ graph TB
     end
 
     subgraph "External Services"
-        Publisher[HTTP Nostr Publisher<br/>Event Publishing]
-        Primal[Primal Cache<br/>Profile/Event Lookups]
-        Storage[S3/Blossom Storage<br/>Image Uploads]
+        Publisher[SmartFlowSocial Publisher<br/>Event Publishing]
+        Primal[Cache worker<br/>NostrMash then Primal]
+        Storage[SmartFlowSocial Blossom<br/>Image Uploads]
         Relays[Nostr Relays<br/>Event Distribution]
         NWC[NWC Service<br/>Lightning Payments]
     end
@@ -105,6 +105,15 @@ graph TB
     style Publisher fill:#e0f2f1
     style Relays fill:#fff9c4
 ```
+
+Publisher, Blossom, and the cache worker in that diagram are the other SmartFlowSocial repositories,
+not generic third-party boxes. Blastr is the managed fan-out relay in front of the publisher path.
+[NostrMash](https://github.com/xdzczk/nostrmash) is the cache worker's first read source.
+
+- [Publisher](https://github.com/xdzczk/smartflowsocial-publisher) (`NOSTR_PUBLISHER_URL`)
+- [Blastr](https://github.com/xdzczk/smartflowsocial-blastr) (`BLASTR_ADMIN_URL`)
+- [Blossom](https://github.com/xdzczk/smartflowsocial-blossom) (`BLOSSOM_SFS_API_URL`)
+- [Cache worker](https://github.com/xdzczk/smartflowsocial-cache-worker) (`PRIMAL_CACHING_URL`)
 
 ## Project Structure
 

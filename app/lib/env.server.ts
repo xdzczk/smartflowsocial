@@ -124,7 +124,7 @@ interface EnvConfig {
   /** Webhook HMAC secret from BTCPay (Settings → Webhooks). */
   BTCPAY_WEBHOOK_SECRET?: string;
 
-  // Blossom (vibe-cdn) internal API: secret for subscription-status gating
+  // Blossom gateway: secret for subscription-status gating
   BLOSSOM_INTERNAL_SECRET?: string;
   BLOSSOM_SFS_API_URL?: string;
   BLOSSOM_UPLOAD_TOKEN_SECRET?: string;
@@ -338,7 +338,7 @@ function reportValidationErrors(
     "\nPlease check your .env file or environment configuration."
   );
   safeConsoleError(
-    "See docs/getting-started/environment-setup.md for detailed configuration instructions."
+    "See docs/reference/configuration.md for detailed configuration instructions."
   );
 
   process.exit(1);

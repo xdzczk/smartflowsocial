@@ -328,6 +328,7 @@ export default (async () => {
         "public/build/**",
         "postgres-data/**",
         "coverage/**",
+        "docs/**/*.{ts,tsx}",
         "tests/e2e/cypress.config.mobile.ts",
       ],
     },

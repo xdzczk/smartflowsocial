@@ -2,7 +2,7 @@
 
 **Estimated time:** 30 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2025-03-12
+**Last updated:** 2026-11-09
 
 Complete guide to configuring all settings in SmartFlowSocial, from timezone to storage to
 engagement filters.
@@ -513,7 +513,7 @@ nostr+walletconnect://pubkey?relay=wss://relay.example.com&secret=...
 - [Multi-Account Guide](./multi-account.md) - Account management
 - [Payments Guide](./payments.md) - Subscription details
 - [Posting Guide](./posting.md) - How settings affect posting
-- [Configuration Reference](../reference/configuration.md) - Technical details
+- [Configuration Reference](../../reference/configuration.md) - Technical details
 
 ---
 

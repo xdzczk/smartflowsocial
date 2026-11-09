@@ -1,6 +1,6 @@
 # Error Troubleshooting Guide
 
-**Last updated:** 2025-03-12
+**Last updated:** 2026-11-09
 
 This guide helps you diagnose and resolve errors and issues with SmartFlowSocial, including
 debugging techniques and tools.
@@ -369,7 +369,7 @@ MONITOR
    pm2 restart smartflow-worker
    ```
 
-See [Queue System Documentation](./queue-system.md) for more details.
+See [Queue System](../guides/operations.md#queue-system) for more details.
 
 ### Jobs Failing
 

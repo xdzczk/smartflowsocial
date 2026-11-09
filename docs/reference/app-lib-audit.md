@@ -1,6 +1,6 @@
 # app/lib Audit: Generic vs Domain
 
-**Last updated:** 2026-03-09
+**Last updated:** 2026-05-04
 
 `app/lib` should contain only **generic, shared utilities** (validation, env, temporal, logging,
 etc.). Domain-specific code belongs in features. This doc classifies current modules to guide

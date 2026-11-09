@@ -505,7 +505,9 @@ relays from their npub when available; otherwise the app default relay list belo
 
 ### Managed Relays (Blastr)
 
-SmartFlowSocial may include a **managed fan-out relay** (Blastr) during publishing.
+SmartFlowSocial may include a **managed fan-out relay**
+([Blastr](https://github.com/xdzczk/smartflowsocial-blastr)) during publishing. The app syncs
+entitlement and policy when `BLASTR_ADMIN_URL` is set.
 
 - **Not persisted** as a string in `User.userRelays`
 - **Feature-gated** via `Plan.enableRelayBlast` (active subscription required)

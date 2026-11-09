@@ -1,5 +1,5 @@
 /**
- * Internal subscription-status endpoint for Blossom server (vibe-cdn).
+ * Internal subscription-status endpoint for the SmartFlowSocial Blossom gateway.
  * Blossom calls GET /internal/subscription-status?pubkey=<hex> with header
  * x-internal-secret to decide if a pubkey is allowed to upload (403 when inactive).
  * No session/cookies; server-to-server only.

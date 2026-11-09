@@ -1,6 +1,6 @@
 # Failure Semantics & Retry Strategy
 
-**Last Updated:** 2026-01-19  
+**Last Updated:** 2026-05-04  
 **Status:** Active
 
 This document defines what failures mean, when retries happen, and when events become permanently

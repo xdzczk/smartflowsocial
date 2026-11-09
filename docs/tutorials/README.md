@@ -1,6 +1,6 @@
 # Tutorials
 
-**Last updated:** 2025-03-12
+**Last updated:** 2026-11-09
 
 Step-by-step tutorials organized by difficulty level to help you master SmartFlowSocial.
 
@@ -16,6 +16,9 @@ Perfect for new users getting started with SmartFlowSocial.
 - [Creating Your First Queue](./beginner/creating-your-first-queue.md) - 20 min
 - [Using Hashtag Presets](./beginner/using-hashtag-presets.md) - 15 min
 - [Using the Calendar View](./beginner/using-calendar-view.md) - 10 min
+- [Creating Your First Post](./beginner/creating-your-first-post.md)
+- [Scheduling Posts](./beginner/scheduling-posts.md)
+- [Adding Images](./beginner/adding-images.md)
 
 ### Intermediate
 
@@ -23,6 +26,9 @@ For users ready to explore advanced features and workflows.
 
 - [Advanced Scheduling Strategies](./intermediate/advanced-scheduling-strategies.md) - 30 min
 - [Long-form Articles](./intermediate/long-form-articles.md) - 35 min
+- [Bulk Scheduling](./intermediate/bulk-scheduling.md)
+- [Multi-account Setup](./intermediate/multi-account-setup.md)
+- [Creating Giveaways](./intermediate/creating-giveaways.md)
 
 **Note:** For bulk scheduling, multi-account setup, and giveaways, see the comprehensive guides:
 
@@ -37,6 +43,7 @@ For power users and developers.
 - [API Usage](./advanced/api-usage.md) - 40 min
 - [Custom Integrations](./advanced/custom-integrations.md) - 45 min
 - [Advanced Queue Management](./advanced/advanced-queue-management.md) - 35 min
+- [Performance Optimization](./advanced/performance-optimization.md)
 
 **Note:** For performance optimization, see:
 

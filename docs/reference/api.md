@@ -3,7 +3,7 @@
 This document describes all API endpoints available in SmartFlowSocial, including request/response
 formats, authentication, error handling, and usage examples.
 
-**Last verified:** 2026-04 (spot-verified against `app/routes/api.*`, `app/routes/internal.*`, and
+**Last verified:** 2026-11-09 (checked against `app/routes/api.*`, `app/routes/internal.*`, and
 `cron.*`).
 
 ## Table of Contents
@@ -14,6 +14,9 @@ formats, authentication, error handling, and usage examples.
 - [Request/Response Format](#requestresponse-format)
 - [Error Handling](#error-handling)
 - [Endpoints](#endpoints)
+- [Public, presence, and telemetry](#public-presence-and-telemetry)
+- [Internal](#internal)
+- [Cron Endpoints](#cron-endpoints)
 - [Rate Limiting](#rate-limiting)
 - [Best Practices](#best-practices)
 - [Examples](#examples)
@@ -1097,6 +1100,74 @@ Supported `phase` values: `start`, `heartbeat`, `end`.
 
 ---
 
+## Public, presence, and telemetry
+
+### GET `/api/public/stats`
+
+Aggregate publishing counts and up to 48 public profiles. Returns 404 when
+`PUBLIC_STATS_ENABLED=false`. Limited to 60 requests per minute per IP. `LANDING_STATS_ORIGINS` adds
+CORS origins. Cached for 15 minutes. Details: [Public stats](../guides/public-stats.md).
+
+### GET `/api/public/avatar/:npub`
+
+A 96px public picture. 404 when public stats are disabled, the npub is unknown, or the account hid
+its picture.
+
+### GET and POST `/api/landing-presence`
+
+Session required. GET returns `{ hideFromLanding, showNotice }`. POST is CSRF-protected form data:
+`intent=dismiss` marks the notice seen; `intent=visibility` with `hideFromLanding=true` or `false`
+updates the opt-out and drops the cached avatar.
+
+### GET `/api/notification-asset?url=`
+
+Same-origin proxy for an HTTPS image on an allowlist of media hosts, so push clients can show
+pictures. Cached for 24 hours.
+
+### POST `/api/web-vitals`
+
+JSON body with `name` and `value`, and optional `id`, `path`, and `rating`. Logged for web-vital
+monitoring. No session.
+
+### POST `/api/engagement/defer-action`
+
+Session required. JSON body: `eventId`, `actionType` (`reply`, `quote`, or `repost`), `mode`
+(`draft` or `schedule`), and optional `content`, `scheduledFor`, `queueTypeId`, and `signedEvent`.
+`mode=queue` is rejected.
+
+### POST `/api/engagement/linked-action`
+
+Session required. JSON body requires `eventId` and `kind` (`DRAFT`, `SCHEDULED_REPLY`,
+`SCHEDULED_QUOTE`, `SCHEDULED_REPOST`, `QUEUED_REPLY`, `QUEUED_QUOTE`, or `QUEUED_REPOST`).
+Optional: `state`, `postId`, `draftId`, `queueTypeId`, `label`, `scheduledFor`.
+
+### GET `/api/queue-needs-resign?queueTypeId=`
+
+Session and an active subscription. `queueTypeId` is required. Returns queue items that need to be
+signed again.
+
+### POST `/api/schedule-overlap-warning`
+
+Session and CSRF. JSON body requires `scheduledFor`. Optional `queueTypeId` and `excludeContentId`.
+Returns the overlap warning for that time.
+
+### POST `/api/referral/manual-payout`
+
+Pays one referrer from a BOLT11 invoice. JSON body: `referrer_npub`, `bolt11`, `amount_sats`. When
+`REFERRAL_MANUAL_PAYOUT_SECRET` is set, send it as `X-Referral-Payout-Secret`.
+
+---
+
+## Internal
+
+### GET `/internal/subscription-status?pubkey=`
+
+Called by the Blossom gateway with header `x-internal-secret` set to `BLOSSOM_INTERNAL_SECRET`. No
+session. `active` is true only when that pubkey has a current subscription or lifetime access. A
+missing secret, unknown pubkey, or disabled user does not return `active: true`.
+
+---
+
 ## Cron Endpoints
 
 ### GET or POST `/cron/checksubscription`
@@ -1110,6 +1181,25 @@ When `CRON_SECRET` is set, send it as `X-Cron-Secret` or `Authorization: Bearer 
 The sweep charges a subscription only when the paid period has ended, the subscription is
 `nwc_auto_renew` / `auto_renew`, and the wallet is still connected. A one-time Lightning purchase is
 not charged again. Each charge uses the same confirmed invoice path as checkout.
+
+### GET or POST `/cron/post-analytics`
+
+Runs the paid post-analytics sweep. Uses the same `CRON_SECRET` check as `/cron/checksubscription`.
+The worker also runs this on `POST_ANALYTICS_INTERVAL_MINUTES`.
+
+### GET `/cron/campaign-payout`
+
+Runs trusted autopay for locked contests and giveaways whose payout settings allow it. This route
+does not check `CRON_SECRET`.
+
+### GET `/cron/cleanup-publish-acks`
+
+Deletes publish-relay acknowledgement rows older than 30 days. This route does not check
+`CRON_SECRET`.
+
+### GET `/cron/referral-payout`
+
+Runs the referral payout batch. This route does not check `CRON_SECRET`.
 
 ---
 

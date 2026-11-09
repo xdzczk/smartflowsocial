@@ -1,6 +1,6 @@
 # User-Facing Guarantees
 
-**Last Updated:** 2025-01-02  
+**Last Updated:** 2026-01-17  
 **Status:** Active
 
 This document defines the operational promises SmartFlowSocial makes to users about how the system

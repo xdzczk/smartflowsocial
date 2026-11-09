@@ -1,6 +1,6 @@
 # Auth / signer architecture
 
-**Last updated:** 2026-04-19
+**Last updated:** 2026-05-04
 
 The auth/signer surface is split into **flow modules**, **composable hooks**, and **signer core** so
 that no single file exceeds ~400 lines (logic) or ~300 (UI), flows are testable without React, and

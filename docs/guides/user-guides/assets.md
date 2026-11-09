@@ -2,7 +2,7 @@
 
 **Estimated time:** 20 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2025-03-12
+**Last updated:** 2026-11-09
 
 Complete guide to uploading, organizing, and managing assets (images, videos, text) in
 SmartFlowSocial.
@@ -428,8 +428,9 @@ SmartFlowSocial's asset management allows you to:
 
 - [Posting Guide](./posting.md) - Using assets in posts
 - [Settings Guide](./settings.md) - Storage configuration
-- [Upload Reference](../reference/upload.md) - Technical details
+- [Upload API](../../reference/api.md#upload) - Technical details
 
 ---
 
-**Next:** [Reference Documentation](../reference/configuration.md) → Technical configuration details
+**Next:** [Reference Documentation](../../reference/configuration.md) → Technical configuration
+details

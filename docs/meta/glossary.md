@@ -1,6 +1,6 @@
 # Glossary
 
-**Last updated:** 2025-03-12
+**Last updated:** 2026-11-09
 
 Terminology and definitions for SmartFlowSocial.
 
@@ -23,9 +23,20 @@ The process of verifying user identity using Nostr signatures (NIP-07).
 
 ### Blossom
 
-A media/CDN service (e.g. vibe-cdn) used for image and file uploads. SmartFlowSocial can use Blossom
-as an upload provider; uploads may be token-based and quota-tracked. See configuration and storage
-docs.
+The [Blossom](https://github.com/hzrd149/blossom) media protocol, and SmartFlowSocial's gateway for
+it ([smartflowsocial-blossom](https://github.com/xdzczk/smartflowsocial-blossom)). Uploads are
+token-based and quota-tracked.
+
+### Blastr
+
+SmartFlowSocial's managed fan-out relay
+([smartflowsocial-blastr](https://github.com/xdzczk/smartflowsocial-blastr)). Publishing can include
+it when the plan allows. It is not stored as one of the user's relay URLs.
+
+### Bunker
+
+A NIP-46 remote signer. Connection strings use the `bunker://` URI, and the client uses nostr-tools'
+`BunkerSigner`. In these docs, "remote signer" and "bunker" are that same connection.
 
 ### BullMQ
 
@@ -157,7 +168,8 @@ time slots.
 
 ### Recyclable Post
 
-Evergreen content that can be reused and scheduled multiple times.
+Content that can be reused and scheduled again. Older pages call this evergreen content. Prefer
+recyclable.
 
 ### Relay
 

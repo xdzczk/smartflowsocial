@@ -2,7 +2,7 @@
 
 **Estimated time:** 5 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2025-03-12
+**Last updated:** 2026-11-09
 
 Get SmartFlowSocial up and running in 5 minutes.
 
@@ -13,10 +13,13 @@ Get SmartFlowSocial up and running in 5 minutes.
 Before you begin, ensure you have:
 
 - ✅ **Node.js 20.0.0+** installed ([Download](https://nodejs.org/))
-- ✅ **pnpm** installed (`npm install -g pnpm`)
+- ✅ **pnpm 10.27.0** via Corepack (`corepack enable && corepack prepare pnpm@10.27.0 --activate`)
 - ✅ **PostgreSQL** running (local or remote)
 - ✅ **Redis** running (for background jobs)
-- ✅ **Nostr browser extension** (Alby, nos2x, or Amber)
+- ✅ **S3-compatible storage** when you exercise uploads
+- ✅ **Nostr browser extension** (Alby, nos2x, or Amber) or a NIP-46 remote signer
+
+Terms used in these guides are collected in the [glossary](../meta/glossary.md).
 
 ---
 
@@ -24,8 +27,8 @@ Before you begin, ensure you have:
 
 ```bash
 # Clone the repository
-git clone https://github.com/xdzczk/SmartFlowSocial.git
-cd SmartFlowSocial
+git clone https://github.com/xdzczk/smartflowsocial.git
+cd smartflowsocial
 
 # Install dependencies
 pnpm install
@@ -55,7 +58,7 @@ cp example.env .env
 pnpm docker
 
 # Use these defaults:
-# DATABASE_URL=postgresql://postgres:postgres@localhost:5432/smartflow
+# DATABASE_URL=postgresql://postgres:postgres@localhost:5433/postgres
 # REDIS_URL=redis://localhost:6379
 ```
 

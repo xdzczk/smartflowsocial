@@ -2,7 +2,7 @@
 
 **Estimated time:** 20 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2025-03-12
+**Last updated:** 2026-03-26
 
 Complete guide to creating and managing Nostr giveaways with fair winner selection in
 SmartFlowSocial.

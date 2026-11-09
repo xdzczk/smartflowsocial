@@ -1,4 +1,6 @@
 /**
+ * Not a Remix route. Moved out of app/routes so it is not served.
+ *
  * Example: Refactored Upload Route with Centralized Error Handling
  *
  * This shows how to refactor an existing route to use the new error handling system.

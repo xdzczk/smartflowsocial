@@ -1,6 +1,6 @@
 # Strategic Boundaries
 
-**Last Updated:** 2025-01-02  
+**Last Updated:** 2026-01-17  
 **Status:** Active
 
 This document defines what SmartFlowSocial **is** and what it **is not**. It establishes what we're

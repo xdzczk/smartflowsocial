@@ -37,17 +37,16 @@
 
 ### Enforcement (must exist in both layers)
 
-- **App policy + UX** (this repo):\n+ - Canonical policy:
-  `app/features/payments/plan-policy.ts`\n+ - Token issuance/quota checks:
-  `app/features/upload/services/blossom-v2.server.ts`\n+ - Plans page marketing + comparison:
-  `app/features/payments/components/PlansPage.tsx`,
-  `app/features/payments/components/FeatureComparisonTable.tsx`\n+- **Blossom gateway enforcement**
-  (`/Users/ivmitko/Documents/Dev/vibe-cdn-master`):\n+ - Central policy mirror:
-  `src/planPolicy.ts`\n+ - Upload boundary enforcement: `src/routes/upload.ts`\n+
+- **App policy and UX** (this repo):
+  - Canonical policy: `app/features/payments/plan-policy.ts`
+  - Token issuance and quota checks: `app/features/upload/services/blossom-v2.server.ts`
+  - Plans page: `app/features/payments/components/PlansPage.tsx` and `FeatureComparisonTable.tsx`
+- **Blossom gateway**
+  ([smartflowsocial-blossom](https://github.com/xdzczk/smartflowsocial-blossom)):
+  - Policy mirror: `src/planPolicy.ts`
+  - Upload boundary: `src/routes/upload.ts`
 
 ### Drift prevention
 
-The hosted-media numbers above are intentionally mirrored between:\n+-
-`vibe-smartflow-main/app/features/payments/plan-policy.ts`\n+-
-`vibe-cdn-master/src/planPolicy.ts`\n+\n+If you change hosted-media limits, update **both files in
-the same pass**.
+The numbers above are mirrored in `app/features/payments/plan-policy.ts` and in `src/planPolicy.ts`
+in the Blossom repository. Change both in the same pass.

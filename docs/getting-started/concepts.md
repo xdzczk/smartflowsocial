@@ -2,7 +2,7 @@
 
 **Estimated time:** 20 minutes  
 **Difficulty:** Beginner  
-**Last updated:** 2025-03-12
+**Last updated:** 2026-11-09
 
 Understand the fundamental concepts behind SmartFlowSocial and how everything works together.
 
@@ -205,7 +205,7 @@ SmartFlowSocial also supports NIP-46 (Nostr Connect) for remote signing:
 
 ### Recyclable Posts
 
-**Recyclable Post** - Evergreen content that can be reused.
+**Recyclable Post** - Content that can be reused. Older copy calls this evergreen.
 
 **Features:**
 

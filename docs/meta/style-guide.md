@@ -1,6 +1,6 @@
 # Documentation Style Guide
 
-**Last updated:** 2025-03-12
+**Last updated:** 2026-11-09
 
 Standards and conventions for writing SmartFlowSocial documentation.
 
@@ -208,25 +208,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 ---
 
-## Section 2
-
-[Content]
-
----
-
-## Related Documentation
-
-- [Related Doc 1](./related-doc-1.md) - Description
-- [Related Doc 2](./related-doc-2.md) - Description
-
----
-
-**Next:** [Next Guide](./next-guide.md) → Description
-
-```
-
----
-
 ## Review Process
 
 ### Before Submitting
@@ -255,10 +236,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 - [Markdown Guide](https://www.markdownguide.org/) - Markdown syntax reference
 - [Technical Writing](https://developers.google.com/tech-writing) - Google's technical writing guide
-- [Documentation Best Practices](https://www.writethedocs.org/guide/) - Write the Docs community guide
+- [Documentation Best Practices](https://www.writethedocs.org/guide/) - Write the Docs community
+  guide
 
 ---
 
 **Next:** [Contributing to Documentation](./contributing.md) → How to contribute
+
+```
 
 ```
