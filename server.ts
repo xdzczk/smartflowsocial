@@ -472,6 +472,14 @@ async function run() {
       "geolocation=(), microphone=(), camera=()"
     );
 
+    // Helmet's default is same-origin, which blocks the landing page from showing these images.
+    res.setHeader(
+      "Cross-Origin-Resource-Policy",
+      req.path.startsWith("/api/public/avatar/")
+        ? "cross-origin"
+        : "same-origin"
+    );
+
     next();
   });
 
