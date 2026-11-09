@@ -1,5 +1,6 @@
 import { env } from "~/lib/env.server";
 import { logWarning } from "~/lib/error-logger.server";
+import { nostrAdapter } from "~/lib/nostr-adapter.server";
 import {
   deleteFromRedis,
   getJsonFromRedis,
@@ -10,10 +11,10 @@ import {
   queryPublicStats,
   saveStatsSnapshot,
 } from "./repositories/public-stats-data.server";
-import type { PublicStats } from "./stats-payload";
+import { toPublicNpub, type PublicStats } from "./stats-payload";
 
 const CACHE_NAME = "public-stats";
-const CACHE_KEY = "smartflow:public-stats:v1";
+const CACHE_KEY = "smartflow:public-stats:v2";
 const CACHE_TTL_SECONDS = 15 * 60;
 
 export function publicStatsEnabled(): boolean {
@@ -49,6 +50,20 @@ export async function getPublicStats(
   if (cached.hit) return cached.value;
 
   const stats = await queryPublicStats(pictureOrigin);
+  const origin = pictureOrigin.replace(/\/$/, "");
+  stats.people = stats.people.flatMap((person) => {
+    const npub = toPublicNpub(person.npub, (hex) =>
+      nostrAdapter.encodeNpub(hex)
+    );
+    if (!npub) return [];
+    return [
+      {
+        npub,
+        name: person.name,
+        picture: `${origin}/api/public/avatar/${npub}`,
+      },
+    ];
+  });
   await setJsonInRedis({
     cache: CACHE_NAME,
     key: CACHE_KEY,
