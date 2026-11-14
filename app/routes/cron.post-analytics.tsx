@@ -2,27 +2,25 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 
 import { runPaidPostAnalyticsSweep } from "~/features/analytics/run-sweep.server";
-import { cronRequestAuthorized } from "~/lib/cron-auth.server";
-import { env } from "~/lib/env.server";
+import { cronJson, denyCronUnlessAuthorized } from "~/lib/cron-http.server";
 
 /**
  * Manual trigger for the paid post-analytics sweep. The worker runs the same
  * function on POST_ANALYTICS_INTERVAL_MINUTES.
  */
 async function runPostAnalyticsCron(request?: Request) {
-  if (!cronRequestAuthorized(request, env.CRON_SECRET)) {
-    return json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = denyCronUnlessAuthorized(request);
+  if (denied) return denied;
   try {
     const result = await runPaidPostAnalyticsSweep();
-    return json({ success: true, ...result });
+    return cronJson({ success: true, ...result });
   } catch (error) {
-    return json(
+    return cronJson(
       {
         success: false,
         error: error instanceof Error ? error.message : "Sweep failed",
       },
-      { status: 500 }
+      500
     );
   }
 }

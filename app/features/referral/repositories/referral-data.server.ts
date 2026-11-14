@@ -5,7 +5,12 @@
 import type { Prisma } from "@prisma/client";
 
 import { ReferralEarningStatus } from "~/features/referral/data/referral-prisma-types.server";
+import { selectExactOldestPrefix } from "~/features/referral/referral-payout-selection";
 import { prisma } from "~/lib/prisma.server";
+
+/** Serializes referral wallet payouts so two requests cannot pass the cap together. */
+const REFERRAL_PAYOUT_LOCK_KEY = 87234101;
+const REFERRAL_PAYOUT_MAX_ATTEMPTS = 5;
 
 export type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
@@ -198,6 +203,192 @@ export async function markEarningPayoutAttempt(
     where: { id: earningId },
     data,
   });
+}
+
+export type BeginReferralPayoutResult =
+  | { ok: true; auditId: string; earningIds: string[] }
+  | { ok: false; error: string };
+
+/**
+ * Locks pending earnings, checks the daily cap, and records a started audit row
+ * keyed by the BOLT11 payment hash. The wallet call happens after this commits.
+ */
+export async function beginReferralPayout(input: {
+  referrerNpub: string;
+  amountSats: number;
+  paymentHash: string;
+  channel: "batch" | "manual";
+  operatorNpub?: string | null;
+  dailyCapSats: number;
+  dayStart: Date;
+}): Promise<BeginReferralPayoutResult> {
+  try {
+    return await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(${REFERRAL_PAYOUT_LOCK_KEY})`;
+
+      const existing = await tx.referralPayoutAuditLog.findUnique({
+        where: { paymentHash: input.paymentHash },
+        select: { status: true },
+      });
+      if (existing?.status === "success") {
+        return { ok: false, error: "ALREADY_PAID" };
+      }
+      if (existing) {
+        return { ok: false, error: "INVOICE_ALREADY_SUBMITTED" };
+      }
+
+      const spent = await tx.referralPayoutAuditLog.aggregate({
+        where: {
+          status: "success",
+          createdAt: { gte: input.dayStart },
+        },
+        _sum: { amountSats: true },
+      });
+      const used = spent._sum.amountSats ?? 0;
+      if (used + input.amountSats > input.dailyCapSats) {
+        return { ok: false, error: "DAILY_CAP" };
+      }
+
+      const rows = await tx.$queryRaw<
+        Array<{
+          id: string;
+          commission_sats: number;
+          payout_claim_hash: string | null;
+        }>
+      >`
+        SELECT id, commission_sats, payout_claim_hash
+        FROM "ReferralEarning"
+        WHERE referrer_npub = ${input.referrerNpub}
+          AND status = 'PENDING'::"ReferralEarningStatus"
+        ORDER BY created_at ASC
+        FOR UPDATE
+      `;
+
+      if (rows.some((row) => row.payout_claim_hash)) {
+        return { ok: false, error: "PAYOUT_IN_PROGRESS" };
+      }
+
+      const earningIds = selectExactOldestPrefix(
+        rows.map((row) => ({
+          id: row.id,
+          commissionSats: row.commission_sats,
+        })),
+        input.amountSats
+      );
+      if (!earningIds) {
+        return { ok: false, error: "AMOUNT_NOT_EXACT" };
+      }
+
+      const claimed = await tx.referralEarning.updateMany({
+        where: {
+          id: { in: earningIds },
+          status: "PENDING",
+          payoutClaimHash: null,
+        },
+        data: { payoutClaimHash: input.paymentHash },
+      });
+      if (claimed.count !== earningIds.length) {
+        throw new Error("CLAIM_CONFLICT");
+      }
+
+      const audit = await tx.referralPayoutAuditLog.create({
+        data: {
+          channel: input.channel,
+          referrerNpub: input.referrerNpub,
+          amountSats: input.amountSats,
+          status: "started",
+          paymentHash: input.paymentHash,
+          operatorNpub: input.operatorNpub ?? null,
+        },
+      });
+
+      return { ok: true, auditId: audit.id, earningIds };
+    });
+  } catch (error) {
+    if (isUniqueConflict(error)) {
+      return { ok: false, error: "INVOICE_ALREADY_SUBMITTED" };
+    }
+    if (error instanceof Error && error.message === "CLAIM_CONFLICT") {
+      return { ok: false, error: "PAYOUT_IN_PROGRESS" };
+    }
+    throw error;
+  }
+}
+
+export async function completeReferralPayoutAttempt(input: {
+  auditId: string;
+  earningIds: string[];
+  paymentHash: string;
+  paidAt: Date;
+}): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const updated = await tx.referralEarning.updateMany({
+      where: {
+        id: { in: input.earningIds },
+        payoutClaimHash: input.paymentHash,
+        status: "PENDING",
+      },
+      data: {
+        status: "PAID",
+        paidAt: input.paidAt,
+        payoutClaimHash: null,
+        payoutFailureReason: null,
+      },
+    });
+    if (updated.count !== input.earningIds.length) {
+      throw new Error("PAYOUT_LEDGER_MISMATCH");
+    }
+    await tx.referralPayoutAuditLog.update({
+      where: { id: input.auditId },
+      data: { status: "success", errorMessage: null },
+    });
+  });
+}
+
+export async function failReferralPayoutAttempt(input: {
+  auditId: string;
+  earningIds: string[];
+  paymentHash: string;
+  reason: string;
+}): Promise<void> {
+  const reason = input.reason.slice(0, 500);
+  await prisma.$transaction(async (tx) => {
+    const rows = await tx.referralEarning.findMany({
+      where: {
+        id: { in: input.earningIds },
+        payoutClaimHash: input.paymentHash,
+      },
+      select: { id: true, payoutAttemptCount: true },
+    });
+    for (const row of rows) {
+      const nextCount = row.payoutAttemptCount + 1;
+      await tx.referralEarning.update({
+        where: { id: row.id },
+        data: {
+          payoutClaimHash: null,
+          payoutAttemptCount: nextCount,
+          payoutFailureReason: reason,
+          status:
+            nextCount >= REFERRAL_PAYOUT_MAX_ATTEMPTS
+              ? ReferralEarningStatus.FAILED
+              : ReferralEarningStatus.PENDING,
+        },
+      });
+    }
+    await tx.referralPayoutAuditLog.update({
+      where: { id: input.auditId },
+      data: { status: "failed", errorMessage: reason },
+    });
+  });
+}
+
+function isUniqueConflict(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "P2002"
+  );
 }
 
 export async function findReferrerPayoutConfig(referrerNpub: string) {

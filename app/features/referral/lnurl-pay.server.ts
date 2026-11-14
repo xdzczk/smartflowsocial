@@ -1,7 +1,17 @@
+import { isAllowedOutboundUrl } from "~/lib/outbound-url.server";
+
 /**
  * Minimal LNURL pay: fetch a BOLT11 invoice for a given amount from an LNURL pay endpoint.
  * Supports payout_destination that is a URL returning LNURL pay JSON (callback, minSendable, maxSendable).
+ * Destinations and callbacks must be public HTTPS URLs. Redirects are not followed.
  */
+
+function payoutUrlAllowed(raw: string): boolean {
+  return isAllowedOutboundUrl(raw, {
+    allowInsecureHttp: process.env["NODE_ENV"] !== "production",
+    allowPrivate: process.env["REFERRAL_PAYOUT_ALLOW_PRIVATE_LNURL"] === "true",
+  });
+}
 
 export async function fetchInvoiceFromLnurlPay(
   url: string,
@@ -9,10 +19,15 @@ export async function fetchInvoiceFromLnurlPay(
 ): Promise<string | null> {
   const millisats = Math.round(amountSats * 1000);
   if (millisats < 1000) return null;
+  if (!payoutUrlAllowed(url)) return null;
 
   let meta: { callback?: string; minSendable?: number; maxSendable?: number };
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    const res = await fetch(url, {
+      redirect: "manual",
+      signal: AbortSignal.timeout(10000),
+    });
+    if (res.status >= 300 && res.status < 400) return null;
     if (!res.ok) return null;
     const data = (await res.json()) as unknown;
     if (typeof data !== "object" || data === null) return null;
@@ -22,7 +37,7 @@ export async function fetchInvoiceFromLnurlPay(
   }
 
   const callback = typeof meta.callback === "string" ? meta.callback : "";
-  if (!callback) return null;
+  if (!callback || !payoutUrlAllowed(callback)) return null;
 
   const min = typeof meta.minSendable === "number" ? meta.minSendable : 0;
   const max =
@@ -37,8 +52,10 @@ export async function fetchInvoiceFromLnurlPay(
 
   try {
     const payRes = await fetch(callbackUrl, {
+      redirect: "manual",
       signal: AbortSignal.timeout(10000),
     });
+    if (payRes.status >= 300 && payRes.status < 400) return null;
     if (!payRes.ok) return null;
     const payData = (await payRes.json()) as unknown;
     if (typeof payData !== "object" || payData === null) return null;

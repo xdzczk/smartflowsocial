@@ -4,6 +4,7 @@ import invariant from "tiny-invariant";
 import { getUserById } from "~/features/user";
 import type { User } from "~/features/user";
 import { env } from "~/lib/env.server";
+import { safeInternalPath } from "~/lib/safe-internal-path";
 
 import {
   createSession as createSessionRow,
@@ -164,7 +165,7 @@ export async function createUserSession({
 
   session.set(SESSION_ID_KEY, dbSession.id);
 
-  return redirect(redirectTo, {
+  return redirect(safeInternalPath(redirectTo), {
     headers: {
       "Set-Cookie": await sessionStorage.commitSession(session, {
         maxAge: remember

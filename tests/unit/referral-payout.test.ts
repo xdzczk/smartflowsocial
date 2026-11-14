@@ -6,16 +6,23 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockAggregatePendingCommissionByReferrer = vi.fn();
-const mockFindPendingEarningsForPayout = vi.fn();
 const mockFindPendingEarningsWithAttemptCount = vi.fn();
 const mockFindReferrerPayoutConfig = vi.fn();
 const mockGroupByReferrerPendingSats = vi.fn();
-const mockMarkEarningPaid = vi.fn();
-const mockMarkEarningPayoutAttempt = vi.fn();
+const mockBeginReferralPayout = vi.fn();
+const mockCompleteReferralPayout = vi.fn();
+const mockFailReferralPayout = vi.fn();
+const { payInvoice } = vi.hoisted(() => ({
+  payInvoice: vi.fn(),
+}));
 
 vi.mock("~/lib/env.server", () => ({
   get env() {
-    return { OWNER_NWC: "nostr+walletconnect://test" };
+    return {
+      OWNER_NWC: "nostr+walletconnect://test",
+      REFERRAL_PAYOUT_MAX_SATS: "1000000",
+      REFERRAL_PAYOUT_DAILY_CAP_SATS: "5000000",
+    };
   },
 }));
 
@@ -31,7 +38,29 @@ vi.mock("~/features/payments/data", () => ({
 
 vi.mock("@getalby/sdk", () => ({
   NWCClient: class {
-    payInvoice = vi.fn().mockResolvedValue(undefined);
+    payInvoice = payInvoice;
+  },
+}));
+
+vi.mock("~/features/referral/bolt11-invoice.server", () => ({
+  readBolt11ForPayout: (invoice: string) => {
+    if (invoice === "lnbc-malformed") {
+      return { ok: false, error: "Malformed BOLT11 invoice" };
+    }
+    if (invoice === "lnbc-amountless") {
+      return { ok: false, error: "Amountless BOLT11 invoices cannot be paid" };
+    }
+    if (invoice === "lnbc-one") {
+      return { ok: true, amountSats: 1, paymentHash: "11".repeat(32) };
+    }
+    if (invoice === "lnbc-huge") {
+      return {
+        ok: true,
+        amountSats: 50_000_000,
+        paymentHash: "bb".repeat(32),
+      };
+    }
+    return { ok: true, amountSats: 5000, paymentHash: "aa".repeat(32) };
   },
 }));
 
@@ -46,17 +75,17 @@ vi.mock("~/features/referral/referral-payout-audit.server", () => ({
 vi.mock("~/features/referral/repositories/referral-data.server", () => ({
   aggregatePendingCommissionByReferrer: (...args: unknown[]) =>
     mockAggregatePendingCommissionByReferrer(...args),
-  findPendingEarningsForPayout: (...args: unknown[]) =>
-    mockFindPendingEarningsForPayout(...args),
   findPendingEarningsWithAttemptCount: (...args: unknown[]) =>
     mockFindPendingEarningsWithAttemptCount(...args),
   findReferrerPayoutConfig: (...args: unknown[]) =>
     mockFindReferrerPayoutConfig(...args),
   groupByReferrerPendingSats: (...args: unknown[]) =>
     mockGroupByReferrerPendingSats(...args),
-  markEarningPaid: (...args: unknown[]) => mockMarkEarningPaid(...args),
-  markEarningPayoutAttempt: (...args: unknown[]) =>
-    mockMarkEarningPayoutAttempt(...args),
+  beginReferralPayout: (...args: unknown[]) => mockBeginReferralPayout(...args),
+  completeReferralPayoutAttempt: (...args: unknown[]) =>
+    mockCompleteReferralPayout(...args),
+  failReferralPayoutAttempt: (...args: unknown[]) =>
+    mockFailReferralPayout(...args),
 }));
 
 import {
@@ -72,17 +101,21 @@ describe("referral-payout", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    payInvoice.mockResolvedValue(undefined);
     mockAggregatePendingCommissionByReferrer.mockResolvedValue({
       _sum: { commissionSats: 5000 },
     });
-    mockFindPendingEarningsForPayout.mockResolvedValue([
-      { id: "e1", commissionSats: 3000 },
-      { id: "e2", commissionSats: 2000 },
-    ]);
     mockFindPendingEarningsWithAttemptCount.mockResolvedValue([
       { id: "e1", commissionSats: 3000, payoutAttemptCount: 0 },
       { id: "e2", commissionSats: 2000, payoutAttemptCount: 0 },
     ]);
+    mockBeginReferralPayout.mockResolvedValue({
+      ok: true,
+      auditId: "audit-1",
+      earningIds: ["e1", "e2"],
+    });
+    mockCompleteReferralPayout.mockResolvedValue(undefined);
+    mockFailReferralPayout.mockResolvedValue(undefined);
   });
 
   describe("getPendingBalanceSats", () => {
@@ -104,29 +137,144 @@ describe("referral-payout", () => {
   });
 
   describe("payReferrerWithInvoice", () => {
-    it("returns error when amount <= 0 or exceeds pending", async () => {
-      const r1 = await payReferrerWithInvoice(referrerNpub, "lnbc1", 0);
-      expect(r1.success).toBe(false);
-      expect(r1.error).toContain("Amount must be positive");
+    it("rejects a declared amount that does not match the invoice", async () => {
+      const result = await payReferrerWithInvoice(
+        referrerNpub,
+        "lnbc-one",
+        5000
+      );
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("does not match");
+      expect(payInvoice).not.toHaveBeenCalled();
+      expect(mockBeginReferralPayout).not.toHaveBeenCalled();
+    });
 
+    it("rejects a 1 sat declaration when the invoice is larger", async () => {
+      mockAggregatePendingCommissionByReferrer.mockResolvedValue({
+        _sum: { commissionSats: 50_000_000 },
+      });
+      const result = await payReferrerWithInvoice(referrerNpub, "lnbc-huge", 1);
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("does not match");
+      expect(payInvoice).not.toHaveBeenCalled();
+    });
+
+    it("rejects amountless and malformed invoices before NWC", async () => {
+      const amountless = await payReferrerWithInvoice(
+        referrerNpub,
+        "lnbc-amountless",
+        5000
+      );
+      expect(amountless.success).toBe(false);
+      expect(amountless.error).toContain("Amountless");
+
+      const malformed = await payReferrerWithInvoice(
+        referrerNpub,
+        "lnbc-malformed",
+        5000
+      );
+      expect(malformed.success).toBe(false);
+      expect(malformed.error).toContain("Malformed");
+      expect(payInvoice).not.toHaveBeenCalled();
+    });
+
+    it("returns error when amount exceeds pending balance", async () => {
       mockAggregatePendingCommissionByReferrer.mockResolvedValue({
         _sum: { commissionSats: 100 },
       });
-      const r2 = await payReferrerWithInvoice(referrerNpub, "lnbc1", 500);
-      expect(r2.success).toBe(false);
-      expect(r2.error).toContain("not exceed pending");
+      const result = await payReferrerWithInvoice(
+        referrerNpub,
+        "lnbc123",
+        5000
+      );
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("not exceed pending");
+      expect(payInvoice).not.toHaveBeenCalled();
     });
 
-    it("marks earnings as paid on successful payInvoice", async () => {
+    it("does not pay when a payout is already in progress", async () => {
+      mockBeginReferralPayout.mockResolvedValue({
+        ok: false,
+        error: "PAYOUT_IN_PROGRESS",
+      });
+      const result = await payReferrerWithInvoice(
+        referrerNpub,
+        "lnbc123",
+        5000
+      );
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("already in progress");
+      expect(payInvoice).not.toHaveBeenCalled();
+    });
+
+    it("treats an already paid invoice as success without paying again", async () => {
+      mockBeginReferralPayout.mockResolvedValue({
+        ok: false,
+        error: "ALREADY_PAID",
+      });
       const result = await payReferrerWithInvoice(
         referrerNpub,
         "lnbc123",
         5000
       );
       expect(result.success).toBe(true);
-      expect(mockMarkEarningPaid).toHaveBeenCalledTimes(2);
-      expect(mockMarkEarningPaid).toHaveBeenCalledWith("e1", expect.any(Date));
-      expect(mockMarkEarningPaid).toHaveBeenCalledWith("e2", expect.any(Date));
+      expect(payInvoice).not.toHaveBeenCalled();
+    });
+
+    it("rejects a resubmitted invoice that already failed or started", async () => {
+      mockBeginReferralPayout.mockResolvedValue({
+        ok: false,
+        error: "INVOICE_ALREADY_SUBMITTED",
+      });
+      const result = await payReferrerWithInvoice(
+        referrerNpub,
+        "lnbc123",
+        5000
+      );
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("already submitted");
+      expect(payInvoice).not.toHaveBeenCalled();
+    });
+
+    it("rejects invoices above the per-payment cap", async () => {
+      const result = await payReferrerWithInvoice(
+        referrerNpub,
+        "lnbc-huge",
+        50_000_000
+      );
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("per-payment cap");
+      expect(payInvoice).not.toHaveBeenCalled();
+    });
+
+    it("pays the invoice and completes the ledger on success", async () => {
+      const result = await payReferrerWithInvoice(
+        referrerNpub,
+        "lnbc123",
+        5000
+      );
+      expect(result.success).toBe(true);
+      expect(payInvoice).toHaveBeenCalledWith({ invoice: "lnbc123" });
+      expect(mockCompleteReferralPayout).toHaveBeenCalledWith(
+        expect.objectContaining({
+          auditId: "audit-1",
+          earningIds: ["e1", "e2"],
+          paymentHash: "aa".repeat(32),
+        })
+      );
+    });
+
+    it("records the wallet failure and does not complete the ledger", async () => {
+      payInvoice.mockRejectedValue(new Error("nwc rejected"));
+      const result = await payReferrerWithInvoice(
+        referrerNpub,
+        "lnbc123",
+        5000
+      );
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("nwc rejected");
+      expect(mockFailReferralPayout).toHaveBeenCalled();
+      expect(mockCompleteReferralPayout).not.toHaveBeenCalled();
     });
   });
 

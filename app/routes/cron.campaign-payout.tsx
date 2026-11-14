@@ -1,21 +1,32 @@
 /**
- * Cron: trusted autopay for contests + giveaways.
- *
- * Eligibility:
- * - campaign is LOCKED (or payout-in-progress for contests)
- * - payoutAutoRunEnabled is true
- * - payoutWalletMode is nwc_creator
- * - contest end has passed (for contests)
- *
- * Safety:
- * - skips when a run is already "running" and recently started (lease-like guard)
+ * Cron: trusted autopay for contests and giveaways.
+ * POST is preferred. GET remains accepted for schedulers that already send
+ * `X-Cron-Secret` or `Authorization: Bearer`.
  */
 
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 
 import { runCampaignPayoutAutorunCron } from "~/features/payments";
+import { cronJson, denyCronUnlessAuthorized } from "~/lib/cron-http.server";
 
-export async function loader() {
+async function runCampaignCron(request: Request) {
+  const denied = denyCronUnlessAuthorized(request);
+  if (denied) return denied;
   const result = await runCampaignPayoutAutorunCron();
-  return json(result, { status: 200 });
+  return cronJson(result);
+}
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  return runCampaignCron(request);
+}
+
+export async function action({ request }: ActionFunctionArgs) {
+  if (request.method !== "POST") {
+    return json(
+      { error: "Method not allowed" },
+      { status: 405, headers: { "Cache-Control": "no-store" } }
+    );
+  }
+  return runCampaignCron(request);
 }

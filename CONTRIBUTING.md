@@ -35,6 +35,29 @@ efficient, and organized codebase.
    git remote add upstream https://github.com/xdzczk/smartflowsocial
    ```
 
+Companion repositories, all Unlicense, all optional except the publisher when you want posts to
+reach relays:
+
+| Piece        | Repository                                             |
+| ------------ | ------------------------------------------------------ |
+| Publisher    | https://github.com/xdzczk/smartflowsocial-publisher    |
+| Blastr       | https://github.com/xdzczk/smartflowsocial-blastr       |
+| Blossom      | https://github.com/xdzczk/smartflowsocial-blossom      |
+| Cache worker | https://github.com/xdzczk/smartflowsocial-cache-worker |
+
+NostrMash is separate infrastructure. The scheduler does not require it.
+
+Issues labeled `good first issue` are the place to start. If that label is empty, documentation
+corrections, fixture-only tests, and typo fixes in `docs/` are safe first changes. Do not open a
+first PR against payout, cron authentication, or wallet code.
+
+Use a GitHub noreply address for commits you push to these public repositories. See
+[commit metadata](docs/privacy/commit-metadata.md). There is no contributor license agreement. The
+Unlicense applies to the code you contribute.
+
+The name SmartFlowSocial and the logo are not part of the Unlicense grant. See
+[TRADEMARK.md](TRADEMARK.md).
+
 ---
 
 ## Project Setup

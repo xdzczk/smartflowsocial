@@ -446,7 +446,7 @@ See [Troubleshooting Guide](../troubleshooting/common-issues.md) for more soluti
 
 ## Related Documentation
 
-- [Quick Start Guide](./quickstart.md) - 5-minute setup
+- [Quick Start Guide](./quickstart.md) - local setup
 - [Configuration Reference](../reference/configuration.md) - All configuration options
 - [Architecture Overview](./architecture.md) - System design
 - [Deployment Guide](../guides/deployment.md) - Production deployment

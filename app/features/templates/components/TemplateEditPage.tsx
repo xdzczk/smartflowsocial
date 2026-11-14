@@ -21,6 +21,7 @@ import {
 } from "~/features/posts/ui";
 import { useFormattedDate } from "~/lib/hooks/useFormattedDate";
 import { INLINE_ICON_STROKE } from "~/lib/icon-constants";
+import { safeInternalPath } from "~/lib/safe-internal-path";
 
 type LoaderData = unknown;
 type Template = Record<string, unknown> & {
@@ -116,7 +117,9 @@ export default function TemplateEditPage() {
       "redirectTo" in fetcherData &&
       typeof fetcherData.redirectTo === "string"
     ) {
-      navigate(fetcherData.redirectTo);
+      navigate(
+        safeInternalPath(fetcherData.redirectTo, "/dashboard/templates")
+      );
     }
   }, [deleteTemplateFetcher.data, navigate]);
 

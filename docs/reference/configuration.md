@@ -387,12 +387,16 @@ characters are stripped. Watch **capital `I` vs lowercase `l`** when pasting bec
 
 ### REFERRAL_MANUAL_PAYOUT_SECRET
 
-Optional secret for `POST /api/referral/manual-payout` (JSON body with `referrer_npub`, `bolt11`,
-`amount_sats`). When unset, the route does not require a header check (avoid in production unless
-the endpoint is otherwise protected).
+Required in production. `POST /api/referral/manual-payout` returns 401 when this is unset or wrong.
+Send it as `X-Referral-Payout-Secret`. Generate one with `openssl rand -base64 32`.
 
-The signed-in operator UI at `/dashboard/admin` does **not** use this secret; it relies on
-`ADMIN_NPUBS` and session auth.
+The invoice amount must equal `amount_sats`. Amountless invoices and invoices larger than the
+declared amount are rejected before the wallet is called. Successful payouts are capped at
+`REFERRAL_PAYOUT_MAX_SATS` (default 1,000,000) per invoice and `REFERRAL_PAYOUT_DAILY_CAP_SATS`
+(default 5,000,000) per UTC day. Those caps do not replace a spending limit on the NWC wallet.
+
+The signed-in operator UI at `/dashboard/admin` does not use this secret. It relies on `ADMIN_NPUBS`
+and session auth, and it calls the same invoice checks.
 
 ---
 
@@ -408,9 +412,17 @@ sweep when you want to trigger it by hand.
 
 ### CRON_SECRET
 
-Optional secret for `GET` or `POST /cron/checksubscription`. Send it as `X-Cron-Secret` or
-`Authorization: Bearer <secret>`. When unset, the route does not check a header (set this in
-production).
+Required in production for every `/cron/*` route: subscription renewal, post analytics, campaign
+autopay, referral payout, and publish-ack cleanup. Send it as `X-Cron-Secret` or
+`Authorization: Bearer <secret>`. When the secret is unset, those routes return 401. They do not run
+the job. Generate one with `openssl rand -base64 32`.
+
+POST is the preferred method. GET is still accepted when the secret matches, so an existing
+scheduler can keep its URL and add the header. Do not put the secret in a query string.
+
+The worker still runs subscription renewal and post analytics on their interval settings. Those
+in-process sweeps do not use this HTTP secret. Campaign autopay, referral payout, and ack cleanup
+run only when something calls their cron route.
 
 ---
 
@@ -906,35 +918,38 @@ when `PRIMAL_CACHING_URL` is unset. The cache worker itself reads NostrMash befo
 
 Read in `app/lib/env.server.ts` and not given their own section above.
 
-| Variable                           | Default                     | Purpose                                                                                       |
-| ---------------------------------- | --------------------------- | --------------------------------------------------------------------------------------------- |
-| `PORT`                             | `3000`                      | HTTP listen port.                                                                             |
-| `HOST`                             | `0.0.0.0`                   | HTTP listen host.                                                                             |
-| `NOSTR_PUBLISHER_API_TOKEN`        | unset                       | Sent as `API-TOKEN` when the publisher requires it.                                           |
-| `NOSTRMASH_BASE_URL`               | `https://api.nostrmash.com` | NostrMash HTTP origin.                                                                        |
-| `NOSTRMASH_API_TOKEN`              | unset                       | Bearer token for NostrMash, only when that deployment requires one.                           |
-| `BLASTR_ADMIN_URL`                 | unset                       | Blastr origin. Unset disables entitlement and policy sync.                                    |
-| `BLASTR_ADMIN_API_TOKEN`           | unset                       | Sent as `X-API-TOKEN` to Blastr admin routes.                                                 |
-| `OWNER_NWC_RELAY`                  | unset                       | One relay URL that overrides relays embedded in `OWNER_NWC`.                                  |
-| `OWNER_NWC_RELAYS`                 | unset                       | Comma-separated relay override. Used before `OWNER_NWC_RELAY`.                                |
-| `POST_ANALYTICS_INTERVAL_MINUTES`  | `60`                        | Worker sweep interval. `0` disables it.                                                       |
-| `POST_ANALYTICS_BATCH_SIZE`        | `40`                        | Notes per analytics sweep.                                                                    |
-| `POST_ANALYTICS_CONCURRENCY`       | `4`                         | Concurrent NostrMash calls inside one sweep.                                                  |
-| `PRIMAL_HTTP_TIMEOUT_MS`           | `8000`                      | Per-attempt timeout for the HTTP Primal proxy.                                                |
-| `PRIMAL_HTTP_MAX_RETRIES`          | `0`                         | Extra retries after the first HTTP Primal attempt.                                            |
-| `RELAY_HEALTH_STORE`               | `memory`                    | `memory` or `redis`.                                                                          |
-| `RUNWAY_LOW_CRON_INTERVAL_MINUTES` | `60`                        | Runway-low sweep interval. `0` disables the worker scheduler.                                 |
-| `DISABLE_RATE_LIMIT`               | unset                       | `true` disables rate limits (tests and local debugging).                                      |
-| `SIGNING_MULTI_SLOT`               | unset                       | `true` keeps more than one in-flight signing attempt. Exposed to the browser as `window.ENV`. |
-| `PUBLIC_STATS_ENABLED`             | enabled                     | `false` disables `GET /api/public/stats` and the avatar proxy.                                |
-| `LANDING_STATS_ORIGINS`            | `https://smartflow.social`  | Extra comma-separated CORS origins for public stats.                                          |
-| `REFERRAL_LANDING_URL`             | `https://smartflow.social`  | Base URL used in referral links.                                                              |
-| `FLY_REGION`                       | unset                       | Set by Fly.io. Returned on responses as `x-fly-region`.                                       |
-| `PRIMARY_REGION`                   | unset                       | Fly primary region. With `FLY_REGION`, used to route database connections.                    |
-| `ENABLE_SOURCE_MAPS`               | unset                       | `true` enables source maps outside production. Production always enables them.                |
-| `E2E_TEST`                         | unset                       | `true` fills missing required variables with test defaults.                                   |
-| `CYPRESS`                          | unset                       | Set by Cypress. Bypasses rate limits during end-to-end tests.                                 |
-| `COOLIFY_URL`                      | unset                       | Used as an allowed origin when `APP_URL` is unset.                                            |
+| Variable                                | Default                     | Purpose                                                                                       |
+| --------------------------------------- | --------------------------- | --------------------------------------------------------------------------------------------- |
+| `PORT`                                  | `3000`                      | HTTP listen port.                                                                             |
+| `HOST`                                  | `0.0.0.0`                   | HTTP listen host.                                                                             |
+| `NOSTR_PUBLISHER_API_TOKEN`             | unset                       | Sent as `API-TOKEN`. Required in production unless public publisher mode is explicit.         |
+| `NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED` | unset                       | `true` only when the publisher is intentionally public.                                       |
+| `REFERRAL_PAYOUT_MAX_SATS`              | `1000000`                   | Maximum sats in one referral invoice.                                                         |
+| `REFERRAL_PAYOUT_DAILY_CAP_SATS`        | `5000000`                   | Maximum sats marked successful in one UTC day.                                                |
+| `NOSTRMASH_BASE_URL`                    | `https://api.nostrmash.com` | NostrMash HTTP origin.                                                                        |
+| `NOSTRMASH_API_TOKEN`                   | unset                       | Bearer token for NostrMash, only when that deployment requires one.                           |
+| `BLASTR_ADMIN_URL`                      | unset                       | Blastr origin. Unset disables entitlement and policy sync.                                    |
+| `BLASTR_ADMIN_API_TOKEN`                | unset                       | Sent as `X-API-TOKEN` to Blastr admin routes.                                                 |
+| `OWNER_NWC_RELAY`                       | unset                       | One relay URL that overrides relays embedded in `OWNER_NWC`.                                  |
+| `OWNER_NWC_RELAYS`                      | unset                       | Comma-separated relay override. Used before `OWNER_NWC_RELAY`.                                |
+| `POST_ANALYTICS_INTERVAL_MINUTES`       | `60`                        | Worker sweep interval. `0` disables it.                                                       |
+| `POST_ANALYTICS_BATCH_SIZE`             | `40`                        | Notes per analytics sweep.                                                                    |
+| `POST_ANALYTICS_CONCURRENCY`            | `4`                         | Concurrent NostrMash calls inside one sweep.                                                  |
+| `PRIMAL_HTTP_TIMEOUT_MS`                | `8000`                      | Per-attempt timeout for the HTTP Primal proxy.                                                |
+| `PRIMAL_HTTP_MAX_RETRIES`               | `0`                         | Extra retries after the first HTTP Primal attempt.                                            |
+| `RELAY_HEALTH_STORE`                    | `memory`                    | `memory` or `redis`.                                                                          |
+| `RUNWAY_LOW_CRON_INTERVAL_MINUTES`      | `60`                        | Runway-low sweep interval. `0` disables the worker scheduler.                                 |
+| `DISABLE_RATE_LIMIT`                    | unset                       | `true` disables rate limits (tests and local debugging).                                      |
+| `SIGNING_MULTI_SLOT`                    | unset                       | `true` keeps more than one in-flight signing attempt. Exposed to the browser as `window.ENV`. |
+| `PUBLIC_STATS_ENABLED`                  | enabled                     | `false` disables `GET /api/public/stats` and the avatar proxy.                                |
+| `LANDING_STATS_ORIGINS`                 | `https://smartflow.social`  | Extra comma-separated CORS origins for public stats.                                          |
+| `REFERRAL_LANDING_URL`                  | `https://smartflow.social`  | Base URL used in referral links.                                                              |
+| `FLY_REGION`                            | unset                       | Set by Fly.io. Returned on responses as `x-fly-region`.                                       |
+| `PRIMARY_REGION`                        | unset                       | Fly primary region. With `FLY_REGION`, used to route database connections.                    |
+| `ENABLE_SOURCE_MAPS`                    | unset                       | `true` enables source maps outside production. Production always enables them.                |
+| `E2E_TEST`                              | unset                       | `true` fills missing required variables with test defaults.                                   |
+| `CYPRESS`                               | unset                       | Set by Cypress. Bypasses rate limits during end-to-end tests.                                 |
+| `COOLIFY_URL`                           | unset                       | Used as an allowed origin when `APP_URL` is unset.                                            |
 
 ---
 

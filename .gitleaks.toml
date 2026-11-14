@@ -1,0 +1,15 @@
+title = "SmartFlowSocial allowlist"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Public AWS documentation example and the Cypress fixture key"
+regexes = [
+  '''AKIAIOSFODNN7EXAMPLE''',
+]
+paths = [
+  '''tests/e2e/support/nostr-test-keys\.ts''',
+  '''tests/utils/nostr-mock\.ts''',
+  '''cypress/support/nostr-test-keys\.ts''',
+]

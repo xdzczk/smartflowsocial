@@ -6,7 +6,7 @@
 import { NWCClient } from "@getalby/sdk";
 
 import { getOwnerNwcWithRelayOverrides } from "~/features/payments/data";
-import { ReferralEarningStatus } from "~/features/referral/data/referral-prisma-types.server";
+import { readBolt11ForPayout } from "~/features/referral/bolt11-invoice.server";
 import { fetchInvoiceFromLnurlPay } from "~/features/referral/lnurl-pay.server";
 import { createReferralPayoutAuditLog } from "~/features/referral/referral-payout-audit.server";
 import { env } from "~/lib/env.server";
@@ -14,15 +14,25 @@ import { logError } from "~/lib/error-logger.server";
 
 import {
   aggregatePendingCommissionByReferrer,
-  findPendingEarningsForPayout,
+  beginReferralPayout,
+  completeReferralPayoutAttempt,
+  failReferralPayoutAttempt,
   findPendingEarningsWithAttemptCount,
   findReferrerPayoutConfig,
   groupByReferrerPendingSats,
-  markEarningPaid,
-  markEarningPayoutAttempt,
 } from "./repositories/referral-data.server";
 
-const REFERRAL_PAYOUT_MAX_ATTEMPTS = 5;
+const DEFAULT_MAX_INVOICE_SATS = 1_000_000;
+const DEFAULT_DAILY_CAP_SATS = 5_000_000;
+
+const BEGIN_ERRORS: Record<string, string> = {
+  INVOICE_ALREADY_SUBMITTED:
+    "This invoice was already submitted. Use a new invoice.",
+  DAILY_CAP: "Daily referral payout cap exceeded",
+  PAYOUT_IN_PROGRESS: "A payout for this referrer is already in progress",
+  AMOUNT_NOT_EXACT:
+    "Amount must equal a whole prefix of the oldest pending earnings",
+};
 
 export async function getPendingBalanceSats(
   referrerNpub: string
@@ -31,11 +41,41 @@ export async function getPendingBalanceSats(
   return result._sum.commissionSats ?? 0;
 }
 
+export function referralPayoutLimits(
+  source: {
+    REFERRAL_PAYOUT_MAX_SATS?: string;
+    REFERRAL_PAYOUT_DAILY_CAP_SATS?: string;
+  } = env
+): { maxInvoiceSats: number; dailyCapSats: number } {
+  return {
+    maxInvoiceSats: positiveInt(
+      source.REFERRAL_PAYOUT_MAX_SATS,
+      DEFAULT_MAX_INVOICE_SATS
+    ),
+    dailyCapSats: positiveInt(
+      source.REFERRAL_PAYOUT_DAILY_CAP_SATS,
+      DEFAULT_DAILY_CAP_SATS
+    ),
+  };
+}
+
+function positiveInt(value: string | undefined, fallback: number): number {
+  if (value === undefined || value.trim() === "") return fallback;
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 1) return fallback;
+  return parsed;
+}
+
+function startOfUtcDay(now = new Date()): Date {
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  );
+}
+
 /**
- * Pay a BOLT11 invoice with owner NWC and mark referrer's oldest pending earnings as paid.
- * amountSats must match the invoice amount and must be <= pending balance.
- * On success: marks earnings (oldest first) totaling amountSats as PAID and sets paid_at.
- * On failure: increments payout_attempt_count, sets payout_failure_reason; if attempt >= max, sets status FAILED.
+ * Pay a BOLT11 invoice with the owner NWC wallet and mark the matching pending
+ * earnings paid. The invoice amount must equal `amountSats`. A smaller declared
+ * amount cannot authorize a larger invoice.
  */
 export async function payReferrerWithInvoice(
   referrerNpub: string,
@@ -46,108 +86,98 @@ export async function payReferrerWithInvoice(
     operatorNpub?: string;
   }
 ): Promise<{ success: boolean; error?: string }> {
-  const pending = await getPendingBalanceSats(referrerNpub);
-  if (amountSats <= 0 || amountSats > pending) {
-    if (audit) {
-      await createReferralPayoutAuditLog({
-        channel: audit.channel,
-        referrerNpub,
-        amountSats,
-        status: "failed",
-        errorMessage: "Amount must be positive and not exceed pending balance",
-        operatorNpub: audit.operatorNpub ?? null,
-      });
-    }
-    return {
-      success: false,
-      error: "Amount must be positive and not exceed pending balance",
-    };
+  const channel = audit?.channel ?? "manual";
+  const operatorNpub = audit?.operatorNpub;
+
+  const reject = async (errorMessage: string) => {
+    await createReferralPayoutAuditLog({
+      channel,
+      referrerNpub,
+      amountSats: Number.isFinite(amountSats) ? amountSats : null,
+      status: "failed",
+      errorMessage,
+      operatorNpub: operatorNpub ?? null,
+    });
+    return { success: false as const, error: errorMessage };
+  };
+
+  const invoice = readBolt11ForPayout(bolt11);
+  if (!invoice.ok) return reject(invoice.error);
+  if (invoice.amountSats !== amountSats) {
+    return reject(
+      "Invoice amount does not match the declared amount. Refusing to pay."
+    );
   }
 
-  const ownerNwc = env.OWNER_NWC;
-  if (!ownerNwc) {
-    return { success: false, error: "OWNER_NWC not configured" };
+  const limits = referralPayoutLimits();
+  if (amountSats > limits.maxInvoiceSats) {
+    return reject(
+      `Invoice exceeds the per-payment cap of ${limits.maxInvoiceSats} sats`
+    );
+  }
+
+  const pending = await getPendingBalanceSats(referrerNpub);
+  if (amountSats < 1 || amountSats > pending) {
+    return reject("Amount must be positive and not exceed pending balance");
+  }
+
+  const ownerNwc = env.OWNER_NWC?.trim();
+  if (!ownerNwc) return reject("OWNER_NWC not configured");
+
+  const begun = await beginReferralPayout({
+    referrerNpub,
+    amountSats,
+    paymentHash: invoice.paymentHash,
+    channel,
+    operatorNpub: operatorNpub ?? null,
+    dailyCapSats: limits.dailyCapSats,
+    dayStart: startOfUtcDay(),
+  });
+  if (!begun.ok) {
+    if (begun.error === "ALREADY_PAID") return { success: true };
+    return reject(BEGIN_ERRORS[begun.error] ?? "Payout could not be started");
   }
 
   const { credentials } = getOwnerNwcWithRelayOverrides(ownerNwc);
   const nwcClient = new NWCClient({ nostrWalletConnectUrl: credentials });
-
   try {
     await nwcClient.payInvoice({ invoice: bolt11 });
   } catch (error) {
-    logError(error instanceof Error ? error : new Error(String(error)), {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    logError(error instanceof Error ? error : new Error(errMsg), {
       referrerNpub,
       message: "Referral payout: payInvoice failed",
     });
-    await markPayoutAttemptFailed(
+    await failReferralPayoutAttempt({
+      auditId: begun.auditId,
+      earningIds: begun.earningIds,
+      paymentHash: invoice.paymentHash,
+      reason: errMsg,
+    });
+    return { success: false, error: errMsg };
+  }
+
+  try {
+    await completeReferralPayoutAttempt({
+      auditId: begun.auditId,
+      earningIds: begun.earningIds,
+      paymentHash: invoice.paymentHash,
+      paidAt: new Date(),
+    });
+  } catch (error) {
+    logError(error instanceof Error ? error : new Error(String(error)), {
       referrerNpub,
-      amountSats,
-      String(error instanceof Error ? error.message : error)
-    );
-    const errMsg = error instanceof Error ? error.message : String(error);
-    if (audit) {
-      await createReferralPayoutAuditLog({
-        channel: audit.channel,
-        referrerNpub,
-        amountSats,
-        status: "failed",
-        errorMessage: errMsg,
-        operatorNpub: audit.operatorNpub ?? null,
-      });
-    }
+      message:
+        "Referral payout: wallet payment succeeded but the ledger update failed",
+    });
     return {
       success: false,
-      error: errMsg,
+      error:
+        "Payment may have been sent but the ledger update failed. Do not retry this invoice.",
     };
   }
 
-  const now = new Date();
-  const pendingRows = await findPendingEarningsForPayout(referrerNpub);
-
-  let remaining = amountSats;
-  for (const row of pendingRows) {
-    if (remaining <= 0) break;
-    if (row.commissionSats <= 0) continue;
-    await markEarningPaid(row.id, now);
-    remaining -= row.commissionSats;
-  }
-
-  if (audit) {
-    await createReferralPayoutAuditLog({
-      channel: audit.channel,
-      referrerNpub,
-      amountSats,
-      status: "success",
-      operatorNpub: audit.operatorNpub ?? null,
-    });
-  }
-
   return { success: true };
-}
-
-async function markPayoutAttemptFailed(
-  referrerNpub: string,
-  amountSats: number,
-  reason: string
-): Promise<void> {
-  const pendingRows = await findPendingEarningsWithAttemptCount(referrerNpub);
-
-  let remaining = amountSats;
-  for (const row of pendingRows) {
-    if (remaining <= 0) break;
-    const mark = Math.min(row.commissionSats, remaining);
-    if (mark <= 0) continue;
-    const nextCount = row.payoutAttemptCount + 1;
-    await markEarningPayoutAttempt(row.id, {
-      payoutAttemptCount: nextCount,
-      payoutFailureReason: reason,
-      status:
-        nextCount >= REFERRAL_PAYOUT_MAX_ATTEMPTS
-          ? ReferralEarningStatus.FAILED
-          : ReferralEarningStatus.PENDING,
-    });
-    remaining -= row.commissionSats;
-  }
 }
 
 export async function getEarningsForPayout(

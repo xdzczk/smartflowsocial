@@ -9,6 +9,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ## [Unreleased]
 
+No GitHub release or tag exists yet. The old `[1.0.0] - 2024-01-01` heading below was a placeholder.
+It was not a published release. The first real release should be tagged `v1.0.0` only after the
+owner reviews this tree. Do not treat `package.json` version `1.0.0` as a shipped release until that
+tag exists.
+
+### Security
+
+- Cron routes fail closed when `CRON_SECRET` is missing or wrong.
+- Manual referral payout fails closed, checks the BOLT11 amount against the declared amount, and
+  refuses amountless, expired, or mismatched invoices before calling the wallet.
+- Referral payouts claim earnings under a database lock and will not pay the same invoice twice.
+- Production boot requires the cron secret, the manual payout secret, and a publisher token unless
+  public publisher mode is explicit.
+
 ### Added
 
 - Blossom upload integration: token-based uploads, commit-batch, quota/usage tracking.
@@ -42,7 +56,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
-## [1.0.0] - 2024-01-01
+## Draft notes previously labeled 1.0.0
+
+These items were listed under a 1 January 2024 release heading. That release was not tagged.
 
 ### Added
 

@@ -24,9 +24,19 @@ __MACOSX
 
 # Coverage reports
 /coverage
-/.nyc_output# Performance test results
-tests/performance/results/# Test results
-test-results/# Build artifacts
+/.nyc_output
+
+# Performance test results
+tests/performance/results/
+
+# Test results
+test-results/
+
+# Local agent diagnostics
+.cursor/*.log
+.cursor/debug-*.log
+
+# Build artifacts
 eslint-report.json
 *.tsbuildinfo
 .tsbuildinfo

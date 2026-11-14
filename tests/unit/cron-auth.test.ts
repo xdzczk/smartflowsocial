@@ -7,8 +7,14 @@ function requestWith(headers: Record<string, string>): Request {
 }
 
 describe("cron request auth", () => {
-  it("allows the call when no secret is configured", () => {
-    expect(cronRequestAuthorized(undefined, undefined)).toBe(true);
+  it("rejects the call when no secret is configured", () => {
+    expect(cronRequestAuthorized(undefined, undefined)).toBe(false);
+    expect(cronRequestAuthorized(requestWith({}), "")).toBe(false);
+    expect(cronRequestAuthorized(requestWith({}), "   ")).toBe(false);
+  });
+
+  it("rejects a request that omits the secret", () => {
+    expect(cronRequestAuthorized(requestWith({}), "secret")).toBe(false);
   });
 
   it("rejects a missing request when a secret is configured", () => {
