@@ -8,17 +8,17 @@ It does not use the hosted service, a paid account, or a production relay.
 
 ## What you are starting
 
-| Piece                                    | Required for the scheduler?       | How it starts                                                                                                                        |
-| ---------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| This app and its worker                  | Yes                               | `pnpm dev` starts both. Do not also run `pnpm start:worker`.                                                                         |
-| PostgreSQL and Redis                     | Yes                               | `pnpm docker`                                                                                                                        |
+| Piece                                    | Required for the scheduler?       | How it starts                                                                                                                          |
+| ---------------------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| This app and its worker                  | Yes                               | `pnpm dev` starts both. Do not also run `pnpm start:worker`.                                                                           |
+| PostgreSQL and Redis                     | Yes                               | `pnpm docker`                                                                                                                          |
 | HTTP publisher                           | Yes, or posts never leave the app | Real worker: [smartflowsocial-publisher](https://github.com/xdzczk/smartflowsocial-publisher). Laptop stand-in: `pnpm publisher:local` |
-| S3-compatible storage                    | Only for uploads                  | Environment variables in `example.env`                                                                                               |
-| Blossom, Blastr, cache worker, NostrMash | No                                | Separate repositories. Leave their variables empty.                                                                                  |
-| Lightning, NWC, referral payouts         | No                                | Leave `REFERRAL_PAYOUTS_ENABLED=false`. The payout routes stay closed.                                                               |
+| S3-compatible storage                    | Only for uploads                  | Environment variables in `example.env`                                                                                                 |
+| Blossom, Blastr, cache worker, NostrMash | No                                | Separate repositories. Leave their variables empty.                                                                                    |
+| Lightning, NWC, referral payouts         | No                                | Leave `REFERRAL_PAYOUTS_ENABLED=false`. The payout routes stay closed.                                                                 |
 
-`pnpm publisher:local` checks Nostr signatures and returns success. It does not connect to relays. Use
-the Cloudflare publisher when you want events on the network. For that process set
+`pnpm publisher:local` checks Nostr signatures and returns success. It does not connect to relays.
+Use the Cloudflare publisher when you want events on the network. For that process set
 `ALLOW_PRIVATE_RELAYS=true` only if the relay is on your own machine.
 
 Production is different. Run `pnpm start` and `pnpm start:worker` as two processes after

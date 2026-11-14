@@ -28,8 +28,8 @@ First public alpha. `package.json` is `0.1.0-alpha.0` and `"private": true`. The
 
 ### Added
 
-- Local signature-checking publisher (`pnpm publisher:local`) and `pnpm smoke:publish` for a scheduled
-  signed event against Postgres, without a public relay.
+- Local signature-checking publisher (`pnpm publisher:local`) and `pnpm smoke:publish` for a
+  scheduled signed event against Postgres, without a public relay.
 - Weekly full Cypress core run, and a CI summary that labels k6 fixture runs separately from
   application health and staging capacity tests.
 - Blossom upload integration: token-based uploads, commit-batch, quota/usage tracking.
