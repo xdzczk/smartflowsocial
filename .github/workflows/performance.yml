@@ -1,13 +1,23 @@
 name: Load Tests (k6)
 
-# The vitest performance suite runs in ci.yml on every push/PR. This workflow
-# only runs the k6 load tests against staging, nightly and on demand.
+# Vitest performance tests run in ci.yml. This workflow is the k6 harness.
+# High-load scripts run only against an explicit non-production staging URL.
+# Without one, the workflow boots a local health fixture and runs a 15-second smoke.
 
 on:
   schedule:
-    # Daily at 02:00 UTC
     - cron: "0 2 * * *"
   workflow_dispatch:
+    inputs:
+      base_url:
+        description: Staging origin. Leave empty to use the local fixture.
+        required: false
+        type: string
+      run_full:
+        description: Run the full k6 suite. Requires a staging URL and a session cookie.
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -16,10 +26,11 @@ jobs:
   load-tests:
     name: k6 load tests
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 30
     env:
-      BASE_URL: ${{ secrets.STAGING_URL || 'http://localhost:3000' }}
-
+      REQUESTED_BASE_URL: ${{ github.event.inputs.base_url || secrets.STAGING_URL }}
+      RUN_FULL: ${{ github.event.inputs.run_full }}
+      K6_SESSION_COOKIE_VALUE: ${{ secrets.K6_SESSION_COOKIE_VALUE }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -42,31 +53,46 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y k6
 
-      - name: Prepare performance results directory
-        run: mkdir -p tests/performance/results
+      - name: Choose target
+        id: target
+        run: |
+          set -euo pipefail
+          if [ -n "${REQUESTED_BASE_URL}" ]; then
+            echo "BASE_URL=${REQUESTED_BASE_URL}" >> "$GITHUB_ENV"
+            echo "mode=remote" >> "$GITHUB_OUTPUT"
+          else
+            node scripts/load-test-fixture.mjs &
+            echo $! > /tmp/load-fixture.pid
+            echo "BASE_URL=http://127.0.0.1:3999" >> "$GITHUB_ENV"
+            echo "mode=fixture" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Run API endpoints load test
-        run: k6 run --summary-export tests/performance/results/api-endpoints-summary.json tests/performance/api-endpoints.js
+      - name: Refuse production targets
+        run: node scripts/assert-load-test-target.mjs
 
-      - name: Run bulk operations load test
-        run: k6 run --summary-export tests/performance/results/bulk-operations-summary.json tests/performance/bulk-operations.js
+      - name: Smoke load
+        run: k6 run tests/performance/smoke-load.js
 
-      - name: Run loader performance test
-        run: k6 run --summary-export tests/performance/results/loader-performance-summary.json tests/performance/loader-performance.js
+      - name: Full suite
+        if: ${{ steps.target.outputs.mode == 'remote' && (env.RUN_FULL == 'true' || github.event_name == 'schedule') }}
+        run: |
+          set -euo pipefail
+          if [ -z "${K6_SESSION_COOKIE_VALUE}" ]; then
+            echo "Full k6 suite needs K6_SESSION_COOKIE_VALUE. The auth probe fails closed without a session."
+            echo "Refusing to treat a missing cookie as a successful load test."
+            exit 1
+          fi
+          mkdir -p tests/performance/results
+          k6 run --summary-export tests/performance/results/api-endpoints-summary.json tests/performance/api-endpoints.js
+          k6 run --summary-export tests/performance/results/bulk-operations-summary.json tests/performance/bulk-operations.js
+          k6 run --summary-export tests/performance/results/loader-performance-summary.json tests/performance/loader-performance.js
+          k6 run --summary-export tests/performance/results/spike-load-summary.json tests/performance/spike-load.js
+          k6 run --summary-export tests/performance/results/soak-load-summary.json tests/performance/soak-load.js
+          node scripts/check-performance-budgets.mjs --source=k6 --dir=tests/performance/results
 
-      - name: Run spike load test
-        run: k6 run --summary-export tests/performance/results/spike-load-summary.json tests/performance/spike-load.js
-
-      - name: Run soak load test
-        run: k6 run --summary-export tests/performance/results/soak-load-summary.json tests/performance/soak-load.js
-
-      - name: Enforce performance budget
-        run: node scripts/check-performance-budgets.mjs --source=k6 --dir=tests/performance/results
-
-      - name: Upload performance results
-        uses: actions/upload-artifact@v7
+      - name: Stop fixture
         if: always()
-        with:
-          name: performance-results
-          path: tests/performance/results/
-          retention-days: 30
+        run: |
+          if [ -f /tmp/load-fixture.pid ]; then
+            kill "$(cat /tmp/load-fixture.pid)" || true
+          fi

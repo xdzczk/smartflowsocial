@@ -426,11 +426,12 @@ Signed-in users whose **npub** appears in `ADMIN_NPUBS` (comma-separated) can op
 - **Batch payout** processes referrers with **≥ 1000 sats** pending commission, **https/http LNURL**
   payout destination, and valid invoice fetch - see `runReferralPayoutBatch` in the codebase
   (mirrors `cron.referral-payout`).
-- **Manual payout** accepts a BOLT11 invoice and marks pending earnings paid up to that amount (must
-  not exceed the referrer’s pending balance).
+- **Manual payout** accepts a BOLT11 invoice. The invoice amount has to match the requested amount,
+  and that amount has to match a prefix of the oldest pending earnings. A smaller declared amount
+  does not authorize a larger invoice.
 
-For scripted manual pay without a browser session, **`REFERRAL_MANUAL_PAYOUT_SECRET`** +
-`POST /api/referral/manual-payout` remains available.
+For scripted manual pay without a browser session, **`REFERRAL_MANUAL_PAYOUT_SECRET`** is required.
+`POST /api/referral/manual-payout` returns 401 when the secret is missing or wrong.
 
 ---
 

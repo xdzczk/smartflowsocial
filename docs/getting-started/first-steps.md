@@ -261,7 +261,7 @@ See [Troubleshooting Guide](../troubleshooting/common-issues.md) for more soluti
 
 ## Related Documentation
 
-- [Quick Start Guide](./quickstart.md) - 5-minute setup
+- [Quick Start Guide](./quickstart.md) - local setup
 - [Core Concepts](./concepts.md) - Understand how it works
 - [Posting Guide](../guides/user-guides/posting.md) - Complete posting guide
 - [Configuration Reference](../reference/configuration.md) - All settings

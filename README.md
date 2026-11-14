@@ -1,11 +1,14 @@
 # SmartFlowSocial
 
-Professional Nostr social media management for creators, teams, and communities.
+A scheduler for Nostr. Sign posts with your own signer. They go out on schedule, even while you are
+offline.
+
+The same application code runs as the hosted service and as a self-hosted install. The license is
+the [Unlicense](LICENSE). No release tag has been published yet.
 
 ![SmartFlowSocial hero banner](./docs/readme-hero.svg)
 
 [![CI](https://github.com/xdzczk/smartflowsocial/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/xdzczk/smartflowsocial/actions/workflows/ci.yml)
-[![Latest release](https://img.shields.io/github/v/release/xdzczk/smartflowsocial?display_name=tag)](https://github.com/xdzczk/smartflowsocial/releases)
 [![Node 20+](https://img.shields.io/badge/node-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![pnpm 10](https://img.shields.io/badge/pnpm-10.27.0-f69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
 [![Remix](https://img.shields.io/badge/Remix-app-121212?logo=remix&logoColor=white)](https://remix.run/)
@@ -18,19 +21,13 @@ Professional Nostr social media management for creators, teams, and communities.
 
 ---
 
-Nostr teams usually juggle three pressures at once: **fast product UX**, **reliable scheduling and
-media**, and **signing that stays under the user’s control**. SmartFlowSocial is built for that
-intersection - a full publishing and engagement surface where browser extension (NIP-07) or remote
-signer (NIP-46) flows stay first-class, while drafts, queues, calendars, and background jobs keep
-day-to-day operations predictable.
+You sign with a NIP-07 browser extension or a NIP-46 remote signer. The server stores the signed
+event and publishes it later. It does not keep your Nostr signing key. Drafts, queues, calendars,
+media, and background jobs live in the app.
 
-The design goal is straightforward: **treat the open protocol as the source of truth for what gets
-published**, while the application owns durable workflow state, observability, and the boring
-operational glue (storage, retries, metrics) that creators still need to ship consistently.
-
-You can adopt it as the **hosted service** at [smartflow.social](https://smartflow.social) for the
-fastest path, or run the **same codebase** yourself when you need data residency, custom
-integrations, or hard cost controls. Feature depth is tracked in the
+Use the hosted service at [smartflow.social](https://smartflow.social), or run this repository
+yourself. Optional pieces (Blastr, Blossom, the cache worker, NostrMash) are separate and are not
+required for the core scheduler. Feature depth is tracked in the
 [Feature Coverage Matrix](./docs/reference/feature-coverage-matrix.md).
 
 ---
@@ -57,16 +54,16 @@ Configuration reference: [Configuration](./docs/reference/configuration.md)
 
 ## Start here
 
-| If you are…                 | Start here                                                   | Then read                                                    |
-| --------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| New to the product (hosted) | [Hosted quick start](./docs/getting-started/hosted.md)       | [Posting guide](./docs/guides/user-guides/posting.md)        |
-| Self-hosting locally        | [5-minute quick start](./docs/getting-started/quickstart.md) | [Installation](./docs/getting-started/installation.md)       |
-| Deploying to production     | [Deployment guide](./docs/guides/deployment.md)              | [Operations](./docs/guides/operations.md)                    |
-| Operating the stack         | [Operations guide](./docs/guides/operations.md)              | [Configuration reference](./docs/reference/configuration.md) |
-| Integrating with APIs       | [API reference](./docs/reference/api.md)                     | [API development](./docs/guides/api-development.md)          |
-| Building or contributing    | [CONTRIBUTING.md](./CONTRIBUTING.md)                         | [Testing guide](./docs/guides/testing.md)                    |
-| Looking up a term           | [Glossary](./docs/meta/glossary.md)                          | [Core concepts](./docs/getting-started/concepts.md)          |
-| Reporting security issues   | [SECURITY.md](./SECURITY.md)                                 | [Security guide](./docs/guides/security.md)                  |
+| If you are…                 | Start here                                             | Then read                                                    |
+| --------------------------- | ------------------------------------------------------ | ------------------------------------------------------------ |
+| New to the product (hosted) | [Hosted quick start](./docs/getting-started/hosted.md) | [Posting guide](./docs/guides/user-guides/posting.md)        |
+| Self-hosting locally        | [Local setup](./docs/getting-started/quickstart.md)    | [Installation](./docs/getting-started/installation.md)       |
+| Deploying to production     | [Deployment guide](./docs/guides/deployment.md)        | [Operations](./docs/guides/operations.md)                    |
+| Operating the stack         | [Operations guide](./docs/guides/operations.md)        | [Configuration reference](./docs/reference/configuration.md) |
+| Integrating with APIs       | [API reference](./docs/reference/api.md)               | [API development](./docs/guides/api-development.md)          |
+| Building or contributing    | [CONTRIBUTING.md](./CONTRIBUTING.md)                   | [Testing guide](./docs/guides/testing.md)                    |
+| Looking up a term           | [Glossary](./docs/meta/glossary.md)                    | [Core concepts](./docs/getting-started/concepts.md)          |
+| Reporting security issues   | [SECURITY.md](./SECURITY.md)                           | [Security guide](./docs/guides/security.md)                  |
 
 Complete docs index: [docs/README.md](./docs/README.md)
 
@@ -112,12 +109,12 @@ Operational details: [Operations guide](./docs/guides/operations.md)
 
 ## Self-hosted quick start
 
-Prerequisites: Node.js 20+, pnpm 10.27.0 (Corepack), PostgreSQL, and Redis. S3-compatible storage is
-required for uploads. Companion services are the
-[publisher](https://github.com/xdzczk/smartflowsocial-publisher),
-[Blastr](https://github.com/xdzczk/smartflowsocial-blastr),
-[Blossom](https://github.com/xdzczk/smartflowsocial-blossom), and the
-[cache worker](https://github.com/xdzczk/smartflowsocial-cache-worker).
+Prerequisites: Node.js 20+, pnpm 10.27.0 (Corepack), PostgreSQL, and Redis. Publishing needs a
+running [HTTP publisher](https://github.com/xdzczk/smartflowsocial-publisher). Uploads need
+S3-compatible storage. Blastr, Blossom, the cache worker, and NostrMash are optional.
+
+`pnpm dev` already starts the worker. Do not also run `pnpm start:worker` against the same Redis or
+you will process jobs twice.
 
 ```bash
 git clone https://github.com/xdzczk/smartflowsocial.git

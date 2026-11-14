@@ -229,7 +229,7 @@ redis-cli -u $REDIS_URL FLUSHDB
 
 ## Related Documentation
 
-- [Quick Start Guide](../getting-started/quickstart.md) - 5-minute setup
+- [Quick Start Guide](../getting-started/quickstart.md) - local setup
 - [Installation Guide](../getting-started/installation.md) - Complete setup
 - [Common Issues](../troubleshooting/common-issues.md) - Problem solving
 - [Developer Guide](../guides/developer-guide.md) - Development workflow

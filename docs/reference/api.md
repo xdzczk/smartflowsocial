@@ -1153,8 +1153,10 @@ Returns the overlap warning for that time.
 
 ### POST `/api/referral/manual-payout`
 
-Pays one referrer from a BOLT11 invoice. JSON body: `referrer_npub`, `bolt11`, `amount_sats`. When
-`REFERRAL_MANUAL_PAYOUT_SECRET` is set, send it as `X-Referral-Payout-Secret`.
+Pays one referrer from a BOLT11 invoice. JSON body: `referrer_npub`, `bolt11`, `amount_sats`.
+`amount_sats` must be a number and must equal the invoice amount. Send
+`REFERRAL_MANUAL_PAYOUT_SECRET` as `X-Referral-Payout-Secret`. The route returns 401 when the secret
+is missing or wrong.
 
 ---
 
@@ -1176,7 +1178,8 @@ Run the subscription renewal sweep once. The app worker already runs this on
 `SUBSCRIPTION_RENEWAL_INTERVAL_MINUTES` (default 60, `0` disables it). This route is a manual
 trigger for the same function.
 
-When `CRON_SECRET` is set, send it as `X-Cron-Secret` or `Authorization: Bearer <secret>`.
+Send `CRON_SECRET` as `X-Cron-Secret` or `Authorization: Bearer <secret>`. The route returns 401
+when the secret is missing or wrong. POST is preferred. GET is accepted when the header matches.
 
 The sweep charges a subscription only when the paid period has ended, the subscription is
 `nwc_auto_renew` / `auto_renew`, and the wallet is still connected. A one-time Lightning purchase is
@@ -1187,19 +1190,19 @@ not charged again. Each charge uses the same confirmed invoice path as checkout.
 Runs the paid post-analytics sweep. Uses the same `CRON_SECRET` check as `/cron/checksubscription`.
 The worker also runs this on `POST_ANALYTICS_INTERVAL_MINUTES`.
 
-### GET `/cron/campaign-payout`
+### GET or POST `/cron/campaign-payout`
 
-Runs trusted autopay for locked contests and giveaways whose payout settings allow it. This route
-does not check `CRON_SECRET`.
+Runs trusted autopay for locked contests and giveaways whose payout settings allow it. Uses the same
+`CRON_SECRET` check as `/cron/checksubscription`.
 
-### GET `/cron/cleanup-publish-acks`
+### GET or POST `/cron/cleanup-publish-acks`
 
-Deletes publish-relay acknowledgement rows older than 30 days. This route does not check
-`CRON_SECRET`.
+Deletes publish-relay acknowledgement rows older than 30 days. Uses the same `CRON_SECRET` check.
 
-### GET `/cron/referral-payout`
+### GET or POST `/cron/referral-payout`
 
-Runs the referral payout batch. This route does not check `CRON_SECRET`.
+Runs the referral payout batch. Uses the same `CRON_SECRET` check. Each invoice is amount-checked
+before the wallet is called.
 
 ---
 

@@ -2,8 +2,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 
 import { checkAndRenewSubscriptions } from "~/features/payments";
-import { cronRequestAuthorized } from "~/lib/cron-auth.server";
-import { env } from "~/lib/env.server";
+import { cronJson, denyCronUnlessAuthorized } from "~/lib/cron-http.server";
 import { ensureServerWebSocket } from "~/lib/websocket-polyfill.server";
 
 ensureServerWebSocket();
@@ -14,12 +13,11 @@ ensureServerWebSocket();
  * to be called for renewals to happen.
  */
 async function runSubscriptionCron(request?: Request) {
-  if (!cronRequestAuthorized(request, env.CRON_SECRET)) {
-    return json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = denyCronUnlessAuthorized(request);
+  if (denied) return denied;
 
   const result = await checkAndRenewSubscriptions();
-  return json(result, { status: result.success ? 200 : 500 });
+  return cronJson(result, result.success ? 200 : 500);
 }
 
 export async function loader(args?: LoaderFunctionArgs) {

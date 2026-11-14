@@ -1885,6 +1885,8 @@ model ReferralEarning {
   status                ReferralEarningStatus @default(PENDING)
   payoutAttemptCount    Int                  @default(0) @map("payout_attempt_count")
   payoutFailureReason   String?              @map("payout_failure_reason")
+  /// Set while a payout for these earnings is in flight. Cleared on success or failure.
+  payoutClaimHash       String?              @map("payout_claim_hash")
   createdAt             DateTime             @default(now()) @map("created_at")
   paidAt                DateTime?            @map("paid_at")
 
@@ -1910,6 +1912,8 @@ model ReferralPayoutAuditLog {
   batchSummary  Json?    @map("batch_summary")
   errorMessage  String?  @map("error_message")
   operatorNpub  String?  @map("operator_npub")
+  /// BOLT11 payment hash. Unique so the same invoice cannot be paid twice.
+  paymentHash   String?  @unique @map("payment_hash")
   createdAt     DateTime @default(now()) @map("created_at")
 
   @@index([createdAt])

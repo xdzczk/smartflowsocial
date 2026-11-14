@@ -2,12 +2,18 @@
 
 ## Supported Versions
 
-We actively support the following versions with security updates:
+There is no tagged release yet. `package.json` says `1.0.0`, and an older changelog heading used
+that number with the date 1 January 2024. That version was never tagged or published.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.0.x   | :white_check_mark: |
-| < 1.0   | :x:                |
+Until the first tag exists, security fixes land on the default branch. After `v1.0.0` is tagged, the
+support line is `1.0.x` patch releases. There is no commitment to backport fixes onto untagged
+history.
+
+| Version                         | Supported                |
+| ------------------------------- | ------------------------ |
+| Default branch, until first tag | Security fixes land here |
+| `1.0.x` after the first tag     | Planned patch line       |
+| Anything older than that tag    | Not supported            |
 
 ## Reporting a Vulnerability
 
@@ -31,9 +37,13 @@ these steps:
 
 ### 3. Response timeline
 
-- **Initial response**: Within 48 hours
-- **Status update**: Within 7 days
-- **Resolution**: Depends on severity and complexity
+This is a single-maintainer public-domain project. There is no paid support desk and no guaranteed
+clock.
+
+- **Initial response**: best effort, usually within a few days
+- **Status update**: when there is something new to say
+- **Resolution**: depends on severity, and on whether a fix can ship without a history rewrite or a
+  production change that needs the owner's approval
 
 ### 4. Disclosure policy
 
@@ -68,8 +78,12 @@ For more details, see [Security Guide](./docs/guides/security.md).
 
 ## Security Updates
 
-Security updates are released as patch versions (e.g., 1.0.0 → 1.0.1). Always update to the latest
-patch version to receive security fixes.
+Security updates will be patch versions once a release exists (for example `1.0.0` to `1.0.1`).
+Until then, track the default branch.
+
+Operator checklist: [Production security checklist](./docs/guides/production-security-checklist.md).
+
+Dependency decisions: [Dependency advisories](./docs/security/dependency-advisories.md).
 
 ---
 

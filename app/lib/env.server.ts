@@ -9,6 +9,7 @@
  *   const url = env.NOSTR_PUBLISHER_URL; // Type-safe, guaranteed to exist
  */
 
+import { productionSecretErrors } from "~/lib/production-secrets.server";
 import {
   safeConsoleError,
   safeConsoleLog,
@@ -19,7 +20,9 @@ interface EnvConfig {
   DATABASE_URL: string;
   SESSION_SECRET: string;
   NOSTR_PUBLISHER_URL: string;
-  NOSTR_PUBLISHER_API_TOKEN?: string; // Optional API token for publisher authentication
+  NOSTR_PUBLISHER_API_TOKEN?: string; // Required in production unless the publisher is explicitly public
+  /** Set to "true" only when the publisher is intentionally unauthenticated. */
+  NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED?: string;
   REDIS_URL: string;
 
   // Storage (required if any storage var is set)
@@ -78,8 +81,8 @@ interface EnvConfig {
    */
   SUBSCRIPTION_RENEWAL_INTERVAL_MINUTES?: string;
   /**
-   * Shared secret for `/cron/checksubscription`. When unset, the route does
-   * not require a header. Send `X-Cron-Secret` or `Authorization: Bearer`.
+   * Shared secret for cron routes. Required in production. Routes reject
+   * requests when it is unset. Send `X-Cron-Secret` or `Authorization: Bearer`.
    */
   CRON_SECRET?: string;
   FLY_REGION?: string;
@@ -135,7 +138,12 @@ interface EnvConfig {
 
   // Referral
   REFERRAL_LANDING_URL?: string;
+  /** Required in production. POST /api/referral/manual-payout rejects when unset. */
   REFERRAL_MANUAL_PAYOUT_SECRET?: string;
+  /** Hard cap for one referral invoice. Defaults to 1000000 sats. */
+  REFERRAL_PAYOUT_MAX_SATS?: string;
+  /** UTC-day cap for successful referral payouts. Defaults to 5000000 sats. */
+  REFERRAL_PAYOUT_DAILY_CAP_SATS?: string;
 
   // Operator admin (/dashboard/admin*)
   ADMIN_NPUBS?: string;
@@ -253,6 +261,7 @@ function addOptionalConfig(config: EnvConfig): void {
     "NOSTR_NSEC",
     "FEEDBACK_INBOX_NPUB",
     "NOSTR_PUBLISHER_API_TOKEN",
+    "NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED",
     "SENTRY_DSN",
     "SENTRY_TRACES_SAMPLE_RATE",
     "SENTRY_PROFILES_SAMPLE_RATE",
@@ -295,6 +304,8 @@ function addOptionalConfig(config: EnvConfig): void {
     "STORAGE_CDN_URL",
     "REFERRAL_LANDING_URL",
     "REFERRAL_MANUAL_PAYOUT_SECRET",
+    "REFERRAL_PAYOUT_MAX_SATS",
+    "REFERRAL_PAYOUT_DAILY_CAP_SATS",
     "ADMIN_NPUBS",
     "VAPID_PUBLIC_KEY",
     "VAPID_PRIVATE_KEY",
@@ -395,6 +406,18 @@ function validateAndGetEnv(): EnvConfig {
   // Validate storage variables: if any is set, all must be set
   const storageMissing = validateStorageVariables(storageVariables);
   missing.push(...storageMissing);
+
+  invalid.push(
+    ...productionSecretErrors({
+      nodeEnv: process.env["NODE_ENV"],
+      e2eTest: process.env["E2E_TEST"],
+      cronSecret: process.env["CRON_SECRET"],
+      referralManualPayoutSecret: process.env["REFERRAL_MANUAL_PAYOUT_SECRET"],
+      nostrPublisherApiToken: process.env["NOSTR_PUBLISHER_API_TOKEN"],
+      nostrPublisherAllowUnauthenticated:
+        process.env["NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED"],
+    })
+  );
 
   // Report errors
   if (missing.length > 0 || invalid.length > 0) {

@@ -9,6 +9,11 @@
 
 import { LN } from "@getalby/sdk/lnclient";
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+vi.mock("~/lib/cron-auth.server", () => ({
+  cronRequestAuthorized: () => true,
+}));
+
 // Mock dependencies
 vi.mock("~/features/user", () => ({
   getEnabledUsersWithSubscriptions: vi.fn(),

@@ -1,10 +1,13 @@
 # Quick Start Guide
 
-**Estimated time:** 5 minutes  
+**Estimated time:** 30–60 minutes for a useful local scheduler  
 **Difficulty:** Beginner  
-**Last updated:** 2026-11-09
+**Last updated:** 2026-11-14
 
-Get SmartFlowSocial up and running in 5 minutes.
+This is the local development setup. It is not a five-minute production install. A useful local
+scheduler needs Node.js, pnpm, PostgreSQL, Redis, and a running HTTP Nostr publisher. Uploads also
+need S3-compatible storage. Production self-hosting is covered in the
+[deployment guide](../guides/deployment.md).
 
 ---
 
@@ -90,15 +93,21 @@ pnpm dev
 
 The application will be available at [http://localhost:3000](http://localhost:3000).
 
-**For production-like setup:**
+`pnpm dev` starts the Remix server and the worker together. Do not start `pnpm start:worker` in a
+second terminal while `pnpm dev` is running, or scheduled work can run twice.
+
+Publishing still needs `NOSTR_PUBLISHER_URL` pointed at a local or self-hosted
+[publisher](https://github.com/xdzczk/smartflowsocial-publisher). `pnpm docker` does not start one.
+Without it, the UI can boot and the publish call fails.
+
+Before you call this healthy:
 
 ```bash
-# Terminal 1: Main server
-pnpm dev
-
-# Terminal 2: Worker process (for scheduled posts)
-pnpm start:worker
+curl -fsS http://localhost:3000/healthcheck
 ```
+
+A 200 from `/healthcheck` means the app can reach Postgres. It does not mean the publisher, object
+storage, or Lightning wallet is configured.
 
 ---
 

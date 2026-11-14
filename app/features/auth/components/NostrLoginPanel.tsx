@@ -29,6 +29,7 @@ import {
 } from "~/features/referral/referral-context.client";
 import { BRAND_NAME } from "~/lib/brand";
 import { nostrAdapter } from "~/lib/nostr-adapter.client";
+import { safeInternalPath } from "~/lib/safe-internal-path";
 
 import {
   appendAmberIntentUrl,
@@ -606,7 +607,7 @@ export default function NostrLoginPanel() {
       }
       queryClient.clear();
       clearPersistedState();
-      const nextUrl = verify.redirectTo;
+      const nextUrl = safeInternalPath(verify.redirectTo);
       // NIP-07: full navigation avoids a long blank "authenticated" state if SPA motion-fast waits on loaders.
       // NIP-46: keep client-side navigation so in-memory signer survives.
       if (signer.type === "nip07" && typeof window !== "undefined") {
