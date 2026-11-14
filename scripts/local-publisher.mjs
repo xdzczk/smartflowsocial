@@ -2,7 +2,7 @@
  * Signature-checking HTTP publisher for local development and the self-host smoke.
  * It is not the Cloudflare publisher. It does not open relay sockets.
  *
- * Start: pnpm dev:publisher
+ * Start: pnpm publisher:local
  * Then set NOSTR_PUBLISHER_URL=http://127.0.0.1:8787/publish
  * and NOSTR_PUBLISHER_API_TOKEN to the same value as LOCAL_PUBLISHER_TOKEN.
  */

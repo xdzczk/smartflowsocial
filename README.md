@@ -117,7 +117,7 @@ S3-compatible storage. Blastr, Blossom, the cache worker, and NostrMash are opti
 `pnpm dev` already starts the worker. Do not also run `pnpm start:worker` against the same Redis or
 you will process jobs twice. First-time setup is about 30–60 minutes.
 [Self-host smoke](./docs/getting-started/self-host-smoke.md) is the path that proves a scheduled
-signed event reaches a publisher. `pnpm dev:publisher` is a local signature check, not the
+signed event reaches a publisher. `pnpm publisher:local` is a local signature check, not the
 [Cloudflare publisher](https://github.com/xdzczk/smartflowsocial-publisher).
 
 ```bash

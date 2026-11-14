@@ -111,7 +111,7 @@ not generic third-party boxes. Blastr is the managed fan-out relay in front of t
 [NostrMash](https://github.com/xdzczk/nostrmash) is the cache worker's first read source.
 
 - [Publisher](https://github.com/xdzczk/smartflowsocial-publisher) (`NOSTR_PUBLISHER_URL`) is
-  required for notes to reach relays. `pnpm dev:publisher` is a local stand-in that only checks
+  required for notes to reach relays. `pnpm publisher:local` is a local stand-in that only checks
   signatures.
 - [Blastr](https://github.com/xdzczk/smartflowsocial-blastr) (`BLASTR_ADMIN_URL`) is optional
   managed fan-out.

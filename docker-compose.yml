@@ -1,7 +1,7 @@
 # Postgres and Redis for local development.
 # `pnpm dev` starts the web server and the worker. Do not run `pnpm start:worker` beside it.
 # The production publisher is https://github.com/xdzczk/smartflowsocial-publisher (a Cloudflare Worker).
-# On a laptop, `pnpm dev:publisher` is a signature-checking stand-in. It does not open relays.
+# On a laptop, `pnpm publisher:local` is a signature-checking stand-in. It does not open relays.
 services:
   postgres:
     image: postgres:latest

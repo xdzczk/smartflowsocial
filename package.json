@@ -42,7 +42,7 @@
     "dev:server": "cross-env NODE_ENV=development E2E_TEST=${E2E_TEST:-} esbuild --platform=node --format=cjs ./server.ts --outdir=build --bundle --external:fsevents --external:file-type --external:sharp --external:@prisma/client --external:@prisma/engines --watch=forever",
     "dev:worker": "cross-env NODE_ENV=development esbuild --platform=node --format=cjs ./worker.ts --outdir=build --bundle --external:fsevents --external:ioredis --external:file-type --external:@prisma/client --external:@prisma/engines --watch=forever",
     "docker": "docker compose up -d",
-    "dev:publisher": "node scripts/local-publisher.mjs",
+    "publisher:local": "node scripts/local-publisher.mjs",
     "smoke:publish": "tsx scripts/self-host-publish-smoke.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

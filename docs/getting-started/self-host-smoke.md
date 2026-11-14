@@ -12,12 +12,12 @@ It does not use the hosted service, a paid account, or a production relay.
 | ---------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | This app and its worker                  | Yes                               | `pnpm dev` starts both. Do not also run `pnpm start:worker`.                                                                         |
 | PostgreSQL and Redis                     | Yes                               | `pnpm docker`                                                                                                                        |
-| HTTP publisher                           | Yes, or posts never leave the app | Real worker: [smartflowsocial-publisher](https://github.com/xdzczk/smartflowsocial-publisher). Laptop stand-in: `pnpm dev:publisher` |
+| HTTP publisher                           | Yes, or posts never leave the app | Real worker: [smartflowsocial-publisher](https://github.com/xdzczk/smartflowsocial-publisher). Laptop stand-in: `pnpm publisher:local` |
 | S3-compatible storage                    | Only for uploads                  | Environment variables in `example.env`                                                                                               |
 | Blossom, Blastr, cache worker, NostrMash | No                                | Separate repositories. Leave their variables empty.                                                                                  |
 | Lightning, NWC, referral payouts         | No                                | Leave `REFERRAL_PAYOUTS_ENABLED=false`. The payout routes stay closed.                                                               |
 
-`pnpm dev:publisher` checks Nostr signatures and returns success. It does not connect to relays. Use
+`pnpm publisher:local` checks Nostr signatures and returns success. It does not connect to relays. Use
 the Cloudflare publisher when you want events on the network. For that process set
 `ALLOW_PRIVATE_RELAYS=true` only if the relay is on your own machine.
 
@@ -59,7 +59,7 @@ Generate `SESSION_SECRET` with `openssl rand -base64 32`. Leave storage, Blastr,
 pnpm docker
 pnpm exec prisma generate
 pnpm exec prisma db push
-pnpm dev:publisher
+pnpm publisher:local
 ```
 
 5. Prove the scheduled-publish path. This creates an ephemeral key, inserts one due post, runs the
