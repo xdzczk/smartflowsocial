@@ -3,6 +3,8 @@ export interface ProductionSecretInput {
   e2eTest: string | undefined;
   cronSecret: string | undefined;
   referralManualPayoutSecret: string | undefined;
+  /** When "true", production also requires the referral payout secret. */
+  referralPayoutsEnabled: string | undefined;
   nostrPublisherApiToken: string | undefined;
   nostrPublisherAllowUnauthenticated: string | undefined;
 }
@@ -13,9 +15,11 @@ export interface ProductionSecretProblem {
 }
 
 /**
- * Production boot refuses to start when secrets that gate financial or
- * administrative HTTP routes are missing. Development and E2E boots may omit
- * them; those routes still reject requests until the secret is set.
+ * Production boot refuses to start when secrets that gate administrative HTTP
+ * routes are missing. Referral payouts are optional: the manual route stays
+ * closed until its secret is set, and production requires that secret only
+ * when `REFERRAL_PAYOUTS_ENABLED=true`. Development and E2E boots may omit
+ * the cron and publisher secrets; those routes still reject requests.
  */
 export function productionSecretErrors(
   input: ProductionSecretInput
@@ -30,11 +34,14 @@ export function productionSecretErrors(
         "is required in production and must be at least 32 characters. Generate one with: openssl rand -base64 32",
     });
   }
-  if ((input.referralManualPayoutSecret?.trim() ?? "").length < 32) {
+  if (
+    input.referralPayoutsEnabled === "true" &&
+    (input.referralManualPayoutSecret?.trim() ?? "").length < 32
+  ) {
     problems.push({
       key: "REFERRAL_MANUAL_PAYOUT_SECRET",
       reason:
-        "is required in production and must be at least 32 characters. Generate one with: openssl rand -base64 32",
+        "is required in production when REFERRAL_PAYOUTS_ENABLED=true and must be at least 32 characters. Generate one with: openssl rand -base64 32",
     });
   }
   const allowPublicPublisher =

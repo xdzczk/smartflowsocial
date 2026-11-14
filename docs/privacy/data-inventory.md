@@ -88,8 +88,14 @@ A published privacy notice needs a real retention statement. The code does not s
 
 ## User rights
 
-The product can export or delete some records through the app and the database. It cannot delete
-events that relays have already stored. A GDPR Article 13 notice has to say who the controller is,
-the purposes, the legal bases, the recipients, the retention periods, and the rights to access,
-rectify, erase, restrict, and complain to a supervisory authority. Those sentences need the owner's
-legal identity. They are not in this repository.
+A signed-in user can delete individual drafts and posts in the app. That deletes the database row.
+There is no in-app control that exports an account or erases every row for that account. An operator
+can delete rows in Postgres. Events a relay has already accepted stay on that relay.
+
+`ENABLE_NOSTR_DELETE_EVENTS`, when set, lets the server publish a kind 5 deletion signed by the
+operator key in `NOSTR_NSEC`. That key is not the user's Nostr key. Relays may ignore the deletion.
+
+A GDPR Article 13 notice has to say who the controller is, the purposes, the legal bases, the
+recipients, the retention periods, and the rights to access, rectify, erase, restrict, and complain
+to a supervisory authority. Those sentences need the owner's legal identity. They are not in this
+repository.

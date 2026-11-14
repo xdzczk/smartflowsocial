@@ -2,18 +2,18 @@
 
 ## Supported Versions
 
-There is no tagged release yet. `package.json` says `1.0.0`, and an older changelog heading used
-that number with the date 1 January 2024. That version was never tagged or published.
+The supported line is `0.1.0-alpha.0` and newer commits on the default branch. `package.json`
+matches that tag. An older changelog heading used `1.0.0` with the date 1 January 2024. That version
+was never tagged or published.
 
-Until the first tag exists, security fixes land on the default branch. After `v1.0.0` is tagged, the
-support line is `1.0.x` patch releases. There is no commitment to backport fixes onto untagged
-history.
+Security fixes land on the default branch. There is no commitment to backport fixes onto older tags
+during this alpha.
 
-| Version                         | Supported                |
-| ------------------------------- | ------------------------ |
-| Default branch, until first tag | Security fixes land here |
-| `1.0.x` after the first tag     | Planned patch line       |
-| Anything older than that tag    | Not supported            |
+| Version                      | Supported                |
+| ---------------------------- | ------------------------ |
+| `0.1.0-alpha.0` and `main`   | Security fixes land here |
+| The unpublished `1.0.0` note | Never released           |
+| Anything older               | Not supported            |
 
 ## Reporting a Vulnerability
 
@@ -78,8 +78,7 @@ For more details, see [Security Guide](./docs/guides/security.md).
 
 ## Security Updates
 
-Security updates will be patch versions once a release exists (for example `1.0.0` to `1.0.1`).
-Until then, track the default branch.
+Security updates ship on the default branch and, when tagged, as the next alpha or patch.
 
 Operator checklist: [Production security checklist](./docs/guides/production-security-checklist.md).
 

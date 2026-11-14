@@ -243,7 +243,8 @@ Go to **Posted** to see all published posts with timestamps and engagement metri
 
 ### Post not publishing
 
-- Check worker process is running: `pnpm start:worker`
+- During `pnpm dev` the worker is already running. Do not start a second one. In production, the
+  worker is `pnpm start:worker` beside `pnpm start`.
 - Verify Redis connection
 - Check post is in "Scheduled" status
 - Review worker logs for errors

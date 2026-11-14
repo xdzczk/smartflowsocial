@@ -110,10 +110,20 @@ Publisher, Blossom, and the cache worker in that diagram are the other SmartFlow
 not generic third-party boxes. Blastr is the managed fan-out relay in front of the publisher path.
 [NostrMash](https://github.com/xdzczk/nostrmash) is the cache worker's first read source.
 
-- [Publisher](https://github.com/xdzczk/smartflowsocial-publisher) (`NOSTR_PUBLISHER_URL`)
-- [Blastr](https://github.com/xdzczk/smartflowsocial-blastr) (`BLASTR_ADMIN_URL`)
-- [Blossom](https://github.com/xdzczk/smartflowsocial-blossom) (`BLOSSOM_SFS_API_URL`)
-- [Cache worker](https://github.com/xdzczk/smartflowsocial-cache-worker) (`PRIMAL_CACHING_URL`)
+- [Publisher](https://github.com/xdzczk/smartflowsocial-publisher) (`NOSTR_PUBLISHER_URL`) is
+  required for notes to reach relays. `pnpm dev:publisher` is a local stand-in that only checks
+  signatures.
+- [Blastr](https://github.com/xdzczk/smartflowsocial-blastr) (`BLASTR_ADMIN_URL`) is optional
+  managed fan-out.
+- [Blossom](https://github.com/xdzczk/smartflowsocial-blossom) (`BLOSSOM_SFS_API_URL`) is optional
+  media storage. S3-compatible storage is the other upload path.
+- [Cache worker](https://github.com/xdzczk/smartflowsocial-cache-worker) (`PRIMAL_CACHING_URL`) is
+  an optional profile and engagement cache.
+- [NostrMash](https://github.com/xdzczk/nostrmash) (`NOSTRMASH_BASE_URL`) is an optional read source
+  for paid post analytics. The scheduler runs without it.
+
+Mandatory for a local scheduler: this repository, PostgreSQL, Redis, and a publisher. `pnpm dev`
+starts the web process and the worker together. Production runs those as two processes.
 
 ## Project Structure
 

@@ -46,6 +46,12 @@ node scripts/check-performance-budgets.mjs --source=k6 --dir=tests/performance/r
 node scripts/check-performance-budgets.mjs --source=bundle
 ```
 
+### `local-publisher.mjs` and `self-host-publish-smoke.ts`
+
+`pnpm dev:publisher` checks Nostr signatures and does not open relays. `pnpm smoke:publish` inserts
+one due post and runs the scheduled job against that publisher. See
+[the self-host smoke](../docs/getting-started/self-host-smoke.md).
+
 ### `VERIFY_INDEXES.sql`
 
 SQL governance check for critical database indexes. Raises exceptions on regressions (CI-safe).

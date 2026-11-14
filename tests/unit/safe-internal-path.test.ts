@@ -18,6 +18,8 @@ describe("safeInternalPath", () => {
     expect(safeInternalPath("//evil.example")).toBe("/dashboard");
     expect(safeInternalPath("\\\\evil.example")).toBe("/dashboard");
     expect(safeInternalPath("/\\evil.example")).toBe("/dashboard");
+    expect(safeInternalPath("\\/evil.example")).toBe("/dashboard");
+    expect(safeInternalPath("/dashboard\\@evil.example")).toBe("/dashboard");
     expect(safeInternalPath("/%2f/evil.example")).toBe("/dashboard");
     expect(safeInternalPath("/%5Cevil.example")).toBe("/dashboard");
     expect(safeInternalPath("/dashboard\nset-cookie")).toBe("/dashboard");

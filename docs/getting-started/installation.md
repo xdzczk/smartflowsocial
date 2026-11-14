@@ -1,6 +1,6 @@
 # Installation Guide
 
-**Estimated time:** 15 minutes  
+**Estimated time:** 30–60 minutes for a working local scheduler  
 **Difficulty:** Beginner  
 **Last updated:** 2026-11-09
 
@@ -383,15 +383,13 @@ pnpm dev
 curl http://localhost:3000/healthcheck
 ```
 
-### Verify Worker Process
+### Verify the worker
 
-```bash
-# Start worker in separate terminal
-pnpm start:worker
+`pnpm dev` already starts the worker. Do not run `pnpm start:worker` in a second terminal against
+the same Redis.
 
-# Check for worker logs
-# Should see: "Worker started"
-```
+`pnpm start:worker` is the production process, after `pnpm build`. Use it only when the web process
+is `pnpm start`, not `pnpm dev`.
 
 ---
 

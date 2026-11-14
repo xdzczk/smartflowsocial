@@ -47,13 +47,14 @@
 
 Essential guides for new users and developers.
 
-| Guide                                             | Description                | Time   |
-| ------------------------------------------------- | -------------------------- | ------ |
-| [Quick Start](./getting-started/quickstart.md)    | Get running in 5 minutes   | 5 min  |
-| [Installation](./getting-started/installation.md) | Complete setup guide       | 15 min |
-| [First Steps](./getting-started/first-steps.md)   | Your first 30 minutes      | 30 min |
-| [Core Concepts](./getting-started/concepts.md)    | Understanding the system   | 20 min |
-| [Architecture](./getting-started/architecture.md) | System design and patterns | 45 min |
+| Guide                                                   | Description                | Time      |
+| ------------------------------------------------------- | -------------------------- | --------- |
+| [Quick Start](./getting-started/quickstart.md)          | Local scheduler setup      | 30–60 min |
+| [Self-host smoke](./getting-started/self-host-smoke.md) | Prove a scheduled publish  | 30–60 min |
+| [Installation](./getting-started/installation.md)       | Complete setup guide       | 30–60 min |
+| [First Steps](./getting-started/first-steps.md)         | Your first 30 minutes      | 30 min    |
+| [Core Concepts](./getting-started/concepts.md)          | Understanding the system   | 20 min    |
+| [Architecture](./getting-started/architecture.md)       | System design and patterns | 45 min    |
 
 ### Guides
 

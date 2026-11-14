@@ -72,6 +72,13 @@ function startOfUtcDay(now = new Date()): Date {
   );
 }
 
+/** Wallet payouts run unless REFERRAL_PAYOUTS_ENABLED is exactly "false". */
+export function referralPayoutsEnabled(
+  flag: string | undefined = env.REFERRAL_PAYOUTS_ENABLED
+): boolean {
+  return flag !== "false";
+}
+
 /**
  * Pay a BOLT11 invoice with the owner NWC wallet and mark the matching pending
  * earnings paid. The invoice amount must equal `amountSats`. A smaller declared
@@ -86,6 +93,10 @@ export async function payReferrerWithInvoice(
     operatorNpub?: string;
   }
 ): Promise<{ success: boolean; error?: string }> {
+  if (!referralPayoutsEnabled()) {
+    return { success: false, error: "Referral payouts are disabled" };
+  }
+
   const channel = audit?.channel ?? "manual";
   const operatorNpub = audit?.operatorNpub;
 
@@ -276,6 +287,16 @@ export interface ReferralPayoutBatchResult {
 export async function runReferralPayoutBatch(options?: {
   operatorNpub?: string;
 }): Promise<ReferralPayoutBatchResult> {
+  if (!referralPayoutsEnabled()) {
+    return {
+      processed: 0,
+      paid: 0,
+      failed: 0,
+      skipped: 0,
+      errors: ["Referral payouts are disabled"],
+    };
+  }
+
   const result: ReferralPayoutBatchResult = {
     processed: 0,
     paid: 0,

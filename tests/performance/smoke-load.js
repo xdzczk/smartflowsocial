@@ -2,9 +2,18 @@ import http from "k6/http";
 import { check, sleep } from "k6";
 
 /**
- * Short health probe. This is the profile used when no staging URL is configured.
- * It is not a capacity test of the application.
+ * Short /healthcheck probe.
+ * K6_TARGET_KIND=fixture means the local harness, not SmartFlowSocial.
+ * K6_TARGET_KIND=application-health means a real origin's health route only.
+ * Capacity numbers come from the authenticated scripts, and only against staging.
  */
+export function handleSummary(data) {
+  const kind = __ENV.K6_TARGET_KIND || "unspecified";
+  const failed = data.metrics.http_req_failed?.values?.rate ?? "unknown";
+  return {
+    stdout: `k6 target kind: ${kind}. http_req_failed rate: ${failed}. This smoke is not a capacity benchmark.\n`,
+  };
+}
 export const options = {
   vus: 2,
   duration: "15s",

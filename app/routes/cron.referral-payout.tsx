@@ -6,12 +6,19 @@
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 
-import { runReferralPayoutBatch } from "~/features/referral/referral-payout.server";
+import {
+  referralPayoutsEnabled,
+  runReferralPayoutBatch,
+} from "~/features/referral/referral-payout.server";
 import { cronJson, denyCronUnlessAuthorized } from "~/lib/cron-http.server";
+import { env } from "~/lib/env.server";
 
 async function runReferralCron(request: Request) {
   const denied = denyCronUnlessAuthorized(request);
   if (denied) return denied;
+  if (!referralPayoutsEnabled(env.REFERRAL_PAYOUTS_ENABLED)) {
+    return cronJson({ error: "Referral payouts are disabled" }, 403);
+  }
   const result = await runReferralPayoutBatch();
   return cronJson(result);
 }

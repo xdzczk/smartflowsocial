@@ -385,10 +385,20 @@ characters are stripped. Watch **capital `I` vs lowercase `l`** when pasting bec
 
 ---
 
+### REFERRAL_PAYOUTS_ENABLED
+
+`false` stops cron, admin, and manual referral payouts before they call a wallet. `example.env` sets
+`false` so a new self-host does not pay anyone. Leave it unset on an existing hosted install that
+already pays referrals: payout execution stays available, and production boot does not require
+`REFERRAL_MANUAL_PAYOUT_SECRET`. Set `true` when this install should pay referrals. Production boot
+then requires the manual payout secret.
+
 ### REFERRAL_MANUAL_PAYOUT_SECRET
 
-Required in production. `POST /api/referral/manual-payout` returns 401 when this is unset or wrong.
-Send it as `X-Referral-Payout-Secret`. Generate one with `openssl rand -base64 32`.
+Not required merely to boot. `POST /api/referral/manual-payout` returns 401 when this is unset or
+wrong, and 404 when `REFERRAL_PAYOUTS_ENABLED=false`. Send it as `X-Referral-Payout-Secret`.
+Generate one with `openssl rand -base64 32`. Production requires it only when
+`REFERRAL_PAYOUTS_ENABLED=true`.
 
 The invoice amount must equal `amount_sats`. Amountless invoices and invoices larger than the
 declared amount are rejected before the wallet is called. Successful payouts are capped at

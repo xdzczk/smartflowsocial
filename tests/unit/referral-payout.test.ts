@@ -16,13 +16,16 @@ const { payInvoice } = vi.hoisted(() => ({
   payInvoice: vi.fn(),
 }));
 
+const envState = vi.hoisted(() => ({
+  OWNER_NWC: "nostr+walletconnect://test",
+  REFERRAL_PAYOUT_MAX_SATS: "1000000",
+  REFERRAL_PAYOUT_DAILY_CAP_SATS: "5000000",
+  REFERRAL_PAYOUTS_ENABLED: undefined as string | undefined,
+}));
+
 vi.mock("~/lib/env.server", () => ({
   get env() {
-    return {
-      OWNER_NWC: "nostr+walletconnect://test",
-      REFERRAL_PAYOUT_MAX_SATS: "1000000",
-      REFERRAL_PAYOUT_DAILY_CAP_SATS: "5000000",
-    };
+    return envState;
   },
 }));
 
@@ -101,6 +104,7 @@ describe("referral-payout", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    envState.REFERRAL_PAYOUTS_ENABLED = undefined;
     payInvoice.mockResolvedValue(undefined);
     mockAggregatePendingCommissionByReferrer.mockResolvedValue({
       _sum: { commissionSats: 5000 },
@@ -137,6 +141,15 @@ describe("referral-payout", () => {
   });
 
   describe("payReferrerWithInvoice", () => {
+    it("does not call the wallet when payouts are disabled", async () => {
+      envState.REFERRAL_PAYOUTS_ENABLED = "false";
+      const result = await payReferrerWithInvoice(referrerNpub, "lnbc-one", 1);
+      expect(result.success).toBe(false);
+      expect(result.error).toContain("disabled");
+      expect(payInvoice).not.toHaveBeenCalled();
+      expect(mockBeginReferralPayout).not.toHaveBeenCalled();
+    });
+
     it("rejects a declared amount that does not match the invoice", async () => {
       const result = await payReferrerWithInvoice(
         referrerNpub,

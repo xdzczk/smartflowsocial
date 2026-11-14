@@ -8,14 +8,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const envState = vi.hoisted(() => ({
   NODE_ENV: "test",
   OWNER_NWC: "nostr+walletconnect://mock",
+  REFERRAL_PAYOUTS_ENABLED: undefined as string | undefined,
 }));
 
 vi.mock("~/lib/env.server", () => ({
   get env() {
-    return {
-      NODE_ENV: envState.NODE_ENV,
-      OWNER_NWC: envState.OWNER_NWC,
-    };
+    return envState;
   },
 }));
 
@@ -95,6 +93,8 @@ vi.mock("~/features/referral/referral-payout.server", () => ({
     mockRunReferralPayoutBatch(...args),
   payReferrerWithInvoice: (...args: unknown[]) =>
     mockPayReferrerWithInvoice(...args),
+  referralPayoutsEnabled: (flag?: string) => flag !== "false",
+  getReferralBatchPreview: vi.fn(),
 }));
 
 import { action } from "~/routes/dashboard.admin.referrals.server";
@@ -103,6 +103,7 @@ describe("dashboard.admin.referrals action", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     envState.OWNER_NWC = "nostr+walletconnect://mock";
+    envState.REFERRAL_PAYOUTS_ENABLED = undefined;
     mockRequireUser.mockResolvedValue({ npub: "npub_admin_hex" });
     mockIsReferralAdmin.mockReturnValue(true);
     mockRunReferralPayoutBatch.mockResolvedValue({
@@ -130,6 +131,26 @@ describe("dashboard.admin.referrals action", () => {
     };
     const res = await action(args);
     expect(res.status).toBe(403);
+  });
+
+  it("does not pay when referral payouts are disabled", async () => {
+    envState.REFERRAL_PAYOUTS_ENABLED = "false";
+    const body = new FormData();
+    body.set("_action", "run_batch_payout");
+    body.set("confirm_batch", "on");
+    body.set("confirm_phrase", "PAY");
+    const args: ActionFunctionArgs = {
+      request: new Request("http://localhost/dashboard/admin/referrals", {
+        method: "POST",
+        body,
+      }),
+      params: {},
+      context: {},
+    };
+    const res = await action(args);
+    expect(res.status).toBe(403);
+    expect(mockRunReferralPayoutBatch).not.toHaveBeenCalled();
+    expect(mockPayReferrerWithInvoice).not.toHaveBeenCalled();
   });
 
   it("returns 400 when OWNER_NWC missing", async () => {

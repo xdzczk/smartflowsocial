@@ -19,13 +19,16 @@ not prove the running process has the variable set.
 - `CRON_SECRET` is set, at least 32 characters, and stored as a secret. `openssl rand -base64 32`.
 - Every external cron call sends `X-Cron-Secret` or `Authorization: Bearer`. POST is preferred.
 - The secret is not in a query string, a shell history file, or a repository.
-- `REFERRAL_MANUAL_PAYOUT_SECRET` is set the same way, and is different from `CRON_SECRET`.
+- `REFERRAL_PAYOUTS_ENABLED` is `false` unless this install pays referral commissions. When it is
+  `true`, `REFERRAL_MANUAL_PAYOUT_SECRET` is set, at least 32 characters, and different from
+  `CRON_SECRET`. When payouts are off, the manual route still does not pay.
 - `BLOSSOM_INTERNAL_SECRET` matches the Blossom server, and is not the upload-token secret unless
   you have chosen that fallback on purpose.
 - `BLASTR_ADMIN_API_TOKEN` matches Blastr `API_TOKEN` when Blastr sync is enabled.
-- Production boot refuses to start when `CRON_SECRET`, `REFERRAL_MANUAL_PAYOUT_SECRET`, or the
-  publisher token is missing. A process that is already running was started before that check and
-  must be restarted after the variables are set.
+- Production boot refuses to start when `CRON_SECRET` or the publisher token is missing. It also
+  refuses to start without `REFERRAL_MANUAL_PAYOUT_SECRET` when `REFERRAL_PAYOUTS_ENABLED=true`. A
+  process that is already running was started before that check and must be restarted after the
+  variables are set.
 
 ## Blastr administration
 

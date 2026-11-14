@@ -6,6 +6,7 @@ import { env } from "~/lib/env.server";
 import { convertToHex } from "~/lib/nostr-conversion";
 
 import { ReferralEarningStatus } from "./data/referral-prisma-types.server";
+import { referralPayoutsEnabled } from "./referral-payout.server";
 import {
   countEarningsAdmin,
   countReferralsAdmin,
@@ -219,6 +220,9 @@ export function earningsToCsv(
 export async function retryFailedPayout(
   earningId: string
 ): Promise<{ success: boolean; error?: string }> {
+  if (!referralPayoutsEnabled()) {
+    return { success: false, error: "Referral payouts are disabled" };
+  }
   const e = await findEarningByIdForRetry(earningId);
   if (!e) return { success: false, error: "Earning not found" };
   if (e.status !== ReferralEarningStatus.FAILED) {

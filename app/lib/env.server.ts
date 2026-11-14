@@ -138,7 +138,13 @@ interface EnvConfig {
 
   // Referral
   REFERRAL_LANDING_URL?: string;
-  /** Required in production. POST /api/referral/manual-payout rejects when unset. */
+  /**
+   * `true` requires REFERRAL_MANUAL_PAYOUT_SECRET at production boot.
+   * `false` disables wallet payouts. Unset keeps payout execution available
+   * for an existing hosted install and does not require the secret to boot.
+   */
+  REFERRAL_PAYOUTS_ENABLED?: string;
+  /** POST /api/referral/manual-payout rejects when unset. Not required to boot unless payouts are enabled. */
   REFERRAL_MANUAL_PAYOUT_SECRET?: string;
   /** Hard cap for one referral invoice. Defaults to 1000000 sats. */
   REFERRAL_PAYOUT_MAX_SATS?: string;
@@ -303,6 +309,7 @@ function addOptionalConfig(config: EnvConfig): void {
     "BLASTR_ADMIN_API_TOKEN",
     "STORAGE_CDN_URL",
     "REFERRAL_LANDING_URL",
+    "REFERRAL_PAYOUTS_ENABLED",
     "REFERRAL_MANUAL_PAYOUT_SECRET",
     "REFERRAL_PAYOUT_MAX_SATS",
     "REFERRAL_PAYOUT_DAILY_CAP_SATS",
@@ -413,6 +420,7 @@ function validateAndGetEnv(): EnvConfig {
       e2eTest: process.env["E2E_TEST"],
       cronSecret: process.env["CRON_SECRET"],
       referralManualPayoutSecret: process.env["REFERRAL_MANUAL_PAYOUT_SECRET"],
+      referralPayoutsEnabled: process.env["REFERRAL_PAYOUTS_ENABLED"],
       nostrPublisherApiToken: process.env["NOSTR_PUBLISHER_API_TOKEN"],
       nostrPublisherAllowUnauthenticated:
         process.env["NOSTR_PUBLISHER_ALLOW_UNAUTHENTICATED"],

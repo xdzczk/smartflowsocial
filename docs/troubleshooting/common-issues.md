@@ -238,10 +238,8 @@ redis-cli -u $REDIS_URL ping
 1. **Verify worker process is running:**
 
 ```bash
-# Check if worker is running
-ps aux | grep "start:worker"
-
-# Start worker if not running
+# Local development: pnpm dev already runs the worker. Do not start a second one.
+# Production, beside `pnpm start`:
 pnpm start:worker
 ```
 
@@ -643,9 +641,8 @@ Alternatively, you can self-host for full control over your data and infrastruct
 
 **How long does setup take?**
 
-- **Quick Start:** 5 minutes (with Docker)
-- **Full Installation:** 15-30 minutes
-- **Production Deployment:** 1-2 hours
+- **Local scheduler:** 30–60 minutes the first time, including Postgres, Redis, and a publisher
+- **Production deployment:** 1–2 hours, plus the secrets in the production checklist
 
 See [Quick Start Guide](../getting-started/quickstart.md) for details.
 
@@ -653,8 +650,11 @@ See [Quick Start Guide](../getting-started/quickstart.md) for details.
 
 **Is my data private?**
 
-Absolutely. Your private keys never leave your browser. All events are signed client-side using
-NIP-07. We never see or store your private keys.
+Your Nostr signing key stays in your signer (a browser extension or a remote signer such as Amber).
+The server stores the public key and the events you have already signed. It does not ask you to
+paste an `nsec`. An optional NWC wallet connection, if you add one, is stored encrypted and is a
+payment credential, not your Nostr key. The operator variable `NOSTR_NSEC` is a separate server key
+for messages the operator sends. It is not your account key.
 
 **What Nostr extensions are supported?**
 

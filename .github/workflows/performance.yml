@@ -1,8 +1,8 @@
 name: Load Tests (k6)
 
-# Vitest performance tests run in ci.yml. This workflow is the k6 harness.
-# High-load scripts run only against an explicit non-production staging URL.
-# Without one, the workflow boots a local health fixture and runs a 15-second smoke.
+# Vitest performance tests run in ci.yml. This workflow is k6.
+# Without a staging URL it boots scripts/load-test-fixture.mjs. That result is the harness, not the app.
+# A staging URL gets a 15-second /healthcheck probe. The authenticated suite is opt-in and never targets production.
 
 on:
   schedule:
@@ -47,7 +47,7 @@ jobs:
       - name: Install k6
         run: |
           sudo apt-get update
-          sudo apt-get install -y ca-certificates gnupg
+          sudo apt-get install -y ca-certificates gnupg curl
           curl -fsSL https://dl.k6.io/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
           echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
           sudo apt-get update
@@ -59,11 +59,13 @@ jobs:
           set -euo pipefail
           if [ -n "${REQUESTED_BASE_URL}" ]; then
             echo "BASE_URL=${REQUESTED_BASE_URL}" >> "$GITHUB_ENV"
+            echo "K6_TARGET_KIND=application-health" >> "$GITHUB_ENV"
             echo "mode=remote" >> "$GITHUB_OUTPUT"
           else
             node scripts/load-test-fixture.mjs &
             echo $! > /tmp/load-fixture.pid
             echo "BASE_URL=http://127.0.0.1:3999" >> "$GITHUB_ENV"
+            echo "K6_TARGET_KIND=fixture" >> "$GITHUB_ENV"
             echo "mode=fixture" >> "$GITHUB_OUTPUT"
           fi
 
@@ -89,6 +91,23 @@ jobs:
           k6 run --summary-export tests/performance/results/spike-load-summary.json tests/performance/spike-load.js
           k6 run --summary-export tests/performance/results/soak-load-summary.json tests/performance/soak-load.js
           node scripts/check-performance-budgets.mjs --source=k6 --dir=tests/performance/results
+          echo "Authenticated staging suite finished. Those summaries are the capacity check. They are not a production test." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Record what this run measured
+        if: always()
+        run: |
+          {
+            echo "## k6 result"
+            echo "Mode: ${{ steps.target.outputs.mode }}"
+            if [ "${{ steps.target.outputs.mode }}" = "fixture" ]; then
+              echo "This run hit scripts/load-test-fixture.mjs. It checked that k6 can complete a 15 second probe. It did not measure SmartFlowSocial."
+            elif [ "${{ steps.target.outputs.mode }}" = "remote" ]; then
+              echo "This run sent a 15 second /healthcheck probe to the configured origin. That is application health, not a capacity benchmark."
+              echo "The authenticated api, bulk, loader, spike, and soak scripts run only when run_full is true or this workflow's nightly schedule has K6_SESSION_COOKIE_VALUE. A missing cookie fails the job."
+            else
+              echo "No target was selected."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Stop fixture
         if: always()
