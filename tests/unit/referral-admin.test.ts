@@ -5,7 +5,9 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-let mockAdminNpubs = "";
+const envState = vi.hoisted(() => ({
+  ADMIN_NPUBS: "",
+}));
 const mockFindReferralsAdmin = vi.fn();
 const mockCountReferralsAdmin = vi.fn();
 const mockFindEarningsAdmin = vi.fn();
@@ -15,8 +17,12 @@ const mockUpdateEarningToPendingRetry = vi.fn();
 
 vi.mock("~/lib/env.server", () => ({
   get env() {
-    return { ADMIN_NPUBS: mockAdminNpubs };
+    return { ADMIN_NPUBS: envState.ADMIN_NPUBS };
   },
+}));
+
+vi.mock("~/features/referral/referral-payout.server", () => ({
+  referralPayoutsEnabled: () => true,
 }));
 
 vi.mock("~/features/referral/repositories/referral-data.server", () => ({
@@ -44,46 +50,46 @@ import { convertHexToNpub } from "~/lib/nostr-conversion";
 describe("referral-admin", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockAdminNpubs = "";
+    envState.ADMIN_NPUBS = "";
   });
 
   describe("isReferralAdmin", () => {
     it("returns false when ADMIN_NPUBS is empty", () => {
-      mockAdminNpubs = "";
+      envState.ADMIN_NPUBS = "";
       expect(isReferralAdmin("npub_any")).toBe(false);
     });
 
     it("returns true when npub is in comma-separated list", () => {
-      mockAdminNpubs = "npub_a,npub_b, npub_c ";
+      envState.ADMIN_NPUBS = "npub_a,npub_b, npub_c ";
       expect(isReferralAdmin("npub_b")).toBe(true);
     });
 
     it("returns false when npub is not in list", () => {
-      mockAdminNpubs = "npub_a,npub_b";
+      envState.ADMIN_NPUBS = "npub_a,npub_b";
       expect(isReferralAdmin("npub_other")).toBe(false);
     });
 
     it("matches case-insensitively (bech32 is lowercase in DB but env may vary)", () => {
-      mockAdminNpubs = "npub1abcDEF";
+      envState.ADMIN_NPUBS = "npub1abcDEF";
       expect(isReferralAdmin("npub1abcdef")).toBe(true);
     });
 
     it("ignores zero-width characters in user npub", () => {
-      mockAdminNpubs = "npub_x";
+      envState.ADMIN_NPUBS = "npub_x";
       expect(isReferralAdmin("npub_\u200Bx")).toBe(true);
     });
 
     it("matches npub1 in ADMIN_NPUBS when session user.npub is hex (Nostr auth v2)", () => {
       const hex =
         "3bf0c63fcb93463407af97a5ee64fa883d107ef9e558472c4eb9aaaefa459da";
-      mockAdminNpubs = convertHexToNpub(hex);
+      envState.ADMIN_NPUBS = convertHexToNpub(hex);
       expect(isReferralAdmin(hex)).toBe(true);
     });
 
     it("matches hex in ADMIN_NPUBS when comparing to npub session value", () => {
       const hex =
         "3bf0c63fcb93463407af97a5ee64fa883d107ef9e558472c4eb9aaaefa459da";
-      mockAdminNpubs = hex;
+      envState.ADMIN_NPUBS = hex;
       expect(isReferralAdmin(convertHexToNpub(hex))).toBe(true);
     });
   });

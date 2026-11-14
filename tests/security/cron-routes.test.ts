@@ -14,7 +14,10 @@ const jobs = vi.hoisted(() => ({
   analytics: vi.fn(async () => ({ notes: 0 })),
 }));
 
-const envState: { CRON_SECRET?: string } = {};
+const envState = vi.hoisted(() => ({
+  CRON_SECRET: undefined as string | undefined,
+  REFERRAL_PAYOUTS_ENABLED: undefined as string | undefined,
+}));
 
 vi.mock("~/lib/env.server", () => ({
   get env() {
@@ -41,6 +44,8 @@ vi.mock("~/features/relays/publish-relay-ack-retention.server", () => ({
 
 vi.mock("~/features/referral/referral-payout.server", () => ({
   runReferralPayoutBatch: () => jobs.referral(),
+  referralPayoutsEnabled: (flag?: string) =>
+    (flag ?? envState.REFERRAL_PAYOUTS_ENABLED) !== "false",
 }));
 
 vi.mock("~/features/analytics/run-sweep.server", () => ({
@@ -59,6 +64,20 @@ describe("cron route authentication", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     envState.CRON_SECRET = undefined;
+    envState.REFERRAL_PAYOUTS_ENABLED = undefined;
+  });
+
+  it("does not run referral payouts when the feature is disabled", async () => {
+    envState.CRON_SECRET = SECRET;
+    envState.REFERRAL_PAYOUTS_ENABLED = "false";
+    const route = await import("~/routes/cron.referral-payout");
+    const response = await route.action({
+      request: request("/cron/referral-payout", "POST", SECRET),
+      params: {},
+      context: {},
+    });
+    expect(response.status).toBe(403);
+    expect(jobs.referral).not.toHaveBeenCalled();
   });
 
   const cases = [

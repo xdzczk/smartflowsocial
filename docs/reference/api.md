@@ -1156,7 +1156,7 @@ Returns the overlap warning for that time.
 Pays one referrer from a BOLT11 invoice. JSON body: `referrer_npub`, `bolt11`, `amount_sats`.
 `amount_sats` must be a number and must equal the invoice amount. Send
 `REFERRAL_MANUAL_PAYOUT_SECRET` as `X-Referral-Payout-Secret`. The route returns 401 when the secret
-is missing or wrong.
+is missing or wrong, and 404 when `REFERRAL_PAYOUTS_ENABLED=false`. A wrong secret never pays.
 
 ---
 

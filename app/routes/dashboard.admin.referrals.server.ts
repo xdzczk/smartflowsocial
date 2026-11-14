@@ -25,6 +25,7 @@ import { listReferralPayoutAuditLogs } from "~/features/referral/referral-payout
 import {
   getReferralBatchPreview,
   payReferrerWithInvoice,
+  referralPayoutsEnabled,
   runReferralPayoutBatch,
 } from "~/features/referral/referral-payout.server";
 import { countReferralEarningsPaidInRange } from "~/features/referral/repositories/referral-data.server";
@@ -171,6 +172,9 @@ export const action = withCSRFProtection(
     const user = await requireUser(request);
     if (!isReferralAdmin(user.npub)) {
       return json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (!referralPayoutsEnabled(env.REFERRAL_PAYOUTS_ENABLED)) {
+      return json({ error: "Referral payouts are disabled" }, { status: 403 });
     }
 
     const formData = await request.formData();

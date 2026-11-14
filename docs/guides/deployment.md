@@ -477,7 +477,9 @@ For managed databases (AWS RDS, Railway, Fly.io), use their built-in backup feat
 
 ## Worker Process Setup
 
-The worker process handles scheduled posts and background jobs.
+The worker process handles scheduled posts and background jobs. In local development, `pnpm dev`
+already starts it. `pnpm start:worker` is for production, next to `pnpm start`, and must not share
+Redis with a `pnpm dev` process.
 
 ### Standalone Worker
 

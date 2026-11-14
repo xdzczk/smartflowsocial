@@ -9,10 +9,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ## [Unreleased]
 
-No GitHub release or tag exists yet. The old `[1.0.0] - 2024-01-01` heading below was a placeholder.
-It was not a published release. The first real release should be tagged `v1.0.0` only after the
-owner reviews this tree. Do not treat `package.json` version `1.0.0` as a shipped release until that
-tag exists.
+## [0.1.0-alpha.0] - 2026-11-14
+
+First public alpha. `package.json` is `0.1.0-alpha.0` and `"private": true`. The old
+`[1.0.0] - 2024-01-01` heading further down was a placeholder and was not a release. Release notes:
+[docs/releases/v0.1.0-alpha.0.md](docs/releases/v0.1.0-alpha.0.md).
 
 ### Security
 
@@ -20,11 +21,17 @@ tag exists.
 - Manual referral payout fails closed, checks the BOLT11 amount against the declared amount, and
   refuses amountless, expired, or mismatched invoices before calling the wallet.
 - Referral payouts claim earnings under a database lock and will not pay the same invoice twice.
-- Production boot requires the cron secret, the manual payout secret, and a publisher token unless
-  public publisher mode is explicit.
+- Production boot requires the cron secret and a publisher token unless public publisher mode is
+  explicit. `REFERRAL_MANUAL_PAYOUT_SECRET` is required at boot only when
+  `REFERRAL_PAYOUTS_ENABLED=true`. The manual payout route stays 401 without that secret, and wallet
+  payouts do not run when the flag is `false`.
 
 ### Added
 
+- Local signature-checking publisher (`pnpm publisher:local`) and `pnpm smoke:publish` for a
+  scheduled signed event against Postgres, without a public relay.
+- Weekly full Cypress core run, and a CI summary that labels k6 fixture runs separately from
+  application health and staging capacity tests.
 - Blossom upload integration: token-based uploads, commit-batch, quota/usage tracking.
 - Web Push notifications: subscribe/unsubscribe, VAPID config, publish success/failure and
   runway-low alerts.

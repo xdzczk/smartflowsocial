@@ -6,7 +6,10 @@
 import { json } from "@remix-run/node";
 import type { ActionFunctionArgs } from "@remix-run/node";
 
-import { payReferrerWithInvoice } from "~/features/referral/referral-payout.server";
+import {
+  payReferrerWithInvoice,
+  referralPayoutsEnabled,
+} from "~/features/referral/referral-payout.server";
 import { env } from "~/lib/env.server";
 import { secretsMatch } from "~/lib/secret-match.server";
 
@@ -17,6 +20,13 @@ export async function action({ request }: ActionFunctionArgs) {
     return json(
       { error: "Method not allowed" },
       { status: 405, headers: { "Cache-Control": "no-store" } }
+    );
+  }
+
+  if (!referralPayoutsEnabled(env.REFERRAL_PAYOUTS_ENABLED)) {
+    return json(
+      { error: "Referral payouts are disabled" },
+      { status: 404, headers: { "Cache-Control": "no-store" } }
     );
   }
 

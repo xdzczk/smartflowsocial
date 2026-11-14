@@ -100,12 +100,11 @@ pnpm exec prisma migrate dev --name migration-name
 
 ### Start Worker Process
 
-```bash
-# Development
-pnpm start:worker
+`pnpm dev` already starts the worker. Do not run `pnpm start:worker` beside it.
 
-# Production
-# Run as separate process or service
+```bash
+# Production, after pnpm build, beside pnpm start
+pnpm start:worker
 ```
 
 ---

@@ -23,11 +23,12 @@ brew install k6
 **Linux:**
 
 ```bash
-sudo gpg -k
-sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+sudo apt-get update
+sudo apt-get install -y ca-certificates gnupg curl
+curl -fsSL https://dl.k6.io/key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
 echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
 sudo apt-get update
-sudo apt-get install k6
+sudo apt-get install -y k6
 ```
 
 **Windows:**
@@ -37,6 +38,18 @@ choco install k6
 ```
 
 Or download from [k6.io](https://k6.io/docs/getting-started/installation/)
+
+## What a k6 run means
+
+| Command or workflow                                                                                                        | What it measures                                                                                       |
+| -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| CI with no `STAGING_URL`                                                                                                   | `scripts/load-test-fixture.mjs` only. The harness works. This is not SmartFlowSocial.                  |
+| `BASE_URL` pointed at a local `pnpm dev` or staging, `k6 run tests/performance/smoke-load.js`                              | A short `/healthcheck` probe of that process. Not a capacity benchmark.                                |
+| Authenticated scripts (`api-endpoints.js`, `bulk-operations.js`, `loader-performance.js`, `spike-load.js`, `soak-load.js`) | Need a session cookie. Run them against staging you control.                                           |
+| `.github/workflows/performance.yml` nightly or `workflow_dispatch` with `run_full`                                         | Staging capacity suite. It fails if the session cookie secret is missing. It refuses production hosts. |
+
+Do not quote fixture output as an application benchmark. Do not put production cookies in the
+repository.
 
 ## Running Tests
 

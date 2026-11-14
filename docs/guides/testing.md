@@ -271,7 +271,14 @@ pnpm exec cypress run --spec "tests/e2e/smoke/critical-path.cy.ts"
   `pnpm test:integration`, `pnpm test:property`, `pnpm test:security` for subsets). CI runs
   lint/format/typecheck, `pnpm test:coverage` (all suites) and the production build in
   [.github/workflows/ci.yml](../../.github/workflows/ci.yml) on every push/PR to main/develop;
-  Cypress runs in [.github/workflows/e2e.yml](../../.github/workflows/e2e.yml).
+  Cypress smoke runs on every push and pull request in
+  [.github/workflows/e2e.yml](../../.github/workflows/e2e.yml). A pull request also runs the drafts,
+  scheduling, and settings specs. The full `tests/e2e/core` suite runs on `workflow_dispatch` and
+  every Monday at 06:00 UTC. A failed scheduled run fails the workflow.
+- **k6:** [.github/workflows/performance.yml](../../.github/workflows/performance.yml) records
+  whether it hit the local fixture, a real `/healthcheck`, or the authenticated staging suite. A
+  fixture pass is not an application benchmark. The workflow refuses production hosts unless
+  `ALLOW_PRODUCTION_LOAD_TEST=true`. Staging credentials are repository secrets, not files in git.
 - **CI must be green for merge:** Do not merge until PR checks pass. Fix any failing or flaky tests
   so the default run is green.
 - **Do not commit test output artifacts:** Do not commit `test-results/` or coverage reports as

@@ -35,8 +35,10 @@ error tracking if used, and the relays. Say which country they operate in if you
 
 **Your rights.** If the controller is established in the EU or UK, or offers the service to people
 there, you can ask for access, correction, deletion, restriction, and a copy of the data the
-controller holds. You can complain to a supervisory authority. Deleting an account does not delete
-events that relays already accepted.
+controller holds. You can complain to a supervisory authority. The app can delete individual posts.
+It does not currently offer one control that exports or erases the whole account. Deleting a row
+does not delete events that relays already accepted. When the operator enables delete events, those
+events are signed by the operator key in `NOSTR_NSEC`, which is not the user's key.
 
 **Contact.** [A contact that is not only a Nostr profile, if Article 13 requires an identity people
 can use. The existing Nostr contact can stay as an additional channel.]

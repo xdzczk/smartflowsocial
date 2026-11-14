@@ -1,6 +1,6 @@
 {
   "name": "smartflow-social",
-  "version": "1.0.0",
+  "version": "0.1.0-alpha.0",
   "description": "A scheduler for Nostr. Sign with your own signer. The same code runs hosted or self-hosted.",
   "author": "SmartFlowSocial Team",
   "license": "Unlicense",
@@ -42,6 +42,8 @@
     "dev:server": "cross-env NODE_ENV=development E2E_TEST=${E2E_TEST:-} esbuild --platform=node --format=cjs ./server.ts --outdir=build --bundle --external:fsevents --external:file-type --external:sharp --external:@prisma/client --external:@prisma/engines --watch=forever",
     "dev:worker": "cross-env NODE_ENV=development esbuild --platform=node --format=cjs ./worker.ts --outdir=build --bundle --external:fsevents --external:ioredis --external:file-type --external:@prisma/client --external:@prisma/engines --watch=forever",
     "docker": "docker compose up -d",
+    "publisher:local": "node scripts/local-publisher.mjs",
+    "smoke:publish": "tsx scripts/self-host-publish-smoke.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "printf '🔍 Running ESLint...\\n' && cross-env NODE_OPTIONS=--max-old-space-size=4096 NODE_COMPILE_CACHE=./.cache/node-compile-cache eslint --cache --cache-location ./node_modules/.cache/eslint .",

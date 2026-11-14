@@ -96,9 +96,11 @@ The application will be available at [http://localhost:3000](http://localhost:30
 `pnpm dev` starts the Remix server and the worker together. Do not start `pnpm start:worker` in a
 second terminal while `pnpm dev` is running, or scheduled work can run twice.
 
-Publishing still needs `NOSTR_PUBLISHER_URL` pointed at a local or self-hosted
-[publisher](https://github.com/xdzczk/smartflowsocial-publisher). `pnpm docker` does not start one.
-Without it, the UI can boot and the publish call fails.
+Publishing still needs `NOSTR_PUBLISHER_URL`. `pnpm docker` does not start a publisher. For a
+laptop, run `pnpm publisher:local` and point the URL at `http://127.0.0.1:8787/publish` with the
+same token. That process checks signatures and does not open relays. The production publisher is the
+separate [Cloudflare worker](https://github.com/xdzczk/smartflowsocial-publisher). The checked
+procedure is the [self-host smoke](./self-host-smoke.md).
 
 Before you call this healthy:
 
@@ -176,14 +178,16 @@ See [Troubleshooting Guide](../troubleshooting/common-issues.md) for more soluti
 
 ## Quick Reference
 
-| Task             | Command                  |
-| ---------------- | ------------------------ |
-| Start dev server | `pnpm dev`               |
-| Start worker     | `pnpm start:worker`      |
-| Run tests        | `pnpm test`              |
-| Check types      | `pnpm exec tsc --noEmit` |
-| Format code      | `pnpm format`            |
-| Lint code        | `pnpm lint`              |
+| Task              | Command                                                       |
+| ----------------- | ------------------------------------------------------------- |
+| Start dev server  | `pnpm dev` (includes the worker)                              |
+| Production worker | `pnpm start:worker` after `pnpm build`, not beside `pnpm dev` |
+| Local publisher   | `pnpm publisher:local`                                        |
+| Publish smoke     | `pnpm smoke:publish`                                          |
+| Run tests         | `pnpm test`                                                   |
+| Check types       | `pnpm exec tsc --noEmit`                                      |
+| Format code       | `pnpm format`                                                 |
+| Lint code         | `pnpm lint`                                                   |
 
 ---
 

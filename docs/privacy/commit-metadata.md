@@ -1,8 +1,9 @@
 # Commit metadata and pseudonymity
 
-An audit on 14 November 2026 found a large number of commits whose author email is an iCloud
-address, with author names that include Ivan and xdzczk. That links the public Git history to a
-personal mailbox.
+An audit on 14 November 2026 of `origin/main` (1,048 commits) found 1,046 commits whose author email
+is an iCloud address. Author names on that history are Ivan (967), xdzczk (79), and dependabot (2).
+The only noreply addresses are the two Dependabot commits. Recent human commits on `origin/develop`
+still use the iCloud address. That links the public Git history to a personal mailbox.
 
 This note does not repeat the email address.
 

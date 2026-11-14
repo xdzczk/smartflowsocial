@@ -52,8 +52,14 @@ corrections, fixture-only tests, and typo fixes in `docs/` are safe first change
 first PR against payout, cron authentication, or wallet code.
 
 Use a GitHub noreply address for commits you push to these public repositories. See
-[commit metadata](docs/privacy/commit-metadata.md). There is no contributor license agreement. The
-Unlicense applies to the code you contribute.
+[commit metadata](docs/privacy/commit-metadata.md). Set `user.email` in this clone. Do not rewrite
+published history to hide older addresses. There is no contributor license agreement. The Unlicense
+applies to the code you contribute.
+
+The checked local path is [the self-host smoke](docs/getting-started/self-host-smoke.md). `pnpm dev`
+starts the worker. `pnpm smoke:publish` signs one ephemeral event and publishes it through the local
+publisher. Report vulnerabilities the way [SECURITY.md](SECURITY.md) describes, not in a public
+issue.
 
 The name SmartFlowSocial and the logo are not part of the Unlicense grant. See
 [TRADEMARK.md](TRADEMARK.md).

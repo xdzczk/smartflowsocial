@@ -3,8 +3,9 @@
 A scheduler for Nostr. Sign posts with your own signer. They go out on schedule, even while you are
 offline.
 
-The same application code runs as the hosted service and as a self-hosted install. The license is
-the [Unlicense](LICENSE). No release tag has been published yet.
+The same application code runs as the hosted service and as a self-hosted install. A live deploy can
+lag this commit until the operator updates it. The license is the [Unlicense](LICENSE).
+`package.json` is `0.1.0-alpha.0`. The first public tag is `v0.1.0-alpha.0`.
 
 ![SmartFlowSocial hero banner](./docs/readme-hero.svg)
 
@@ -114,7 +115,10 @@ running [HTTP publisher](https://github.com/xdzczk/smartflowsocial-publisher). U
 S3-compatible storage. Blastr, Blossom, the cache worker, and NostrMash are optional.
 
 `pnpm dev` already starts the worker. Do not also run `pnpm start:worker` against the same Redis or
-you will process jobs twice.
+you will process jobs twice. First-time setup is about 30–60 minutes.
+[Self-host smoke](./docs/getting-started/self-host-smoke.md) is the path that proves a scheduled
+signed event reaches a publisher. `pnpm publisher:local` is a local signature check, not the
+[Cloudflare publisher](https://github.com/xdzczk/smartflowsocial-publisher).
 
 ```bash
 git clone https://github.com/xdzczk/smartflowsocial.git
