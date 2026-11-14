@@ -31,6 +31,7 @@ describe("Smoke: financial and upload authorization", () => {
       method: "POST",
       url: "/api/upload",
       failOnStatusCode: false,
+      followRedirect: false,
       body: { unused: true },
     }).then((response) => {
       expect(response.status).to.be.oneOf([302, 303, 401, 403]);
